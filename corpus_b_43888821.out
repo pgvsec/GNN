@@ -1,0 +1,1253 @@
+Preflight OK — Corpus A cache verified.
+SLURM_JOB_ID : 43888821
+SLURM_NODEID : 0
+CPUs allocated: 66
+Start time    : Wed Oct  7 13:35:31 EDT 2026
+Corpus B: 38969 graphs, 609 shards, 609 to generate (0 cached), device cpu
+Avg 19.7 draws/graph -> ~766,390 samples
+  shard 6 B verified n=3: mean_fp 1.21  certified 100.0%  multistable 10.7%
+  shard 5 B verified n=2: mean_fp 1.00  certified 100.0%  multistable 0.0%
+  shard 20 B verified n=3: mean_fp 1.86  certified 100.0%  multistable 39.3%
+  shard 2 B verified n=3: mean_fp 2.18  certified 96.4%  multistable 39.3%
+  shard 13 B verified n=3: mean_fp 1.48  certified 100.0%  multistable 21.4%
+  shard 11 B verified n=3: mean_fp 1.21  certified 100.0%  multistable 10.7%
+  shard 12 B verified n=3: mean_fp 1.43  certified 100.0%  multistable 17.9%
+  shard 7 B verified n=3: mean_fp 1.71  certified 100.0%  multistable 28.6%
+  shard 18 B verified n=3: mean_fp 1.49  certified 99.1%  multistable 17.0%
+  shard 30 B verified n=3: mean_fp 1.79  certified 100.0%  multistable 32.1%
+  shard 10 B verified n=3: mean_fp 1.36  certified 100.0%  multistable 17.9%
+  shard 15 B verified n=3: mean_fp 1.64  certified 100.0%  multistable 25.0%
+  shard 21 B verified n=3: mean_fp 1.88  certified 97.6%  multistable 33.3%
+  shard 25 B verified n=3: mean_fp 1.98  certified 100.0%  multistable 33.3%
+  shard 17 B verified n=3: mean_fp 1.44  certified 100.0%  multistable 18.6%
+  shard 8 B verified n=3: mean_fp 1.97  certified 99.1%  multistable 29.5%
+  shard 24 B verified n=3: mean_fp 1.35  certified 100.0%  multistable 16.1%
+  shard 0 B verified n=3: mean_fp 1.53  certified 100.0%  multistable 24.3%
+  shard 4 B verified n=3: mean_fp 1.81  certified 100.0%  multistable 34.5%
+  shard 31 B verified n=3: mean_fp 1.74  certified 100.0%  multistable 32.1%
+  shard 1 B verified n=3: mean_fp 1.57  certified 100.0%  multistable 25.7%
+  shard 23 B verified n=3: mean_fp 2.04  certified 99.3%  multistable 42.1%
+  shard 26 B verified n=3: mean_fp 1.89  certified 98.8%  multistable 26.2%
+  shard 19 B verified n=3: mean_fp 1.36  certified 100.0%  multistable 16.1%
+  shard 14 B verified n=3: mean_fp 2.05  certified 100.0%  multistable 41.1%
+  shard 28 B verified n=3: mean_fp 1.81  certified 100.0%  multistable 32.1%
+  shard 3 B verified n=3: mean_fp 1.70  certified 99.4%  multistable 25.0%
+  shard 27 B verified n=3: mean_fp 2.55  certified 100.0%  multistable 63.1%
+  shard 9 B verified n=3: mean_fp 1.77  certified 100.0%  multistable 28.6%
+  shard 16 B verified n=3: mean_fp 1.74  certified 100.0%  multistable 24.3%
+  shard 22 B verified n=3: mean_fp 1.62  certified 100.0%  multistable 23.2%
+  shard 29 B verified n=3: mean_fp 1.69  certified 100.0%  multistable 25.6%
+shard   16:    1437 samples      2723 FPs  cert  99.1%  bif_crossed  38.3%   49.1s | 1/609  eta 523.7 min
+  shard 32 B verified n=3: mean_fp 1.79  certified 100.0%  multistable 32.1%
+shard    5:    1489 samples      2646 FPs  cert  99.4%  bif_crossed  47.3%   51.8s | 2/609  eta 275.0 min
+  shard 33 B verified n=3: mean_fp 1.36  certified 100.0%  multistable 13.4%
+shard   24:    1431 samples      2349 FPs  cert  99.4%  bif_crossed  40.7%   53.1s | 3/609  eta 187.8 min
+  shard 34 B verified n=3: mean_fp 1.45  certified 100.0%  multistable 20.2%
+shard   30:    1279 samples      2384 FPs  cert  99.4%  bif_crossed  47.1%   54.9s | 4/609  eta 145.1 min
+  shard 35 B verified n=3: mean_fp 2.32  certified 100.0%  multistable 52.8%
+shard   13:    1328 samples      2466 FPs  cert  99.3%  bif_crossed  43.2%   58.9s | 5/609  eta 123.8 min
+  shard 36 B verified n=3: mean_fp 1.18  certified 100.0%  multistable 7.1%
+shard    7:    1252 samples      2276 FPs  cert  99.4%  bif_crossed  47.8%   59.6s | 6/609  eta 104.2 min
+shard    8:    1279 samples      2465 FPs  cert  99.3%  bif_crossed  36.0%   59.7s | 7/609  eta  89.3 min
+  shard 37 B verified n=3: mean_fp 3.29  certified 100.0%  multistable 78.6%
+  shard 38 B verified n=3: mean_fp 2.03  certified 100.0%  multistable 39.3%
+shard    3:    1338 samples      2539 FPs  cert  99.1%  bif_crossed  55.2%   63.0s | 8/609  eta  82.1 min
+shard   22:    1361 samples      2609 FPs  cert  99.3%  bif_crossed  48.5%   63.0s | 9/609  eta  72.9 min
+  shard 39 B verified n=3: mean_fp 1.75  certified 100.0%  multistable 30.4%
+  shard 40 B verified n=3: mean_fp 1.95  certified 100.0%  multistable 34.5%
+shard    0:    1386 samples      2650 FPs  cert  99.0%  bif_crossed  43.7%   67.6s | 10/609  eta  70.0 min
+  shard 41 B verified n=3: mean_fp 1.55  certified 100.0%  multistable 25.0%
+shard    4:    1339 samples      2691 FPs  cert  98.4%  bif_crossed  47.9%   70.0s | 11/609  eta  65.7 min
+  shard 42 B verified n=3: mean_fp 1.09  certified 100.0%  multistable 4.5%
+shard   29:    1334 samples      2714 FPs  cert  99.3%  bif_crossed  46.3%   70.9s | 12/609  eta  61.0 min
+  shard 43 B verified n=3: mean_fp 1.31  certified 100.0%  multistable 15.7%
+shard   25:    1320 samples      2605 FPs  cert  99.2%  bif_crossed  45.2%   72.4s | 13/609  eta  57.4 min
+shard   14:    1256 samples      2378 FPs  cert  98.6%  bif_crossed  45.9%   72.9s | 14/609  eta  53.5 min
+shard    1:    1433 samples      2813 FPs  cert  98.5%  bif_crossed  32.4%   73.1s | 15/609  eta  49.9 min
+  shard 44 B verified n=3: mean_fp 1.54  certified 100.0%  multistable 19.6%
+  shard 46 B verified n=3: mean_fp 1.07  certified 100.0%  multistable 3.6%
+  shard 45 B verified n=3: mean_fp 2.21  certified 100.0%  multistable 37.5%
+shard   23:    1496 samples      2694 FPs  cert  99.2%  bif_crossed  45.4%   74.6s | 16/609  eta  47.7 min
+shard    9:    1395 samples      2669 FPs  cert  98.4%  bif_crossed  48.2%   75.2s | 17/609  eta  45.1 min
+  shard 47 B verified n=3: mean_fp 1.50  certified 100.0%  multistable 25.0%
+  shard 48 B verified n=3: mean_fp 1.36  certified 100.0%  multistable 15.5%
+shard    6:    1345 samples      2586 FPs  cert  98.7%  bif_crossed  40.3%   77.4s | 18/609  eta  43.8 min
+  shard 49 B verified n=3: mean_fp 2.36  certified 100.0%  multistable 57.1%
+shard   20:    1443 samples      2608 FPs  cert  99.3%  bif_crossed  47.7%   79.8s | 19/609  eta  42.7 min
+shard   27:    1429 samples      2681 FPs  cert  98.7%  bif_crossed  44.9%   81.7s | 20/609  eta  41.4 min
+  shard 50 B verified n=3: mean_fp 1.60  certified 100.0%  multistable 26.2%
+shard   21:    1273 samples      2679 FPs  cert  98.5%  bif_crossed  43.0%   82.2s | 21/609  eta  39.6 min
+  shard 51 B verified n=3: mean_fp 1.43  certified 100.0%  multistable 18.8%
+  shard 52 B verified n=3: mean_fp 1.83  certified 100.0%  multistable 29.8%
+shard   17:    1330 samples      2291 FPs  cert  99.3%  bif_crossed  46.4%   83.4s | 22/609  eta  38.2 min
+  shard 53 B verified n=3: mean_fp 1.39  certified 100.0%  multistable 19.6%
+shard   18:    1355 samples      2381 FPs  cert  99.1%  bif_crossed  40.4%   85.0s | 23/609  eta  37.2 min
+  shard 54 B verified n=3: mean_fp 1.30  certified 100.0%  multistable 15.2%
+shard   28:    1412 samples      2507 FPs  cert  99.0%  bif_crossed  52.1%   87.1s | 24/609  eta  36.5 min
+shard   26:    1475 samples      2630 FPs  cert  99.2%  bif_crossed  45.2%   87.5s | 25/609  eta  35.1 min
+  shard 55 B verified n=3: mean_fp 1.42  certified 100.0%  multistable 14.3%
+  shard 56 B verified n=3: mean_fp 2.36  certified 100.0%  multistable 44.6%
+shard   31:    1392 samples      2461 FPs  cert  99.8%  bif_crossed  50.4%   91.2s | 26/609  eta  35.1 min
+shard   10:    1355 samples      2607 FPs  cert  99.4%  bif_crossed  43.6%   92.4s | 27/609  eta  34.1 min
+shard   12:    1394 samples      2577 FPs  cert  98.9%  bif_crossed  45.5%   92.5s | 28/609  eta  32.9 min
+  shard 57 B verified n=3: mean_fp 1.62  certified 99.4%  multistable 23.8%
+  shard 58 B verified n=3: mean_fp 2.71  certified 100.0%  multistable 71.4%
+  shard 59 B verified n=3: mean_fp 1.57  certified 100.0%  multistable 25.0%
+shard   11:    1349 samples      2719 FPs  cert  99.3%  bif_crossed  49.4%   93.7s | 29/609  eta  32.1 min
+  shard 60 B verified n=3: mean_fp 1.86  certified 100.0%  multistable 34.5%
+shard   19:    1261 samples      2425 FPs  cert  99.4%  bif_crossed  44.2%   94.9s | 30/609  eta  31.4 min
+  shard 61 B verified n=3: mean_fp 2.10  certified 100.0%  multistable 31.0%
+shard   32:    1386 samples      2487 FPs  cert  99.2%  bif_crossed  52.9%   52.7s | 31/609  eta  32.5 min
+  shard 62 B verified n=3: mean_fp 1.71  certified 100.0%  multistable 27.4%
+shard    2:    1332 samples      2400 FPs  cert  99.4%  bif_crossed  46.0%  104.4s | 32/609  eta  32.1 min
+  shard 63 B verified n=3: mean_fp 1.29  certified 100.0%  multistable 14.3%
+shard   33:    1265 samples      2261 FPs  cert  99.5%  bif_crossed  39.7%   54.3s | 33/609  eta  31.6 min
+shard   35:    1440 samples      2738 FPs  cert  99.2%  bif_crossed  47.0%   51.7s | 34/609  eta  30.8 min
+  shard 64 B verified n=3: mean_fp 1.40  certified 100.0%  multistable 20.2%
+  shard 65 B verified n=3: mean_fp 1.55  certified 100.0%  multistable 19.6%
+shard   15:    1209 samples      2537 FPs  cert  98.8%  bif_crossed  49.3%  113.4s | 35/609  eta  31.7 min
+  shard 66 B verified n=2: mean_fp 1.40  certified 100.0%  multistable 16.7%
+shard   37:    1379 samples      2413 FPs  cert  99.2%  bif_crossed  37.3%   59.1s | 36/609  eta  32.2 min
+shard   39:    1385 samples      2411 FPs  cert  99.4%  bif_crossed  40.4%   56.9s | 37/609  eta  31.5 min
+  shard 67 B verified n=3: mean_fp 1.44  certified 100.0%  multistable 16.1%
+  shard 68 B verified n=3: mean_fp 2.12  certified 100.0%  multistable 42.9%
+shard   36:    1318 samples      2627 FPs  cert  99.0%  bif_crossed  47.3%   63.4s | 38/609  eta  31.3 min
+  shard 69 B verified n=3: mean_fp 2.93  certified 100.0%  multistable 67.9%
+shard   40:    1263 samples      2260 FPs  cert  99.4%  bif_crossed  39.7%   60.9s | 39/609  eta  30.8 min
+  shard 70 B verified n=3: mean_fp 1.64  certified 100.0%  multistable 28.6%
+shard   34:    1353 samples      2754 FPs  cert  98.7%  bif_crossed  48.4%   73.0s | 40/609  eta  30.5 min
+  shard 71 B verified n=3: mean_fp 1.38  certified 100.0%  multistable 14.3%
+shard   38:    1420 samples      2623 FPs  cert  99.1%  bif_crossed  46.7%   70.8s | 41/609  eta  30.7 min
+  shard 72 B verified n=3: mean_fp 1.43  certified 100.0%  multistable 19.4%
+shard   42:    1262 samples      2652 FPs  cert  98.4%  bif_crossed  53.3%   65.6s | 42/609  eta  31.1 min
+  shard 73 B verified n=3: mean_fp 2.11  certified 100.0%  multistable 46.4%
+shard   45:    1306 samples      2429 FPs  cert  99.0%  bif_crossed  49.4%   68.8s | 43/609  eta  31.7 min
+  shard 74 B verified n=3: mean_fp 1.68  certified 100.0%  multistable 33.9%
+shard   43:    1416 samples      2536 FPs  cert  99.2%  bif_crossed  38.1%   71.6s | 44/609  eta  31.1 min
+  shard 75 B verified n=3: mean_fp 2.29  certified 100.0%  multistable 55.4%
+shard   52:    1387 samples      2753 FPs  cert  99.1%  bif_crossed  57.8%   65.5s | 45/609  eta  31.4 min
+shard   62:    1365 samples      2287 FPs  cert  99.3%  bif_crossed  37.2%   46.3s | 46/609  eta  30.8 min
+  shard 76 B verified n=3: mean_fp 1.84  certified 100.0%  multistable 37.5%
+  shard 77 B verified n=3: mean_fp 2.29  certified 100.0%  multistable 46.4%
+shard   46:    1272 samples      2683 FPs  cert  99.2%  bif_crossed  46.3%   76.1s | 47/609  eta  30.2 min
+  shard 78 B verified n=3: mean_fp 1.61  certified 100.0%  multistable 17.9%
+shard   49:    1346 samples      2686 FPs  cert  99.1%  bif_crossed  54.8%   73.3s | 48/609  eta  29.9 min
+  shard 79 B verified n=3: mean_fp 1.57  certified 100.0%  multistable 25.0%
+shard   48:    1271 samples      2538 FPs  cert  99.4%  bif_crossed  50.3%   79.4s | 49/609  eta  29.9 min
+  shard 80 B verified n=3: mean_fp 1.82  certified 100.0%  multistable 41.1%
+shard   57:    1396 samples      2476 FPs  cert  99.5%  bif_crossed  51.5%   64.9s | 50/609  eta  29.6 min
+  shard 81 B verified n=3: mean_fp 2.16  certified 100.0%  multistable 38.4%
+shard   44:    1328 samples      2231 FPs  cert  99.5%  bif_crossed  47.9%   85.3s | 51/609  eta  29.2 min
+  shard 82 B verified n=3: mean_fp 1.33  certified 100.0%  multistable 14.7%
+shard   68:    1412 samples      2595 FPs  cert  99.5%  bif_crossed  50.9%   46.0s | 52/609  eta  30.1 min
+shard   51:    1394 samples      2789 FPs  cert  98.9%  bif_crossed  46.5%   84.1s | 53/609  eta  29.4 min
+shard   47:    1291 samples      2502 FPs  cert  99.4%  bif_crossed  52.8%   91.8s | 54/609  eta  28.9 min
+  shard 84 B verified n=3: mean_fp 1.36  certified 100.0%  multistable 14.3%
+  shard 83 B verified n=3: mean_fp 1.37  certified 100.0%  multistable 17.1%
+shard   67:    1355 samples      2435 FPs  cert  99.7%  bif_crossed  45.1%   47.9s | 55/609  eta  28.4 min
+  shard 85 B verified n=3: mean_fp 1.36  certified 100.0%  multistable 14.3%
+  shard 86 B verified n=3: mean_fp 2.14  certified 100.0%  multistable 42.0%
+shard   56:    1314 samples      2609 FPs  cert  99.5%  bif_crossed  52.1%   85.2s | 56/609  eta  28.9 min
+shard   50:    1286 samples      2731 FPs  cert  98.9%  bif_crossed  49.7%   93.0s | 57/609  eta  28.3 min
+  shard 88 B verified n=3: mean_fp 1.62  certified 100.0%  multistable 26.2%
+  shard 87 B verified n=3: mean_fp 1.89  certified 100.0%  multistable 31.2%
+shard   58:    1419 samples      2618 FPs  cert  99.2%  bif_crossed  40.9%   84.2s | 58/609  eta  28.4 min
+shard   41:    1254 samples      2210 FPs  cert  99.1%  bif_crossed  43.9%  109.4s | 59/609  eta  27.9 min
+  shard 89 B verified n=3: mean_fp 2.18  certified 100.0%  multistable 42.9%
+  shard 90 B verified n=3: mean_fp 1.18  certified 100.0%  multistable 7.1%
+shard   69:    1364 samples      2702 FPs  cert  98.8%  bif_crossed  48.7%   58.6s | 60/609  eta  28.0 min
+  shard 91 B verified n=3: mean_fp 1.11  certified 100.0%  multistable 5.4%
+shard   53:    1350 samples      2423 FPs  cert  98.7%  bif_crossed  44.4%   98.5s | 61/609  eta  27.6 min
+shard   59:    1310 samples      2534 FPs  cert  99.2%  bif_crossed  44.4%   89.6s | 62/609  eta  27.2 min
+shard   61:    1286 samples      2768 FPs  cert  99.1%  bif_crossed  57.2%   87.4s | 63/609  eta  26.7 min
+  shard 92 B verified n=3: mean_fp 1.93  certified 100.0%  multistable 28.6%
+shard   64:    1231 samples      2158 FPs  cert  99.2%  bif_crossed  51.5%   76.6s | 64/609  eta  26.3 min
+shard   71:    1368 samples      2392 FPs  cert  99.5%  bif_crossed  43.0%   56.7s | 65/609  eta  25.9 min
+  shard 93 B verified n=3: mean_fp 2.12  certified 100.0%  multistable 36.9%
+  shard 96 B verified n=3: mean_fp 1.04  certified 100.0%  multistable 1.8%
+  shard 94 B verified n=3: mean_fp 3.02  certified 100.0%  multistable 72.6%
+shard   65:    1410 samples      2842 FPs  cert  98.9%  bif_crossed  51.4%   76.8s | 66/609  eta  25.5 min
+  shard 95 B verified n=3: mean_fp 2.17  certified 99.1%  multistable 39.3%
+  shard 97 B verified n=3: mean_fp 1.36  certified 100.0%  multistable 17.9%
+shard   60:    1333 samples      2587 FPs  cert  98.9%  bif_crossed  53.0%   93.5s | 67/609  eta  25.6 min
+  shard 98 B verified n=3: mean_fp 2.21  certified 100.0%  multistable 53.6%
+shard   72:    1364 samples      2593 FPs  cert  99.2%  bif_crossed  55.4%   58.2s | 68/609  eta  25.4 min
+shard   63:    1372 samples      2558 FPs  cert  99.3%  bif_crossed  50.3%   84.4s | 69/609  eta  25.0 min
+  shard 99 B verified n=3: mean_fp 1.55  certified 100.0%  multistable 22.3%
+  shard 100 B verified n=3: mean_fp 2.21  certified 99.1%  multistable 45.5%
+shard   73:    1306 samples      2442 FPs  cert  99.4%  bif_crossed  45.8%   56.4s | 70/609  eta  25.0 min
+  shard 101 B verified n=3: mean_fp 2.06  certified 98.8%  multistable 44.0%
+shard   55:    1299 samples      2407 FPs  cert  99.4%  bif_crossed  46.0%  105.6s | 71/609  eta  24.7 min
+  shard 102 B verified n=3: mean_fp 1.13  certified 98.8%  multistable 7.1%
+shard   54:    1237 samples      2506 FPs  cert  98.7%  bif_crossed  45.1%  109.8s | 72/609  eta  24.5 min
+shard   70:    1412 samples      2517 FPs  cert  99.4%  bif_crossed  36.6%   72.7s | 73/609  eta  24.4 min
+  shard 103 B verified n=4: mean_fp 2.35  certified 100.0%  multistable 56.0%
+  shard 104 B verified n=3: mean_fp 1.14  certified 100.0%  multistable 7.1%
+shard   66:    1359 samples      2248 FPs  cert  99.4%  bif_crossed  40.6%   85.6s | 74/609  eta  24.3 min
+  shard 105 B verified n=3: mean_fp 1.86  certified 100.0%  multistable 42.9%
+shard   78:    1272 samples      2559 FPs  cert  99.4%  bif_crossed  50.2%   62.3s | 75/609  eta  25.4 min
+shard   79:    1403 samples      2610 FPs  cert  99.5%  bif_crossed  48.5%   60.8s | 76/609  eta  25.0 min
+  shard 107 B verified n=3: mean_fp 1.50  certified 100.0%  multistable 24.1%
+  shard 106 B verified n=3: mean_fp 1.96  certified 100.0%  multistable 38.4%
+shard   77:    1357 samples      2311 FPs  cert  99.0%  bif_crossed  44.9%   69.3s | 77/609  eta  25.3 min
+  shard 108 B verified n=3: mean_fp 1.86  certified 100.0%  multistable 33.9%
+shard   74:    1447 samples      2595 FPs  cert  99.5%  bif_crossed  45.7%   77.2s | 78/609  eta  25.1 min
+  shard 109 B verified n=3: mean_fp 2.50  certified 100.0%  multistable 53.6%
+shard   76:    1419 samples      2505 FPs  cert  99.2%  bif_crossed  42.9%   73.1s | 79/609  eta  25.0 min
+  shard 110 B verified n=3: mean_fp 2.11  certified 100.0%  multistable 36.6%
+shard   83:    1393 samples      2503 FPs  cert  99.0%  bif_crossed  37.7%   56.1s | 80/609  eta  24.7 min
+  shard 111 B verified n=3: mean_fp 1.43  certified 100.0%  multistable 21.4%
+shard   75:    1376 samples      2357 FPs  cert  99.3%  bif_crossed  48.5%   82.3s | 81/609  eta  24.7 min
+shard   86:    1363 samples      2569 FPs  cert  99.4%  bif_crossed  45.6%   58.2s | 82/609  eta  24.4 min
+  shard 113 B verified n=3: mean_fp 1.57  certified 100.0%  multistable 23.2%
+  shard 112 B verified n=3: mean_fp 1.40  certified 100.0%  multistable 19.0%
+shard   82:    1435 samples      2377 FPs  cert  99.6%  bif_crossed  40.6%   74.4s | 83/609  eta  24.8 min
+shard   95:    1268 samples      2598 FPs  cert  99.4%  bif_crossed  45.8%   50.6s | 84/609  eta  24.6 min
+  shard 114 B verified n=3: mean_fp 1.54  certified 100.0%  multistable 19.4%
+shard   81:    1282 samples      2676 FPs  cert  98.9%  bif_crossed  52.7%   78.2s | 85/609  eta  24.4 min
+  shard 115 B verified n=3: mean_fp 2.42  certified 99.1%  multistable 49.1%
+shard   91:    1379 samples      2428 FPs  cert  99.1%  bif_crossed  47.9%   53.8s | 86/609  eta  24.1 min
+  shard 117 B verified n=3: mean_fp 2.18  certified 100.0%  multistable 55.4%
+  shard 116 B verified n=3: mean_fp 1.77  certified 100.0%  multistable 31.5%
+shard   88:    1387 samples      2541 FPs  cert  99.0%  bif_crossed  50.1%   65.4s | 87/609  eta  24.1 min
+  shard 118 B verified n=3: mean_fp 1.07  certified 100.0%  multistable 3.6%
+shard   99:    1380 samples      2465 FPs  cert  99.1%  bif_crossed  40.5%   51.7s | 88/609  eta  24.0 min
+shard   85:    1408 samples      2671 FPs  cert  98.9%  bif_crossed  55.2%   74.2s | 89/609  eta  23.7 min
+  shard 119 B verified n=2: mean_fp 1.00  certified 100.0%  multistable 0.0%
+  shard 120 B verified n=3: mean_fp 1.50  certified 100.0%  multistable 25.0%
+shard   96:    1410 samples      2518 FPs  cert  99.3%  bif_crossed  41.2%   58.4s | 90/609  eta  23.4 min
+shard   80:    1314 samples      2256 FPs  cert  99.4%  bif_crossed  47.5%   86.9s | 91/609  eta  23.1 min
+  shard 121 B verified n=3: mean_fp 1.19  certified 100.0%  multistable 9.5%
+  shard 122 B verified n=3: mean_fp 1.71  certified 100.0%  multistable 28.6%
+shard   97:    1277 samples      2610 FPs  cert  98.7%  bif_crossed  52.2%   59.5s | 92/609  eta  23.0 min
+  shard 123 B verified n=3: mean_fp 1.50  certified 100.0%  multistable 25.0%
+shard   90:    1400 samples      2574 FPs  cert  99.6%  bif_crossed  53.5%   67.5s | 93/609  eta  22.8 min
+shard  101:    1294 samples      2453 FPs  cert  99.0%  bif_crossed  46.0%   53.0s | 94/609  eta  22.6 min
+  shard 125 B verified n=2: mean_fp 1.27  certified 100.0%  multistable 13.3%
+  shard 124 B verified n=3: mean_fp 1.44  certified 100.0%  multistable 21.4%
+shard  104:    1458 samples      2666 FPs  cert  99.6%  bif_crossed  38.1%   57.6s | 95/609  eta  23.2 min
+  shard 126 B verified n=3: mean_fp 1.24  certified 100.0%  multistable 10.7%
+shard   89:    1351 samples      2694 FPs  cert  99.2%  bif_crossed  47.5%   81.9s | 96/609  eta  23.3 min
+shard   93:    1386 samples      2598 FPs  cert  99.3%  bif_crossed  40.4%   76.8s | 97/609  eta  23.0 min
+  shard 127 B verified n=3: mean_fp 1.60  certified 100.0%  multistable 25.0%
+  shard 128 B verified n=3: mean_fp 2.36  certified 100.0%  multistable 51.8%
+shard   92:    1381 samples      2532 FPs  cert  98.6%  bif_crossed  37.2%   78.2s | 98/609  eta  22.8 min
+  shard 129 B verified n=3: mean_fp 1.24  certified 100.0%  multistable 10.7%
+shard   84:    1411 samples      2411 FPs  cert  99.1%  bif_crossed  39.1%   95.1s | 99/609  eta  22.6 min
+shard   87:    1427 samples      2555 FPs  cert  98.7%  bif_crossed  39.1%   88.4s | 100/609  eta  22.4 min
+  shard 130 B verified n=3: mean_fp 2.00  certified 100.0%  multistable 42.9%
+  shard 131 B verified n=3: mean_fp 1.71  certified 100.0%  multistable 25.0%
+shard  108:    1490 samples      2529 FPs  cert  99.7%  bif_crossed  43.4%   45.8s | 101/609  eta  22.3 min
+  shard 132 B verified n=3: mean_fp 1.71  certified 100.0%  multistable 28.6%
+shard  102:    1396 samples      2361 FPs  cert  98.8%  bif_crossed  41.0%   73.5s | 102/609  eta  22.3 min
+  shard 133 B verified n=3: mean_fp 1.71  certified 100.0%  multistable 27.7%
+shard  100:    1376 samples      2675 FPs  cert  99.2%  bif_crossed  43.8%   87.0s | 103/609  eta  22.8 min
+  shard 134 B verified n=3: mean_fp 1.84  certified 100.0%  multistable 31.2%
+shard   98:    1375 samples      2581 FPs  cert  98.8%  bif_crossed  45.7%   89.9s | 104/609  eta  22.6 min
+  shard 135 B verified n=3: mean_fp 1.46  certified 100.0%  multistable 16.1%
+shard   94:    1314 samples      2459 FPs  cert  99.5%  bif_crossed  49.0%   98.4s | 105/609  eta  22.7 min
+shard  115:    1486 samples      2535 FPs  cert  98.9%  bif_crossed  40.8%   48.1s | 106/609  eta  22.5 min
+  shard 136 B verified n=3: mean_fp 2.29  certified 100.0%  multistable 56.0%
+shard  111:    1334 samples      2508 FPs  cert  99.3%  bif_crossed  44.4%   59.9s | 107/609  eta  22.2 min
+  shard 138 B verified n=3: mean_fp 1.24  certified 100.0%  multistable 8.3%
+shard  113:    1373 samples      2460 FPs  cert  99.1%  bif_crossed  45.2%   57.8s | 108/609  eta  22.1 min
+  shard 137 B verified n=3: mean_fp 1.47  certified 100.0%  multistable 20.7%
+  shard 139 B verified n=3: mean_fp 1.21  certified 100.0%  multistable 10.7%
+shard  103:    1156 samples      2510 FPs  cert  98.6%  bif_crossed  54.8%   91.7s | 109/609  eta  22.1 min
+shard  106:    1263 samples      2352 FPs  cert  99.4%  bif_crossed  45.7%   75.6s | 110/609  eta  21.9 min
+  shard 141 B verified n=2: mean_fp 1.00  certified 100.0%  multistable 0.0%
+  shard 140 B verified n=3: mean_fp 1.72  certified 100.0%  multistable 29.5%
+shard  117:    1259 samples      2464 FPs  cert  99.3%  bif_crossed  46.9%   56.1s | 111/609  eta  21.9 min
+  shard 142 B verified n=3: mean_fp 1.77  certified 100.0%  multistable 33.0%
+shard  105:    1351 samples      2544 FPs  cert  99.2%  bif_crossed  41.6%   95.7s | 112/609  eta  22.0 min
+shard  114:    1355 samples      2667 FPs  cert  99.2%  bif_crossed  44.1%   63.0s | 113/609  eta  21.8 min
+  shard 143 B verified n=3: mean_fp 2.23  certified 98.8%  multistable 53.6%
+shard  125:    1452 samples      2549 FPs  cert  99.5%  bif_crossed  49.7%   51.1s | 114/609  eta  21.6 min
+  shard 144 B verified n=3: mean_fp 1.64  certified 100.0%  multistable 28.6%
+shard  107:    1265 samples      2414 FPs  cert  98.8%  bif_crossed  40.2%   85.2s | 115/609  eta  21.4 min
+  shard 145 B verified n=3: mean_fp 1.40  certified 100.0%  multistable 19.0%
+shard  119:    1311 samples      2378 FPs  cert  99.0%  bif_crossed  46.6%   56.6s | 116/609  eta  21.2 min
+shard  109:    1273 samples      2744 FPs  cert  98.8%  bif_crossed  53.6%   78.4s | 117/609  eta  21.0 min
+  shard 146 B verified n=3: mean_fp 1.43  certified 100.0%  multistable 19.0%
+  shard 148 B verified n=3: mean_fp 1.61  certified 100.0%  multistable 30.4%
+  shard 147 B verified n=3: mean_fp 1.63  certified 100.0%  multistable 20.2%
+shard  112:    1465 samples      2423 FPs  cert  99.7%  bif_crossed  45.1%   73.6s | 118/609  eta  20.9 min
+  shard 149 B verified n=3: mean_fp 1.86  certified 100.0%  multistable 32.1%
+shard  110:    1262 samples      2611 FPs  cert  99.2%  bif_crossed  52.9%   82.2s | 119/609  eta  21.0 min
+  shard 150 B verified n=3: mean_fp 1.29  certified 100.0%  multistable 14.3%
+shard  116:    1339 samples      2537 FPs  cert  99.4%  bif_crossed  42.9%   72.9s | 120/609  eta  21.0 min
+  shard 151 B verified n=3: mean_fp 1.57  certified 100.0%  multistable 28.6%
+shard  121:    1330 samples      2349 FPs  cert  99.1%  bif_crossed  39.7%   67.5s | 121/609  eta  20.9 min
+  shard 152 B verified n=3: mean_fp 1.77  certified 100.0%  multistable 34.8%
+shard  122:    1312 samples      2534 FPs  cert  99.2%  bif_crossed  47.9%   68.9s | 122/609  eta  20.8 min
+  shard 153 B verified n=3: mean_fp 1.67  certified 100.0%  multistable 28.6%
+shard  123:    1331 samples      2653 FPs  cert  98.5%  bif_crossed  48.5%   69.1s | 123/609  eta  20.7 min
+shard  132:    1339 samples      2519 FPs  cert  99.3%  bif_crossed  44.1%   49.1s | 124/609  eta  20.5 min
+  shard 154 B verified n=3: mean_fp 1.26  certified 100.0%  multistable 10.7%
+  shard 155 B verified n=3: mean_fp 1.80  certified 100.0%  multistable 33.9%
+shard  120:    1358 samples      2763 FPs  cert  98.9%  bif_crossed  44.0%   78.9s | 125/609  eta  20.8 min
+  shard 156 B verified n=3: mean_fp 2.38  certified 98.2%  multistable 48.2%
+shard  126:    1340 samples      2433 FPs  cert  99.1%  bif_crossed  42.0%   67.7s | 126/609  eta  20.7 min
+  shard 157 B verified n=3: mean_fp 1.76  certified 100.0%  multistable 32.1%
+shard  137:    1415 samples      2518 FPs  cert  99.6%  bif_crossed  34.1%   42.4s | 127/609  eta  20.7 min
+  shard 158 B verified n=3: mean_fp 1.43  certified 100.0%  multistable 21.4%
+shard  130:    1276 samples      2372 FPs  cert  98.4%  bif_crossed  51.8%   67.4s | 128/609  eta  20.7 min
+shard  118:    1302 samples      2480 FPs  cert  99.5%  bif_crossed  34.6%   90.5s | 129/609  eta  20.6 min
+  shard 159 B verified n=3: mean_fp 1.57  certified 100.0%  multistable 27.4%
+shard  133:    1432 samples      2413 FPs  cert  99.2%  bif_crossed  40.0%   62.7s | 130/609  eta  20.4 min
+  shard 161 B verified n=3: mean_fp 1.50  certified 100.0%  multistable 20.5%
+  shard 160 B verified n=3: mean_fp 1.95  certified 98.5%  multistable 33.2%
+shard  139:    1531 samples      2813 FPs  cert  99.2%  bif_crossed  38.4%   49.3s | 131/609  eta  20.4 min
+  shard 162 B verified n=3: mean_fp 1.33  certified 100.0%  multistable 15.5%
+shard  124:    1339 samples      2566 FPs  cert  99.3%  bif_crossed  39.4%   93.0s | 132/609  eta  20.5 min
+shard  138:    1438 samples      2407 FPs  cert  99.5%  bif_crossed  34.8%   55.9s | 133/609  eta  20.3 min
+  shard 163 B verified n=3: mean_fp 1.07  certified 100.0%  multistable 3.6%
+  shard 164 B verified n=2: mean_fp 1.00  certified 100.0%  multistable 0.0%
+shard  129:    1355 samples      2222 FPs  cert  99.8%  bif_crossed  40.6%   81.6s | 134/609  eta  20.3 min
+  shard 165 B verified n=3: mean_fp 1.73  certified 98.2%  multistable 23.2%
+shard  142:    1401 samples      2592 FPs  cert  99.1%  bif_crossed  44.3%   52.3s | 135/609  eta  20.2 min
+shard  134:    1369 samples      2697 FPs  cert  99.3%  bif_crossed  56.6%   69.7s | 136/609  eta  20.2 min
+  shard 167 B verified n=3: mean_fp 1.36  certified 100.0%  multistable 17.9%
+  shard 166 B verified n=4: mean_fp 1.42  certified 99.7%  multistable 17.9%
+shard  141:    1353 samples      2569 FPs  cert  99.3%  bif_crossed  46.3%   67.9s | 137/609  eta  20.5 min
+shard  131:    1339 samples      2543 FPs  cert  99.0%  bif_crossed  37.8%   94.3s | 138/609  eta  20.4 min
+shard  128:    1284 samples      2597 FPs  cert  98.3%  bif_crossed  50.3%   96.8s | 139/609  eta  20.2 min
+  shard 170 B verified n=3: mean_fp 2.43  certified 100.0%  multistable 50.0%
+  shard 169 B verified n=3: mean_fp 1.50  certified 100.0%  multistable 23.2%
+  shard 168 B verified n=3: mean_fp 1.77  certified 100.0%  multistable 30.0%
+shard  127:    1320 samples      2702 FPs  cert  98.5%  bif_crossed  41.3%   98.8s | 140/609  eta  20.1 min
+  shard 171 B verified n=3: mean_fp 1.55  certified 100.0%  multistable 18.7%
+shard  136:    1352 samples      2702 FPs  cert  99.2%  bif_crossed  52.8%   79.3s | 141/609  eta  20.1 min
+  shard 172 B verified n=3: mean_fp 1.29  certified 100.0%  multistable 10.7%
+shard  135:    1286 samples      2458 FPs  cert  99.6%  bif_crossed  42.1%   84.3s | 142/609  eta  19.9 min
+  shard 173 B verified n=3: mean_fp 1.41  certified 100.0%  multistable 18.8%
+shard  147:    1314 samples      2609 FPs  cert  98.9%  bif_crossed  49.2%   65.3s | 143/609  eta  19.8 min
+  shard 174 B verified n=3: mean_fp 1.07  certified 100.0%  multistable 3.6%
+shard  149:    1377 samples      2500 FPs  cert  99.8%  bif_crossed  40.7%   66.1s | 144/609  eta  19.8 min
+shard  148:    1339 samples      2400 FPs  cert  99.0%  bif_crossed  41.7%   67.4s | 145/609  eta  19.6 min
+shard  146:    1317 samples      2316 FPs  cert  99.5%  bif_crossed  42.8%   68.1s | 146/609  eta  19.4 min
+  shard 176 B verified n=3: mean_fp 2.00  certified 100.0%  multistable 42.9%
+shard  150:    1353 samples      2481 FPs  cert  99.1%  bif_crossed  51.1%   62.0s | 147/609  eta  19.3 min
+  shard 175 B verified n=3: mean_fp 1.16  certified 100.0%  multistable 7.1%
+  shard 177 B verified n=3: mean_fp 2.42  certified 98.8%  multistable 50.0%
+  shard 178 B verified n=3: mean_fp 2.04  certified 100.0%  multistable 42.9%
+shard  145:    1317 samples      2565 FPs  cert  98.6%  bif_crossed  51.1%   70.4s | 148/609  eta  19.2 min
+shard  140:    1369 samples      2167 FPs  cert  99.3%  bif_crossed  42.2%   80.1s | 149/609  eta  19.0 min
+shard  155:    1304 samples      2708 FPs  cert  99.5%  bif_crossed  42.3%   54.4s | 150/609  eta  18.8 min
+  shard 180 B verified n=3: mean_fp 1.86  certified 100.0%  multistable 42.9%
+  shard 179 B verified n=3: mean_fp 1.39  certified 100.0%  multistable 18.6%
+  shard 181 B verified n=3: mean_fp 2.01  certified 100.0%  multistable 44.3%
+shard  154:    1414 samples      2415 FPs  cert  99.5%  bif_crossed  47.9%   56.3s | 151/609  eta  18.8 min
+  shard 182 B verified n=3: mean_fp 1.07  certified 100.0%  multistable 3.6%
+shard  153:    1361 samples      2572 FPs  cert  98.5%  bif_crossed  39.8%   67.2s | 152/609  eta  19.0 min
+shard  143:    1364 samples      2754 FPs  cert  98.5%  bif_crossed  53.1%   83.2s | 153/609  eta  18.9 min
+shard  152:    1266 samples      2643 FPs  cert  99.3%  bif_crossed  48.1%   69.4s | 154/609  eta  18.8 min
+  shard 183 B verified n=3: mean_fp 2.04  certified 100.0%  multistable 44.3%
+  shard 184 B verified n=3: mean_fp 1.38  certified 100.0%  multistable 17.9%
+shard  144:    1347 samples      2649 FPs  cert  99.3%  bif_crossed  43.3%   84.0s | 155/609  eta  18.6 min
+  shard 185 B verified n=3: mean_fp 1.82  certified 100.0%  multistable 35.7%
+  shard 186 B verified n=2: mean_fp 1.07  certified 100.0%  multistable 3.3%
+shard  157:    1348 samples      2491 FPs  cert  99.4%  bif_crossed  52.2%   57.4s | 156/609  eta  18.5 min
+shard  162:    1400 samples      2554 FPs  cert  99.5%  bif_crossed  45.1%   47.8s | 157/609  eta  18.4 min
+  shard 187 B verified n=3: mean_fp 1.39  certified 100.0%  multistable 15.7%
+  shard 188 B verified n=3: mean_fp 1.48  certified 100.0%  multistable 20.4%
+shard  158:    1273 samples      2520 FPs  cert  99.3%  bif_crossed  44.6%   60.8s | 158/609  eta  18.4 min
+  shard 189 B verified n=3: mean_fp 1.29  certified 100.0%  multistable 14.3%
+shard  156:    1346 samples      2685 FPs  cert  99.2%  bif_crossed  53.3%   66.9s | 159/609  eta  18.4 min
+  shard 190 B verified n=3: mean_fp 1.61  certified 100.0%  multistable 28.6%
+shard  164:    1336 samples      2550 FPs  cert  99.1%  bif_crossed  42.4%   59.7s | 160/609  eta  18.7 min
+  shard 191 B verified n=3: mean_fp 1.37  certified 100.0%  multistable 14.3%
+shard  159:    1380 samples      2703 FPs  cert  98.5%  bif_crossed  42.9%   72.9s | 161/609  eta  18.7 min
+  shard 192 B verified n=3: mean_fp 2.93  certified 100.0%  multistable 60.7%
+shard  161:    1349 samples      2409 FPs  cert  99.1%  bif_crossed  41.7%   72.9s | 162/609  eta  18.6 min
+  shard 193 B verified n=3: mean_fp 1.21  certified 100.0%  multistable 10.7%
+shard  151:    1236 samples      2403 FPs  cert  98.9%  bif_crossed  37.3%   97.7s | 163/609  eta  18.6 min
+  shard 194 B verified n=2: mean_fp 1.47  certified 100.0%  multistable 23.3%
+shard  166:    1385 samples      2698 FPs  cert  98.5%  bif_crossed  41.9%   66.7s | 164/609  eta  18.7 min
+  shard 195 B verified n=3: mean_fp 1.61  certified 100.0%  multistable 26.8%
+shard  181:    1440 samples      2721 FPs  cert  99.2%  bif_crossed  47.1%   46.6s | 165/609  eta  18.7 min
+  shard 196 B verified n=3: mean_fp 1.93  certified 100.0%  multistable 30.4%
+shard  160:    1449 samples      2955 FPs  cert  98.8%  bif_crossed  40.8%   86.0s | 166/609  eta  18.6 min
+  shard 197 B verified n=3: mean_fp 1.36  certified 100.0%  multistable 17.9%
+shard  168:    1378 samples      2472 FPs  cert  99.6%  bif_crossed  40.7%   64.6s | 167/609  eta  18.6 min
+shard  179:    1346 samples      2719 FPs  cert  99.2%  bif_crossed  49.3%   53.2s | 168/609  eta  18.5 min
+  shard 198 B verified n=3: mean_fp 1.88  certified 100.0%  multistable 35.7%
+shard  174:    1408 samples      2520 FPs  cert  99.4%  bif_crossed  50.5%   58.2s | 169/609  eta  18.4 min
+  shard 199 B verified n=3: mean_fp 1.93  certified 100.0%  multistable 26.2%
+shard  171:    1456 samples      2443 FPs  cert  99.5%  bif_crossed  37.3%   63.7s | 170/609  eta  18.2 min
+shard  163:    1325 samples      2497 FPs  cert  99.2%  bif_crossed  44.5%   83.9s | 171/609  eta  18.1 min
+  shard 200 B verified n=3: mean_fp 1.48  certified 100.0%  multistable 21.4%
+  shard 202 B verified n=3: mean_fp 1.50  certified 100.0%  multistable 23.8%
+  shard 201 B verified n=3: mean_fp 1.90  certified 98.8%  multistable 26.2%
+shard  182:    1325 samples      2522 FPs  cert  98.9%  bif_crossed  46.4%   55.1s | 172/609  eta  18.0 min
+  shard 203 B verified n=3: mean_fp 2.31  certified 100.0%  multistable 50.0%
+shard  176:    1370 samples      2312 FPs  cert  99.9%  bif_crossed  38.1%   62.1s | 173/609  eta  18.0 min
+  shard 204 B verified n=4: mean_fp 1.32  certified 100.0%  multistable 14.9%
+shard  178:    1404 samples      2415 FPs  cert  99.6%  bif_crossed  39.2%   64.0s | 174/609  eta  18.0 min
+  shard 205 B verified n=4: mean_fp 1.82  certified 98.4%  multistable 24.4%
+shard  165:    1306 samples      2487 FPs  cert  99.0%  bif_crossed  47.2%   91.5s | 175/609  eta  18.0 min
+shard  183:    1550 samples      3006 FPs  cert  99.1%  bif_crossed  43.7%   56.6s | 176/609  eta  17.9 min
+  shard 206 B verified n=3: mean_fp 1.21  certified 100.0%  multistable 10.7%
+shard  185:    1345 samples      2458 FPs  cert  99.6%  bif_crossed  41.5%   56.5s | 177/609  eta  17.8 min
+  shard 207 B verified n=3: mean_fp 1.71  certified 100.0%  multistable 23.2%
+shard  189:    1485 samples      2444 FPs  cert  99.7%  bif_crossed  42.0%   50.2s | 178/609  eta  17.7 min
+shard  188:    1280 samples      2473 FPs  cert  99.1%  bif_crossed  46.6%   55.1s | 179/609  eta  17.5 min
+shard  177:    1277 samples      2489 FPs  cert  99.4%  bif_crossed  48.7%   70.7s | 180/609  eta  17.4 min
+  shard 210 B verified n=3: mean_fp 1.33  certified 100.0%  multistable 14.3%
+  shard 208 B verified n=3: mean_fp 1.97  certified 100.0%  multistable 42.1%
+  shard 209 B verified n=3: mean_fp 1.95  certified 99.3%  multistable 34.3%
+  shard 211 B verified n=3: mean_fp 1.75  certified 100.0%  multistable 33.9%
+shard  175:    1395 samples      2206 FPs  cert  99.3%  bif_crossed  44.5%   80.5s | 181/609  eta  17.6 min
+  shard 212 B verified n=3: mean_fp 1.61  certified 99.3%  multistable 20.0%
+shard  172:    1375 samples      2546 FPs  cert  99.5%  bif_crossed  39.1%   87.0s | 182/609  eta  17.6 min
+  shard 213 B verified n=3: mean_fp 1.89  certified 100.0%  multistable 39.3%
+shard  191:    1415 samples      2719 FPs  cert  99.1%  bif_crossed  49.8%   53.2s | 183/609  eta  17.6 min
+shard  190:    1573 samples      3062 FPs  cert  99.4%  bif_crossed  52.6%   64.5s | 184/609  eta  17.5 min
+  shard 214 B verified n=3: mean_fp 2.04  certified 100.0%  multistable 41.1%
+shard  169:    1353 samples      2441 FPs  cert  98.8%  bif_crossed  45.5%   95.8s | 185/609  eta  17.3 min
+shard  173:    1293 samples      2713 FPs  cert  99.2%  bif_crossed  48.3%   90.2s | 186/609  eta  17.2 min
+  shard 215 B verified n=3: mean_fp 1.34  certified 100.0%  multistable 17.0%
+  shard 216 B verified n=3: mean_fp 1.43  certified 100.0%  multistable 21.4%
+  shard 217 B verified n=2: mean_fp 1.27  certified 100.0%  multistable 13.3%
+shard  167:    1270 samples      2430 FPs  cert  98.2%  bif_crossed  41.3%  106.7s | 187/609  eta  17.1 min
+shard  170:    1377 samples      2740 FPs  cert  98.9%  bif_crossed  42.1%   97.0s | 188/609  eta  17.0 min
+  shard 218 B verified n=3: mean_fp 1.68  certified 100.0%  multistable 30.4%
+shard  187:    1294 samples      2464 FPs  cert  99.5%  bif_crossed  41.7%   73.8s | 189/609  eta  16.9 min
+  shard 219 B verified n=3: mean_fp 2.19  certified 100.0%  multistable 50.0%
+  shard 220 B verified n=3: mean_fp 1.43  certified 100.0%  multistable 19.6%
+shard  186:    1394 samples      2712 FPs  cert  98.7%  bif_crossed  50.4%   77.1s | 190/609  eta  16.9 min
+shard  180:    1353 samples      2653 FPs  cert  98.9%  bif_crossed  44.9%   89.9s | 191/609  eta  16.7 min
+  shard 222 B verified n=3: mean_fp 2.36  certified 100.0%  multistable 46.4%
+  shard 221 B verified n=3: mean_fp 2.75  certified 96.4%  multistable 48.2%
+shard  195:    1380 samples      2661 FPs  cert  99.0%  bif_crossed  44.5%   59.1s | 192/609  eta  17.1 min
+shard  193:    1369 samples      2472 FPs  cert  99.6%  bif_crossed  50.0%   68.4s | 193/609  eta  17.0 min
+  shard 223 B verified n=3: mean_fp 1.49  certified 100.0%  multistable 22.1%
+shard  184:    1274 samples      2223 FPs  cert  99.3%  bif_crossed  46.9%   92.7s | 194/609  eta  16.9 min
+  shard 224 B verified n=3: mean_fp 1.31  certified 100.0%  multistable 11.9%
+shard  196:    1276 samples      2404 FPs  cert  99.4%  bif_crossed  45.8%   58.6s | 195/609  eta  16.8 min
+  shard 226 B verified n=3: mean_fp 2.09  certified 100.0%  multistable 33.9%
+shard  199:    1367 samples      2418 FPs  cert  99.2%  bif_crossed  44.0%   53.6s | 196/609  eta  16.7 min
+  shard 227 B verified n=3: mean_fp 1.37  certified 100.0%  multistable 16.1%
+  shard 225 B verified n=4: mean_fp 1.54  certified 100.0%  multistable 21.5%
+shard  208:    1330 samples      2403 FPs  cert  99.8%  bif_crossed  50.2%   47.0s | 197/609  eta  16.9 min
+  shard 228 B verified n=3: mean_fp 3.57  certified 100.0%  multistable 82.1%
+shard  200:    1283 samples      2288 FPs  cert  98.9%  bif_crossed  43.2%   62.8s | 198/609  eta  16.8 min
+shard  194:    1403 samples      2537 FPs  cert  99.4%  bif_crossed  39.1%   79.3s | 199/609  eta  16.7 min
+  shard 229 B verified n=3: mean_fp 2.13  certified 99.1%  multistable 33.0%
+  shard 230 B verified n=3: mean_fp 1.20  certified 100.0%  multistable 7.9%
+shard  210:    1443 samples      2530 FPs  cert  99.4%  bif_crossed  42.5%   53.3s | 200/609  eta  16.7 min
+shard  209:    1351 samples      2645 FPs  cert  99.4%  bif_crossed  48.1%   53.9s | 201/609  eta  16.6 min
+  shard 232 B verified n=3: mean_fp 1.58  certified 100.0%  multistable 24.1%
+shard  198:    1333 samples      2751 FPs  cert  98.7%  bif_crossed  45.1%   71.8s | 202/609  eta  16.6 min
+  shard 231 B verified n=4: mean_fp 1.46  certified 99.7%  multistable 16.6%
+  shard 233 B verified n=3: mean_fp 1.43  certified 100.0%  multistable 14.3%
+shard  192:    1363 samples      2673 FPs  cert  99.2%  bif_crossed  42.7%   92.2s | 203/609  eta  16.5 min
+  shard 234 B verified n=3: mean_fp 1.00  certified 100.0%  multistable 0.0%
+shard  207:    1285 samples      2605 FPs  cert  99.1%  bif_crossed  48.7%   61.9s | 204/609  eta  16.5 min
+shard  204:    1267 samples      2067 FPs  cert  99.3%  bif_crossed  43.7%   69.3s | 205/609  eta  16.4 min
+shard  205:    1362 samples      2272 FPs  cert  99.1%  bif_crossed  42.8%   67.5s | 206/609  eta  16.3 min
+  shard 237 B verified n=3: mean_fp 1.21  certified 100.0%  multistable 9.5%
+  shard 236 B verified n=3: mean_fp 1.69  certified 100.0%  multistable 26.5%
+  shard 235 B verified n=3: mean_fp 1.62  certified 100.0%  multistable 25.4%
+shard  214:    1380 samples      2683 FPs  cert  99.3%  bif_crossed  53.7%   49.5s | 207/609  eta  16.3 min
+  shard 238 B verified n=3: mean_fp 2.26  certified 100.0%  multistable 54.8%
+shard  211:    1412 samples      2752 FPs  cert  98.7%  bif_crossed  46.7%   66.4s | 208/609  eta  16.2 min
+  shard 239 B verified n=3: mean_fp 1.19  certified 100.0%  multistable 8.3%
+shard  197:    1377 samples      2311 FPs  cert  99.4%  bif_crossed  41.5%   89.0s | 209/609  eta  16.2 min
+  shard 240 B verified n=3: mean_fp 1.46  certified 100.0%  multistable 16.1%
+shard  203:    1253 samples      2446 FPs  cert  98.5%  bif_crossed  44.7%   81.6s | 210/609  eta  16.1 min
+  shard 241 B verified n=3: mean_fp 1.43  certified 100.0%  multistable 21.4%
+shard  212:    1302 samples      2800 FPs  cert  98.6%  bif_crossed  56.1%   60.9s | 211/609  eta  16.0 min
+  shard 242 B verified n=3: mean_fp 1.79  certified 100.0%  multistable 31.0%
+shard  202:    1325 samples      2675 FPs  cert  98.3%  bif_crossed  45.3%   88.3s | 212/609  eta  16.0 min
+  shard 243 B verified n=3: mean_fp 1.69  certified 98.9%  multistable 17.5%
+shard  223:    1452 samples      2502 FPs  cert  99.0%  bif_crossed  45.0%   46.3s | 213/609  eta  16.0 min
+  shard 244 B verified n=3: mean_fp 1.48  certified 100.0%  multistable 20.2%
+shard  220:    1502 samples      2452 FPs  cert  99.3%  bif_crossed  39.4%   64.3s | 214/609  eta  16.0 min
+  shard 245 B verified n=3: mean_fp 1.94  certified 98.8%  multistable 32.1%
+shard  201:    1358 samples      2451 FPs  cert  98.9%  bif_crossed  47.0%   97.8s | 215/609  eta  15.9 min
+shard  219:    1390 samples      2574 FPs  cert  99.7%  bif_crossed  49.7%   72.3s | 216/609  eta  16.0 min
+shard  226:    1385 samples      2535 FPs  cert  99.6%  bif_crossed  35.7%   53.2s | 217/609  eta  15.9 min
+  shard 247 B verified n=3: mean_fp 1.00  certified 100.0%  multistable 0.0%
+  shard 248 B verified n=3: mean_fp 1.79  certified 100.0%  multistable 35.7%
+  shard 246 B verified n=4: mean_fp 1.58  certified 99.7%  multistable 20.3%
+shard  217:    1442 samples      2738 FPs  cert  99.4%  bif_crossed  42.6%   77.4s | 218/609  eta  15.9 min
+shard  218:    1375 samples      2563 FPs  cert  98.9%  bif_crossed  41.2%   80.0s | 219/609  eta  15.9 min
+  shard 249 B verified n=3: mean_fp 1.71  certified 100.0%  multistable 28.9%
+  shard 250 B verified n=3: mean_fp 1.39  certified 100.0%  multistable 16.1%
+shard  215:    1387 samples      2590 FPs  cert  99.1%  bif_crossed  50.7%   85.8s | 220/609  eta  15.9 min
+shard  216:    1345 samples      2518 FPs  cert  99.2%  bif_crossed  39.6%   85.5s | 221/609  eta  15.8 min
+  shard 251 B verified n=3: mean_fp 1.67  certified 100.0%  multistable 29.8%
+  shard 252 B verified n=3: mean_fp 1.71  certified 100.0%  multistable 32.1%
+shard  227:    1300 samples      2576 FPs  cert  99.2%  bif_crossed  38.8%   64.2s | 222/609  eta  15.7 min
+  shard 253 B verified n=3: mean_fp 2.04  certified 100.0%  multistable 41.1%
+shard  213:    1492 samples      2669 FPs  cert  98.9%  bif_crossed  45.0%   92.7s | 223/609  eta  15.6 min
+shard  229:    1376 samples      2713 FPs  cert  99.2%  bif_crossed  45.1%   56.6s | 224/609  eta  15.5 min
+  shard 255 B verified n=3: mean_fp 1.84  certified 100.0%  multistable 31.2%
+shard  221:    1316 samples      2678 FPs  cert  98.9%  bif_crossed  46.7%   84.7s | 225/609  eta  15.5 min
+  shard 254 B verified n=3: mean_fp 1.49  certified 99.4%  multistable 21.4%
+  shard 256 B verified n=3: mean_fp 1.66  certified 100.0%  multistable 25.7%
+shard  228:    1270 samples      2482 FPs  cert  99.4%  bif_crossed  42.8%   60.9s | 226/609  eta  15.4 min
+  shard 257 B verified n=3: mean_fp 1.67  certified 100.0%  multistable 23.8%
+shard  236:    1407 samples      2532 FPs  cert  99.5%  bif_crossed  49.2%   47.4s | 227/609  eta  15.3 min
+  shard 258 B verified n=3: mean_fp 2.12  certified 100.0%  multistable 51.2%
+shard  233:    1302 samples      2511 FPs  cert  99.3%  bif_crossed  41.6%   54.7s | 228/609  eta  15.3 min
+  shard 259 B verified n=3: mean_fp 2.32  certified 96.4%  multistable 50.0%
+shard  224:    1345 samples      2183 FPs  cert  99.3%  bif_crossed  44.1%   77.3s | 229/609  eta  15.2 min
+shard  235:    1371 samples      2734 FPs  cert  99.3%  bif_crossed  57.4%   52.3s | 230/609  eta  15.1 min
+shard  232:    1339 samples      2729 FPs  cert  98.2%  bif_crossed  42.9%   59.7s | 231/609  eta  15.0 min
+  shard 261 B verified n=3: mean_fp 1.61  certified 100.0%  multistable 21.4%
+  shard 260 B verified n=3: mean_fp 1.80  certified 100.0%  multistable 29.5%
+  shard 262 B verified n=3: mean_fp 2.52  certified 100.0%  multistable 54.8%
+shard  222:    1188 samples      2229 FPs  cert  99.2%  bif_crossed  48.1%   93.3s | 232/609  eta  15.0 min
+shard  231:    1317 samples      2438 FPs  cert  99.0%  bif_crossed  53.2%   62.2s | 233/609  eta  14.9 min
+  shard 263 B verified n=3: mean_fp 1.80  certified 100.0%  multistable 27.7%
+shard  238:    1325 samples      2480 FPs  cert  99.0%  bif_crossed  46.7%   51.1s | 234/609  eta  14.8 min
+  shard 264 B verified n=3: mean_fp 2.03  certified 100.0%  multistable 38.3%
+  shard 265 B verified n=3: mean_fp 1.70  certified 100.0%  multistable 25.0%
+shard  239:    1377 samples      2575 FPs  cert  99.4%  bif_crossed  43.4%   51.8s | 235/609  eta  14.8 min
+  shard 266 B verified n=3: mean_fp 1.82  certified 100.0%  multistable 35.7%
+shard  234:    1371 samples      2688 FPs  cert  99.6%  bif_crossed  44.9%   62.6s | 236/609  eta  14.7 min
+  shard 267 B verified n=3: mean_fp 1.86  certified 100.0%  multistable 42.9%
+shard  241:    1272 samples      2512 FPs  cert  99.3%  bif_crossed  49.8%   54.7s | 237/609  eta  14.7 min
+  shard 268 B verified n=3: mean_fp 1.07  certified 100.0%  multistable 3.6%
+shard  206:    1337 samples      2471 FPs  cert  98.8%  bif_crossed  39.6%  128.0s | 238/609  eta  14.7 min
+  shard 269 B verified n=2: mean_fp 1.00  certified 100.0%  multistable 0.0%
+shard  237:    1255 samples      2628 FPs  cert  99.0%  bif_crossed  48.0%   68.0s | 239/609  eta  14.6 min
+  shard 270 B verified n=3: mean_fp 1.89  certified 100.0%  multistable 41.1%
+shard  242:    1261 samples      2359 FPs  cert  99.4%  bif_crossed  51.2%   61.3s | 240/609  eta  14.6 min
+shard  244:    1396 samples      2428 FPs  cert  99.4%  bif_crossed  49.4%   52.5s | 241/609  eta  14.5 min
+  shard 271 B verified n=3: mean_fp 1.67  certified 100.0%  multistable 29.8%
+  shard 272 B verified n=3: mean_fp 1.26  certified 100.0%  multistable 11.9%
+shard  230:    1297 samples      2298 FPs  cert  99.2%  bif_crossed  44.5%   84.1s | 242/609  eta  14.4 min
+  shard 273 B verified n=3: mean_fp 1.29  certified 100.0%  multistable 12.9%
+shard  245:    1394 samples      2302 FPs  cert  99.7%  bif_crossed  45.2%   56.1s | 243/609  eta  14.5 min
+  shard 274 B verified n=3: mean_fp 1.52  certified 100.0%  multistable 19.6%
+shard  225:    1335 samples      2956 FPs  cert  98.0%  bif_crossed  48.2%  110.0s | 244/609  eta  14.5 min
+  shard 275 B verified n=3: mean_fp 2.02  certified 100.0%  multistable 39.3%
+shard  248:    1321 samples      2612 FPs  cert  99.4%  bif_crossed  41.3%   59.7s | 245/609  eta  14.5 min
+  shard 276 B verified n=3: mean_fp 2.00  certified 100.0%  multistable 46.4%
+shard  257:    1314 samples      2284 FPs  cert  99.7%  bif_crossed  40.0%   46.3s | 246/609  eta  14.5 min
+  shard 277 B verified n=3: mean_fp 1.50  certified 100.0%  multistable 25.0%
+shard  243:    1431 samples      2819 FPs  cert  98.6%  bif_crossed  41.2%   84.2s | 247/609  eta  14.6 min
+shard  255:    1318 samples      2400 FPs  cert  99.4%  bif_crossed  44.8%   54.2s | 248/609  eta  14.5 min
+  shard 278 B verified n=3: mean_fp 2.75  certified 98.8%  multistable 56.0%
+  shard 279 B verified n=3: mean_fp 1.61  certified 100.0%  multistable 26.8%
+shard  253:    1373 samples      2907 FPs  cert  99.0%  bif_crossed  52.7%   59.7s | 249/609  eta  14.5 min
+  shard 280 B verified n=3: mean_fp 1.21  certified 100.0%  multistable 10.7%
+shard  240:    1362 samples      2468 FPs  cert  99.0%  bif_crossed  47.9%   95.4s | 250/609  eta  14.4 min
+  shard 281 B verified n=3: mean_fp 1.50  certified 100.0%  multistable 25.0%
+shard  258:    1411 samples      2704 FPs  cert  99.2%  bif_crossed  43.9%   59.2s | 251/609  eta  14.4 min
+  shard 282 B verified n=3: mean_fp 1.70  certified 100.0%  multistable 29.5%
+shard  246:    1269 samples      2366 FPs  cert  99.1%  bif_crossed  46.9%   86.5s | 252/609  eta  14.4 min
+  shard 283 B verified n=3: mean_fp 1.00  certified 100.0%  multistable 0.0%
+shard  264:    1339 samples      2846 FPs  cert  99.3%  bif_crossed  41.7%   56.8s | 253/609  eta  14.3 min
+  shard 284 B verified n=3: mean_fp 1.48  certified 100.0%  multistable 21.4%
+shard  265:    1281 samples      2425 FPs  cert  99.8%  bif_crossed  40.4%   60.2s | 254/609  eta  14.3 min
+shard  262:    1324 samples      2592 FPs  cert  99.2%  bif_crossed  43.9%   63.5s | 255/609  eta  14.2 min
+  shard 286 B verified n=3: mean_fp 1.14  certified 100.0%  multistable 7.1%
+  shard 285 B verified n=3: mean_fp 2.05  certified 100.0%  multistable 49.1%
+shard  252:    1383 samples      2534 FPs  cert  99.8%  bif_crossed  46.9%   76.4s | 256/609  eta  14.2 min
+shard  247:    1299 samples      2644 FPs  cert  99.0%  bif_crossed  48.8%   89.8s | 257/609  eta  14.1 min
+  shard 287 B verified n=3: mean_fp 2.14  certified 100.0%  multistable 51.8%
+shard  249:    1356 samples      2448 FPs  cert  99.5%  bif_crossed  42.1%   86.4s | 258/609  eta  14.0 min
+  shard 288 B verified n=3: mean_fp 1.49  certified 100.0%  multistable 24.3%
+shard  271:    1479 samples      2914 FPs  cert  99.4%  bif_crossed  44.1%   49.1s | 259/609  eta  13.9 min
+  shard 289 B verified n=3: mean_fp 2.10  certified 100.0%  multistable 47.6%
+  shard 290 B verified n=3: mean_fp 1.10  certified 100.0%  multistable 4.8%
+shard  251:    1339 samples      2461 FPs  cert  99.0%  bif_crossed  41.2%   80.2s | 260/609  eta  13.9 min
+  shard 291 B verified n=3: mean_fp 1.61  certified 100.0%  multistable 26.8%
+shard  268:    1301 samples      2620 FPs  cert  99.0%  bif_crossed  45.4%   58.0s | 261/609  eta  13.8 min
+  shard 292 B verified n=3: mean_fp 1.64  certified 100.0%  multistable 23.2%
+shard  266:    1365 samples      2559 FPs  cert  99.3%  bif_crossed  38.1%   66.0s | 262/609  eta  13.7 min
+  shard 293 B verified n=3: mean_fp 2.15  certified 99.3%  multistable 46.4%
+shard  254:    1391 samples      2267 FPs  cert  99.3%  bif_crossed  37.0%   82.5s | 263/609  eta  13.7 min
+shard  261:    1237 samples      2109 FPs  cert  99.7%  bif_crossed  35.8%   74.6s | 264/609  eta  13.6 min
+  shard 294 B verified n=3: mean_fp 1.14  certified 100.0%  multistable 7.1%
+  shard 295 B verified n=3: mean_fp 1.43  certified 100.0%  multistable 17.9%
+shard  272:    1338 samples      2581 FPs  cert  99.3%  bif_crossed  52.8%   55.8s | 265/609  eta  13.5 min
+shard  250:    1338 samples      2444 FPs  cert  99.0%  bif_crossed  38.0%   93.3s | 266/609  eta  13.5 min
+  shard 296 B verified n=4: mean_fp 2.06  certified 98.9%  multistable 36.0%
+  shard 297 B verified n=3: mean_fp 2.32  certified 100.0%  multistable 50.0%
+shard  270:    1347 samples      2454 FPs  cert  99.3%  bif_crossed  41.6%   62.8s | 267/609  eta  13.4 min
+  shard 298 B verified n=3: mean_fp 1.34  certified 97.9%  multistable 11.4%
+shard  259:    1234 samples      2400 FPs  cert  98.7%  bif_crossed  40.6%   84.3s | 268/609  eta  13.4 min
+  shard 299 B verified n=3: mean_fp 1.68  certified 100.0%  multistable 32.1%
+shard  256:    1368 samples      2585 FPs  cert  98.7%  bif_crossed  42.8%   91.0s | 269/609  eta  13.4 min
+  shard 300 B verified n=3: mean_fp 1.26  certified 100.0%  multistable 10.7%
+shard  260:    1357 samples      2566 FPs  cert  99.1%  bif_crossed  49.2%   86.6s | 270/609  eta  13.3 min
+  shard 301 B verified n=3: mean_fp 2.61  certified 96.4%  multistable 60.7%
+shard  263:    1368 samples      2957 FPs  cert  98.7%  bif_crossed  55.0%   86.6s | 271/609  eta  13.3 min
+shard  267:    1371 samples      2562 FPs  cert  99.2%  bif_crossed  45.9%   80.6s | 272/609  eta  13.2 min
+  shard 302 B verified n=3: mean_fp 1.50  certified 100.0%  multistable 25.0%
+  shard 303 B verified n=3: mean_fp 1.07  certified 100.0%  multistable 3.6%
+shard  277:    1375 samples      2444 FPs  cert  99.4%  bif_crossed  49.7%   48.5s | 273/609  eta  13.1 min
+shard  273:    1373 samples      2503 FPs  cert  99.2%  bif_crossed  49.8%   69.0s | 274/609  eta  13.0 min
+  shard 304 B verified n=3: mean_fp 1.84  certified 100.0%  multistable 36.6%
+  shard 305 B verified n=3: mean_fp 1.73  certified 100.0%  multistable 30.4%
+shard  269:    1408 samples      2721 FPs  cert  99.1%  bif_crossed  46.3%   84.9s | 275/609  eta  13.1 min
+  shard 306 B verified n=3: mean_fp 2.07  certified 100.0%  multistable 42.9%
+shard  276:    1333 samples      2707 FPs  cert  98.9%  bif_crossed  54.0%   62.4s | 276/609  eta  13.1 min
+  shard 307 B verified n=3: mean_fp 1.60  certified 100.0%  multistable 22.6%
+shard  274:    1356 samples      2595 FPs  cert  99.0%  bif_crossed  47.1%   77.2s | 277/609  eta  13.1 min
+  shard 308 B verified n=2: mean_fp 1.47  certified 100.0%  multistable 23.3%
+shard  286:    1417 samples      2572 FPs  cert  99.4%  bif_crossed  58.3%   43.8s | 278/609  eta  13.1 min
+  shard 309 B verified n=3: mean_fp 1.33  certified 100.0%  multistable 13.1%
+shard  280:    1299 samples      2427 FPs  cert  98.8%  bif_crossed  45.3%   59.4s | 279/609  eta  13.0 min
+  shard 310 B verified n=4: mean_fp 2.09  certified 100.0%  multistable 36.0%
+shard  279:    1328 samples      2786 FPs  cert  98.5%  bif_crossed  42.9%   66.2s | 280/609  eta  13.0 min
+shard  275:    1334 samples      2419 FPs  cert  99.1%  bif_crossed  45.7%   80.5s | 281/609  eta  12.9 min
+  shard 311 B verified n=3: mean_fp 1.45  certified 100.0%  multistable 17.9%
+  shard 312 B verified n=3: mean_fp 1.86  certified 100.0%  multistable 31.0%
+shard  282:    1343 samples      2489 FPs  cert  99.4%  bif_crossed  45.6%   67.5s | 282/609  eta  13.0 min
+  shard 313 B verified n=2: mean_fp 2.67  certified 100.0%  multistable 60.0%
+shard  284:    1258 samples      2414 FPs  cert  99.0%  bif_crossed  54.5%   64.3s | 283/609  eta  12.9 min
+  shard 314 B verified n=3: mean_fp 1.38  certified 100.0%  multistable 17.3%
+shard  281:    1325 samples      2555 FPs  cert  99.5%  bif_crossed  53.7%   75.2s | 284/609  eta  12.9 min
+shard  293:    1400 samples      2403 FPs  cert  99.1%  bif_crossed  45.5%   55.1s | 285/609  eta  12.8 min
+shard  296:    1323 samples      2765 FPs  cert  99.1%  bif_crossed  51.5%   51.4s | 286/609  eta  12.8 min
+  shard 315 B verified n=3: mean_fp 1.26  certified 100.0%  multistable 11.9%
+  shard 317 B verified n=3: mean_fp 3.11  certified 96.4%  multistable 67.9%
+shard  285:    1377 samples      2437 FPs  cert  99.1%  bif_crossed  46.4%   64.0s | 287/609  eta  12.7 min
+  shard 316 B verified n=3: mean_fp 1.86  certified 100.0%  multistable 29.5%
+  shard 318 B verified n=3: mean_fp 2.19  certified 100.0%  multistable 39.8%
+shard  292:    1307 samples      2679 FPs  cert  99.3%  bif_crossed  48.8%   59.8s | 288/609  eta  12.6 min
+  shard 319 B verified n=3: mean_fp 1.68  certified 100.0%  multistable 32.1%
+shard  290:    1362 samples      2474 FPs  cert  99.2%  bif_crossed  48.3%   64.6s | 289/609  eta  12.6 min
+  shard 320 B verified n=3: mean_fp 1.86  certified 100.0%  multistable 42.9%
+shard  298:    1526 samples      2601 FPs  cert  99.3%  bif_crossed  35.3%   56.6s | 290/609  eta  12.6 min
+shard  283:    1296 samples      2265 FPs  cert  99.4%  bif_crossed  38.3%   78.8s | 291/609  eta  12.5 min
+  shard 321 B verified n=3: mean_fp 1.64  certified 100.0%  multistable 28.6%
+  shard 322 B verified n=3: mean_fp 1.16  certified 100.0%  multistable 8.0%
+shard  278:    1285 samples      2443 FPs  cert  99.2%  bif_crossed  53.3%   94.7s | 292/609  eta  12.5 min
+  shard 323 B verified n=3: mean_fp 1.95  certified 100.0%  multistable 35.7%
+shard  304:    1396 samples      2526 FPs  cert  99.4%  bif_crossed  47.7%   52.4s | 293/609  eta  12.4 min
+  shard 324 B verified n=3: mean_fp 1.07  certified 100.0%  multistable 3.6%
+shard  299:    1354 samples      2619 FPs  cert  99.6%  bif_crossed  49.3%   62.8s | 294/609  eta  12.4 min
+shard  295:    1382 samples      2515 FPs  cert  99.2%  bif_crossed  40.6%   70.8s | 295/609  eta  12.4 min
+  shard 325 B verified n=3: mean_fp 1.57  certified 100.0%  multistable 25.9%
+  shard 326 B verified n=3: mean_fp 1.64  certified 99.6%  multistable 25.0%
+shard  294:    1287 samples      2460 FPs  cert  99.1%  bif_crossed  43.2%   82.7s | 296/609  eta  12.5 min
+  shard 327 B verified n=3: mean_fp 1.85  certified 99.1%  multistable 33.0%
+shard  311:    1353 samples      2386 FPs  cert  99.3%  bif_crossed  49.2%   47.4s | 297/609  eta  12.4 min
+shard  308:    1434 samples      2522 FPs  cert  99.2%  bif_crossed  37.7%   57.3s | 298/609  eta  12.4 min
+  shard 329 B verified n=3: mean_fp 1.11  certified 100.0%  multistable 5.4%
+  shard 328 B verified n=3: mean_fp 2.08  certified 98.8%  multistable 38.1%
+shard  300:    1396 samples      2466 FPs  cert  99.3%  bif_crossed  43.3%   77.4s | 299/609  eta  12.3 min
+  shard 330 B verified n=3: mean_fp 1.61  certified 100.0%  multistable 20.5%
+shard  310:    1251 samples      2763 FPs  cert  99.0%  bif_crossed  55.2%   54.9s | 300/609  eta  12.3 min
+shard  291:    1357 samples      2713 FPs  cert  99.1%  bif_crossed  55.2%   94.7s | 301/609  eta  12.2 min
+  shard 331 B verified n=3: mean_fp 1.57  certified 100.0%  multistable 28.6%
+  shard 332 B verified n=3: mean_fp 1.11  certified 100.0%  multistable 5.4%
+shard  303:    1338 samples      2440 FPs  cert  99.6%  bif_crossed  43.7%   76.5s | 302/609  eta  12.1 min
+shard  287:    1274 samples      2517 FPs  cert  99.2%  bif_crossed  51.4%  100.1s | 303/609  eta  12.0 min
+shard  289:    1332 samples      2588 FPs  cert  99.0%  bif_crossed  45.3%   98.1s | 304/609  eta  12.0 min
+  shard 333 B verified n=3: mean_fp 1.38  certified 100.0%  multistable 17.9%
+  shard 334 B verified n=3: mean_fp 1.25  certified 100.0%  multistable 8.9%
+  shard 335 B verified n=3: mean_fp 1.88  certified 100.0%  multistable 40.5%
+shard  288:    1337 samples      2424 FPs  cert  98.9%  bif_crossed  39.7%  100.1s | 305/609  eta  11.9 min
+  shard 336 B verified n=3: mean_fp 1.31  certified 97.9%  multistable 15.0%
+shard  302:    1318 samples      2402 FPs  cert  98.9%  bif_crossed  43.2%   80.1s | 306/609  eta  11.9 min
+shard  307:    1365 samples      2511 FPs  cert  99.6%  bif_crossed  39.0%   69.5s | 307/609  eta  11.8 min
+  shard 337 B verified n=3: mean_fp 1.57  certified 100.0%  multistable 28.6%
+shard  309:    1291 samples      2480 FPs  cert  98.8%  bif_crossed  41.9%   61.1s | 308/609  eta  11.7 min
+  shard 338 B verified n=3: mean_fp 1.55  certified 100.0%  multistable 25.0%
+  shard 339 B verified n=3: mean_fp 1.83  certified 100.0%  multistable 34.5%
+shard  316:    1424 samples      2472 FPs  cert  99.4%  bif_crossed  41.8%   44.6s | 309/609  eta  11.7 min
+shard  305:    1419 samples      2526 FPs  cert  99.5%  bif_crossed  50.0%   82.3s | 310/609  eta  11.6 min
+  shard 340 B verified n=3: mean_fp 1.84  certified 100.0%  multistable 33.6%
+  shard 341 B verified n=3: mean_fp 2.21  certified 100.0%  multistable 51.2%
+shard  297:    1346 samples      2535 FPs  cert  99.3%  bif_crossed  47.8%   99.1s | 311/609  eta  11.6 min
+shard  306:    1331 samples      2353 FPs  cert  99.2%  bif_crossed  45.8%   78.5s | 312/609  eta  11.5 min
+  shard 343 B verified n=3: mean_fp 1.86  certified 100.0%  multistable 39.3%
+  shard 342 B verified n=3: mean_fp 1.07  certified 100.0%  multistable 3.6%
+shard  301:    1285 samples      2531 FPs  cert  98.6%  bif_crossed  56.0%   91.3s | 313/609  eta  11.5 min
+  shard 344 B verified n=3: mean_fp 1.69  certified 100.0%  multistable 31.0%
+shard  314:    1305 samples      2347 FPs  cert  99.5%  bif_crossed  53.3%   57.0s | 314/609  eta  11.4 min
+  shard 345 B verified n=3: mean_fp 2.11  certified 100.0%  multistable 37.5%
+shard  320:    1405 samples      2408 FPs  cert  99.5%  bif_crossed  43.1%   52.2s | 315/609  eta  11.4 min
+  shard 346 B verified n=3: mean_fp 1.69  certified 100.0%  multistable 27.9%
+shard  318:    1355 samples      2820 FPs  cert  99.5%  bif_crossed  50.8%   58.6s | 316/609  eta  11.4 min
+  shard 347 B verified n=3: mean_fp 1.86  certified 100.0%  multistable 27.1%
+shard  319:    1393 samples      2518 FPs  cert  98.9%  bif_crossed  43.5%   60.6s | 317/609  eta  11.4 min
+  shard 348 B verified n=4: mean_fp 1.79  certified 100.0%  multistable 37.3%
+shard  312:    1331 samples      2640 FPs  cert  99.2%  bif_crossed  52.6%   81.1s | 318/609  eta  11.4 min
+shard  317:    1296 samples      2318 FPs  cert  99.1%  bif_crossed  48.1%   68.2s | 319/609  eta  11.3 min
+  shard 349 B verified n=3: mean_fp 1.49  certified 99.1%  multistable 16.1%
+  shard 350 B verified n=3: mean_fp 1.80  certified 100.0%  multistable 25.9%
+shard  321:    1335 samples      2584 FPs  cert  99.3%  bif_crossed  55.5%   62.9s | 320/609  eta  11.3 min
+  shard 351 B verified n=3: mean_fp 1.70  certified 100.0%  multistable 30.7%
+shard  322:    1460 samples      2498 FPs  cert  99.3%  bif_crossed  39.7%   64.7s | 321/609  eta  11.2 min
+shard  313:    1329 samples      2639 FPs  cert  98.6%  bif_crossed  45.7%   78.8s | 322/609  eta  11.2 min
+  shard 353 B verified n=3: mean_fp 1.57  certified 100.0%  multistable 25.0%
+  shard 352 B verified n=3: mean_fp 1.39  certified 100.0%  multistable 18.6%
+shard  315:    1494 samples      2421 FPs  cert  99.3%  bif_crossed  42.0%   77.0s | 323/609  eta  11.1 min
+  shard 354 B verified n=3: mean_fp 1.00  certified 100.0%  multistable 0.0%
+shard  325:    1413 samples      2486 FPs  cert  98.7%  bif_crossed  44.5%   59.8s | 324/609  eta  11.1 min
+shard  324:    1266 samples      2566 FPs  cert  98.9%  bif_crossed  48.3%   63.5s | 325/609  eta  11.0 min
+  shard 355 B verified n=3: mean_fp 1.38  certified 100.0%  multistable 17.9%
+  shard 356 B verified n=3: mean_fp 1.76  certified 100.0%  multistable 34.5%
+shard  326:    1466 samples      2517 FPs  cert  99.5%  bif_crossed  39.4%   66.0s | 326/609  eta  11.0 min
+  shard 357 B verified n=3: mean_fp 1.81  certified 100.0%  multistable 29.8%
+shard  323:    1341 samples      2456 FPs  cert  99.3%  bif_crossed  45.1%   74.3s | 327/609  eta  11.0 min
+  shard 358 B verified n=3: mean_fp 1.75  certified 100.0%  multistable 33.0%
+shard  331:    1354 samples      2357 FPs  cert  99.5%  bif_crossed  44.6%   59.5s | 328/609  eta  11.0 min
+  shard 359 B verified n=3: mean_fp 2.14  certified 100.0%  multistable 53.6%
+shard  345:    1352 samples      2352 FPs  cert  99.2%  bif_crossed  44.1%   44.1s | 329/609  eta  11.0 min
+  shard 360 B verified n=3: mean_fp 1.36  certified 100.0%  multistable 17.9%
+shard  339:    1381 samples      2636 FPs  cert  99.1%  bif_crossed  45.8%   56.1s | 330/609  eta  10.9 min
+shard  329:    1353 samples      2393 FPs  cert  99.3%  bif_crossed  44.2%   65.4s | 331/609  eta  10.9 min
+  shard 361 B verified n=3: mean_fp 1.59  certified 99.4%  multistable 20.8%
+  shard 362 B verified n=3: mean_fp 1.85  certified 100.0%  multistable 35.1%
+shard  333:    1380 samples      2123 FPs  cert  99.5%  bif_crossed  36.6%   64.8s | 332/609  eta  10.9 min
+  shard 363 B verified n=3: mean_fp 1.46  certified 100.0%  multistable 21.4%
+shard  338:    1371 samples      2530 FPs  cert  99.1%  bif_crossed  43.5%   62.1s | 333/609  eta  10.8 min
+shard  334:    1313 samples      2396 FPs  cert  98.9%  bif_crossed  43.1%   66.3s | 334/609  eta  10.7 min
+shard  328:    1360 samples      2704 FPs  cert  98.8%  bif_crossed  54.2%   71.9s | 335/609  eta  10.7 min
+shard  340:    1364 samples      2729 FPs  cert  99.1%  bif_crossed  45.2%   60.5s | 336/609  eta  10.6 min
+  shard 367 B verified n=3: mean_fp 1.60  certified 100.0%  multistable 23.8%
+  shard 366 B verified n=3: mean_fp 1.71  certified 100.0%  multistable 25.0%
+  shard 364 B verified n=3: mean_fp 1.54  certified 100.0%  multistable 23.7%
+  shard 365 B verified n=4: mean_fp 1.50  certified 100.0%  multistable 20.0%
+shard  347:    1525 samples      2622 FPs  cert  99.8%  bif_crossed  39.6%   48.8s | 337/609  eta  10.6 min
+shard  346:    1440 samples      2495 FPs  cert  99.8%  bif_crossed  50.1%   50.0s | 338/609  eta  10.5 min
+  shard 368 B verified n=3: mean_fp 1.62  certified 100.0%  multistable 28.6%
+  shard 369 B verified n=3: mean_fp 2.20  certified 100.0%  multistable 48.2%
+shard  327:    1334 samples      2503 FPs  cert  99.3%  bif_crossed  48.8%   80.4s | 339/609  eta  10.5 min
+  shard 370 B verified n=3: mean_fp 1.38  certified 100.0%  multistable 16.8%
+shard  332:    1344 samples      2616 FPs  cert  99.3%  bif_crossed  46.4%   80.7s | 340/609  eta  10.5 min
+shard  348:    1277 samples      2381 FPs  cert  99.5%  bif_crossed  45.4%   54.4s | 341/609  eta  10.4 min
+  shard 371 B verified n=3: mean_fp 1.25  certified 100.0%  multistable 8.9%
+  shard 372 B verified n=3: mean_fp 1.20  certified 100.0%  multistable 9.8%
+shard  330:    1338 samples      2259 FPs  cert  99.0%  bif_crossed  47.7%   84.2s | 342/609  eta  10.4 min
+  shard 373 B verified n=3: mean_fp 2.20  certified 100.0%  multistable 46.4%
+shard  350:    1339 samples      2695 FPs  cert  98.9%  bif_crossed  58.9%   52.1s | 343/609  eta  10.3 min
+  shard 374 B verified n=3: mean_fp 2.40  certified 100.0%  multistable 57.1%
+shard  356:    1342 samples      2518 FPs  cert  99.3%  bif_crossed  46.9%   48.9s | 344/609  eta  10.3 min
+  shard 375 B verified n=3: mean_fp 1.79  certified 100.0%  multistable 31.4%
+shard  337:    1231 samples      2361 FPs  cert  99.0%  bif_crossed  43.9%   91.0s | 345/609  eta  10.3 min
+shard  355:    1309 samples      2550 FPs  cert  99.4%  bif_crossed  51.9%   55.7s | 346/609  eta  10.3 min
+  shard 376 B verified n=3: mean_fp 1.74  certified 100.0%  multistable 27.1%
+shard  335:    1264 samples      2511 FPs  cert  98.5%  bif_crossed  44.6%   95.2s | 347/609  eta  10.2 min
+  shard 378 B verified n=3: mean_fp 1.31  certified 100.0%  multistable 15.5%
+  shard 377 B verified n=3: mean_fp 1.21  certified 100.0%  multistable 9.8%
+shard  349:    1357 samples      2573 FPs  cert  99.3%  bif_crossed  43.7%   70.2s | 348/609  eta  10.2 min
+  shard 379 B verified n=3: mean_fp 1.43  certified 100.0%  multistable 21.4%
+shard  341:    1471 samples      2622 FPs  cert  99.3%  bif_crossed  35.6%   93.7s | 349/609  eta  10.1 min
+shard  344:    1232 samples      2549 FPs  cert  98.8%  bif_crossed  48.3%   88.6s | 350/609  eta  10.1 min
+  shard 381 B verified n=2: mean_fp 1.60  certified 100.0%  multistable 30.0%
+  shard 380 B verified n=3: mean_fp 1.05  certified 100.0%  multistable 1.8%
+shard  336:    1335 samples      2478 FPs  cert  99.1%  bif_crossed  53.8%  100.3s | 351/609  eta  10.0 min
+shard  343:    1402 samples      2430 FPs  cert  99.6%  bif_crossed  45.0%   90.7s | 352/609  eta  10.0 min
+  shard 383 B verified n=3: mean_fp 1.45  certified 100.0%  multistable 19.0%
+  shard 382 B verified n=3: mean_fp 1.96  certified 99.1%  multistable 37.5%
+shard  351:    1262 samples      2496 FPs  cert  99.1%  bif_crossed  54.8%   70.6s | 353/609  eta   9.9 min
+  shard 384 B verified n=3: mean_fp 1.10  certified 100.0%  multistable 4.8%
+shard  342:    1245 samples      2449 FPs  cert  99.0%  bif_crossed  47.3%   94.5s | 354/609  eta   9.9 min
+  shard 385 B verified n=2: mean_fp 2.20  certified 100.0%  multistable 60.0%
+shard  357:    1447 samples      2836 FPs  cert  98.8%  bif_crossed  53.1%   64.4s | 355/609  eta   9.9 min
+shard  352:    1376 samples      2525 FPs  cert  99.3%  bif_crossed  51.2%   75.4s | 356/609  eta   9.8 min
+  shard 386 B verified n=3: mean_fp 1.49  certified 98.8%  multistable 14.3%
+shard  353:    1259 samples      2416 FPs  cert  99.1%  bif_crossed  40.4%   75.8s | 357/609  eta   9.7 min
+  shard 388 B verified n=3: mean_fp 1.40  certified 100.0%  multistable 20.2%
+  shard 387 B verified n=4: mean_fp 1.66  certified 100.0%  multistable 24.0%
+shard  360:    1279 samples      2597 FPs  cert  99.2%  bif_crossed  51.0%   55.2s | 358/609  eta   9.7 min
+  shard 389 B verified n=3: mean_fp 2.14  certified 100.0%  multistable 35.7%
+shard  361:    1350 samples      2450 FPs  cert  99.4%  bif_crossed  47.9%   56.5s | 359/609  eta   9.7 min
+  shard 390 B verified n=3: mean_fp 1.00  certified 100.0%  multistable 0.0%
+shard  354:    1287 samples      2208 FPs  cert  99.0%  bif_crossed  37.5%   81.3s | 360/609  eta   9.6 min
+  shard 391 B verified n=3: mean_fp 1.64  certified 100.0%  multistable 28.6%
+shard  362:    1398 samples      2557 FPs  cert  99.8%  bif_crossed  48.9%   61.5s | 361/609  eta   9.6 min
+  shard 392 B verified n=3: mean_fp 1.24  certified 100.0%  multistable 10.7%
+shard  364:    1374 samples      2532 FPs  cert  98.9%  bif_crossed  38.6%   58.3s | 362/609  eta   9.6 min
+  shard 393 B verified n=3: mean_fp 1.30  certified 100.0%  multistable 15.2%
+shard  359:    1309 samples      2673 FPs  cert  99.2%  bif_crossed  43.9%   67.2s | 363/609  eta   9.5 min
+shard  366:    1282 samples      2298 FPs  cert  99.5%  bif_crossed  45.2%   59.4s | 364/609  eta   9.4 min
+  shard 394 B verified n=3: mean_fp 1.61  certified 100.0%  multistable 28.0%
+  shard 395 B verified n=3: mean_fp 1.68  certified 100.0%  multistable 26.2%
+shard  369:    1367 samples      2652 FPs  cert  99.4%  bif_crossed  49.7%   57.9s | 365/609  eta   9.4 min
+  shard 396 B verified n=3: mean_fp 1.43  certified 100.0%  multistable 20.2%
+shard  367:    1303 samples      2320 FPs  cert  99.1%  bif_crossed  46.4%   63.9s | 366/609  eta   9.4 min
+  shard 397 B verified n=3: mean_fp 1.43  certified 100.0%  multistable 21.4%
+shard  358:    1390 samples      2456 FPs  cert  99.4%  bif_crossed  43.6%   84.9s | 367/609  eta   9.3 min
+  shard 398 B verified n=3: mean_fp 1.99  certified 100.0%  multistable 37.1%
+shard  374:    1372 samples      2553 FPs  cert  99.2%  bif_crossed  45.2%   55.2s | 368/609  eta   9.3 min
+  shard 399 B verified n=3: mean_fp 1.61  certified 100.0%  multistable 29.5%
+shard  372:    1285 samples      2306 FPs  cert  98.9%  bif_crossed  49.6%   63.6s | 369/609  eta   9.3 min
+shard  368:    1347 samples      2342 FPs  cert  99.2%  bif_crossed  48.0%   73.5s | 370/609  eta   9.2 min
+  shard 400 B verified n=3: mean_fp 1.32  certified 100.0%  multistable 16.1%
+  shard 401 B verified n=3: mean_fp 1.89  certified 100.0%  multistable 32.1%
+shard  377:    1560 samples      2866 FPs  cert  99.2%  bif_crossed  46.3%   48.6s | 371/609  eta   9.2 min
+  shard 402 B verified n=3: mean_fp 1.05  certified 100.0%  multistable 2.4%
+shard  375:    1412 samples      2610 FPs  cert  99.2%  bif_crossed  49.4%   57.6s | 372/609  eta   9.2 min
+  shard 403 B verified n=3: mean_fp 1.68  certified 100.0%  multistable 29.5%
+shard  370:    1469 samples      2618 FPs  cert  98.5%  bif_crossed  38.7%   81.0s | 373/609  eta   9.2 min
+  shard 404 B verified n=3: mean_fp 3.71  certified 100.0%  multistable 71.4%
+shard  379:    1423 samples      2656 FPs  cert  99.1%  bif_crossed  46.3%   58.3s | 374/609  eta   9.1 min
+  shard 405 B verified n=3: mean_fp 2.71  certified 100.0%  multistable 82.1%
+shard  363:    1341 samples      2700 FPs  cert  98.6%  bif_crossed  50.6%   93.9s | 375/609  eta   9.1 min
+shard  384:    1363 samples      2542 FPs  cert  99.2%  bif_crossed  46.1%   54.7s | 376/609  eta   9.0 min
+shard  371:    1455 samples      2600 FPs  cert  99.0%  bif_crossed  41.6%   80.0s | 377/609  eta   9.0 min
+  shard 406 B verified n=3: mean_fp 1.20  certified 100.0%  multistable 7.1%
+shard  365:    1310 samples      2306 FPs  cert  99.4%  bif_crossed  40.1%   93.8s | 378/609  eta   8.9 min
+  shard 407 B verified n=3: mean_fp 1.97  certified 99.4%  multistable 39.3%
+  shard 408 B verified n=3: mean_fp 1.36  certified 100.0%  multistable 17.3%
+  shard 409 B verified n=3: mean_fp 1.29  certified 100.0%  multistable 14.3%
+shard  373:    1304 samples      2498 FPs  cert  99.5%  bif_crossed  45.4%   82.5s | 379/609  eta   8.9 min
+  shard 410 B verified n=3: mean_fp 2.02  certified 100.0%  multistable 39.3%
+shard  389:    1430 samples      2845 FPs  cert  98.7%  bif_crossed  39.8%   53.8s | 380/609  eta   8.9 min
+shard  376:    1292 samples      2538 FPs  cert  99.2%  bif_crossed  45.0%   74.4s | 381/609  eta   8.8 min
+  shard 411 B verified n=3: mean_fp 1.48  certified 100.0%  multistable 21.4%
+  shard 412 B verified n=3: mean_fp 1.52  certified 100.0%  multistable 18.8%
+shard  381:    1392 samples      2564 FPs  cert  99.1%  bif_crossed  45.8%   70.7s | 382/609  eta   8.8 min
+  shard 413 B verified n=3: mean_fp 1.31  certified 100.0%  multistable 14.3%
+shard  386:    1400 samples      2367 FPs  cert  99.8%  bif_crossed  53.6%   63.5s | 383/609  eta   8.8 min
+  shard 414 B verified n=3: mean_fp 1.30  certified 100.0%  multistable 12.9%
+shard  390:    1377 samples      2397 FPs  cert  98.4%  bif_crossed  51.0%   60.2s | 384/609  eta   8.7 min
+shard  382:    1438 samples      2657 FPs  cert  99.2%  bif_crossed  40.7%   74.8s | 385/609  eta   8.7 min
+  shard 416 B verified n=3: mean_fp 1.71  certified 100.0%  multistable 25.0%
+shard  393:    1285 samples      2417 FPs  cert  98.8%  bif_crossed  44.7%   53.2s | 386/609  eta   8.6 min
+  shard 415 B verified n=3: mean_fp 1.24  certified 100.0%  multistable 10.7%
+shard  394:    1381 samples      2777 FPs  cert  99.1%  bif_crossed  47.4%   54.0s | 387/609  eta   8.6 min
+  shard 417 B verified n=3: mean_fp 2.24  certified 100.0%  multistable 39.3%
+  shard 418 B verified n=3: mean_fp 1.04  certified 100.0%  multistable 1.8%
+shard  378:    1327 samples      2587 FPs  cert  98.6%  bif_crossed  48.8%   85.6s | 388/609  eta   8.5 min
+  shard 419 B verified n=3: mean_fp 1.73  certified 100.0%  multistable 25.9%
+shard  388:    1268 samples      2359 FPs  cert  99.1%  bif_crossed  42.9%   73.0s | 389/609  eta   8.5 min
+shard  385:    1281 samples      2453 FPs  cert  99.4%  bif_crossed  50.7%   79.0s | 390/609  eta   8.4 min
+  shard 421 B verified n=3: mean_fp 1.29  certified 100.0%  multistable 14.3%
+  shard 420 B verified n=3: mean_fp 1.89  certified 100.0%  multistable 39.3%
+shard  397:    1339 samples      2318 FPs  cert  99.5%  bif_crossed  40.1%   57.7s | 391/609  eta   8.4 min
+  shard 422 B verified n=3: mean_fp 1.64  certified 100.0%  multistable 25.0%
+shard  392:    1377 samples      2393 FPs  cert  99.6%  bif_crossed  51.2%   68.0s | 392/609  eta   8.4 min
+  shard 423 B verified n=3: mean_fp 2.43  certified 100.0%  multistable 49.3%
+shard  395:    1257 samples      2598 FPs  cert  98.9%  bif_crossed  55.5%   65.5s | 393/609  eta   8.3 min
+  shard 424 B verified n=3: mean_fp 1.61  certified 100.0%  multistable 23.2%
+shard  380:    1324 samples      2476 FPs  cert  98.9%  bif_crossed  43.9%   94.5s | 394/609  eta   8.3 min
+shard  387:    1299 samples      2340 FPs  cert  98.8%  bif_crossed  30.3%   84.4s | 395/609  eta   8.2 min
+shard  383:    1440 samples      2606 FPs  cert  99.2%  bif_crossed  43.7%   93.3s | 396/609  eta   8.2 min
+  shard 426 B verified n=3: mean_fp 2.36  certified 100.0%  multistable 64.3%
+shard  399:    1331 samples      2708 FPs  cert  99.0%  bif_crossed  53.9%   58.2s | 397/609  eta   8.1 min
+  shard 427 B verified n=3: mean_fp 2.12  certified 100.0%  multistable 40.5%
+  shard 425 B verified n=3: mean_fp 2.21  certified 99.6%  multistable 38.4%
+  shard 428 B verified n=4: mean_fp 1.48  certified 99.6%  multistable 19.1%
+shard  400:    1409 samples      2684 FPs  cert  99.1%  bif_crossed  44.7%   56.3s | 398/609  eta   8.1 min
+  shard 429 B verified n=3: mean_fp 1.36  certified 100.0%  multistable 17.0%
+shard  396:    1384 samples      2756 FPs  cert  99.4%  bif_crossed  51.9%   73.1s | 399/609  eta   8.0 min
+  shard 430 B verified n=3: mean_fp 3.39  certified 96.4%  multistable 96.4%
+shard  391:    1303 samples      2598 FPs  cert  99.0%  bif_crossed  58.0%   84.2s | 400/609  eta   8.0 min
+shard  403:    1471 samples      2349 FPs  cert  99.4%  bif_crossed  39.6%   58.1s | 401/609  eta   8.0 min
+  shard 431 B verified n=3: mean_fp 2.31  certified 100.0%  multistable 45.0%
+shard  401:    1311 samples      2343 FPs  cert  99.1%  bif_crossed  57.4%   62.1s | 402/609  eta   7.9 min
+  shard 432 B verified n=3: mean_fp 1.69  certified 100.0%  multistable 30.0%
+  shard 433 B verified n=3: mean_fp 1.34  certified 100.0%  multistable 16.1%
+shard  402:    1421 samples      2524 FPs  cert  99.4%  bif_crossed  43.6%   68.8s | 403/609  eta   7.9 min
+  shard 434 B verified n=4: mean_fp 1.80  certified 99.6%  multistable 28.4%
+shard  398:    1350 samples      2382 FPs  cert  99.6%  bif_crossed  48.1%   87.4s | 404/609  eta   7.9 min
+shard  411:    1355 samples      2645 FPs  cert  99.0%  bif_crossed  47.5%   54.3s | 405/609  eta   7.9 min
+  shard 435 B verified n=3: mean_fp 1.64  certified 100.0%  multistable 30.4%
+  shard 436 B verified n=3: mean_fp 1.33  certified 100.0%  multistable 14.3%
+shard  404:    1391 samples      2718 FPs  cert  99.5%  bif_crossed  43.6%   74.6s | 406/609  eta   7.9 min
+  shard 437 B verified n=2: mean_fp 1.07  certified 100.0%  multistable 3.3%
+shard  415:    1512 samples      2515 FPs  cert  99.2%  bif_crossed  44.9%   52.9s | 407/609  eta   7.8 min
+  shard 438 B verified n=3: mean_fp 1.46  certified 100.0%  multistable 17.9%
+shard  409:    1319 samples      2361 FPs  cert  99.2%  bif_crossed  48.1%   72.2s | 408/609  eta   7.8 min
+shard  407:    1407 samples      2693 FPs  cert  98.4%  bif_crossed  47.2%   73.9s | 409/609  eta   7.7 min
+  shard 439 B verified n=3: mean_fp 2.48  certified 100.0%  multistable 59.5%
+  shard 440 B verified n=3: mean_fp 1.36  certified 100.0%  multistable 15.5%
+shard  406:    1383 samples      2620 FPs  cert  99.1%  bif_crossed  47.1%   76.4s | 410/609  eta   7.7 min
+  shard 441 B verified n=2: mean_fp 3.00  certified 100.0%  multistable 80.0%
+shard  417:    1324 samples      2443 FPs  cert  99.5%  bif_crossed  47.1%   59.1s | 411/609  eta   7.6 min
+  shard 442 B verified n=2: mean_fp 1.87  certified 100.0%  multistable 43.3%
+shard  410:    1248 samples      2417 FPs  cert  99.4%  bif_crossed  49.0%   75.2s | 412/609  eta   7.6 min
+  shard 443 B verified n=4: mean_fp 1.77  certified 100.0%  multistable 28.4%
+shard  405:    1399 samples      2708 FPs  cert  98.9%  bif_crossed  55.8%   84.4s | 413/609  eta   7.6 min
+shard  413:    1339 samples      2430 FPs  cert  99.6%  bif_crossed  45.1%   71.2s | 414/609  eta   7.5 min
+  shard 444 B verified n=3: mean_fp 1.85  certified 100.0%  multistable 35.7%
+  shard 445 B verified n=3: mean_fp 1.40  certified 100.0%  multistable 16.4%
+shard  408:    1301 samples      2478 FPs  cert  98.2%  bif_crossed  52.3%   93.0s | 415/609  eta   7.5 min
+shard  424:    1282 samples      2800 FPs  cert  99.1%  bif_crossed  51.0%   61.3s | 416/609  eta   7.5 min
+  shard 446 B verified n=3: mean_fp 1.96  certified 100.0%  multistable 35.7%
+  shard 447 B verified n=3: mean_fp 1.93  certified 100.0%  multistable 42.9%
+shard  412:    1323 samples      2626 FPs  cert  98.8%  bif_crossed  47.4%   88.0s | 417/609  eta   7.5 min
+shard  423:    1432 samples      2742 FPs  cert  99.3%  bif_crossed  44.3%   67.5s | 418/609  eta   7.4 min
+shard  416:    1386 samples      2420 FPs  cert  99.5%  bif_crossed  44.3%   80.6s | 419/609  eta   7.4 min
+shard  433:    1499 samples      2748 FPs  cert  99.1%  bif_crossed  43.8%   52.1s | 420/609  eta   7.3 min
+  shard 449 B verified n=3: mean_fp 1.32  certified 100.0%  multistable 14.3%
+  shard 451 B verified n=3: mean_fp 1.60  certified 100.0%  multistable 27.4%
+  shard 450 B verified n=3: mean_fp 1.90  certified 100.0%  multistable 33.3%
+  shard 448 B verified n=3: mean_fp 1.83  certified 99.5%  multistable 33.2%
+shard  429:    1385 samples      2513 FPs  cert  98.8%  bif_crossed  45.5%   59.8s | 421/609  eta   7.3 min
+shard  419:    1400 samples      2613 FPs  cert  99.3%  bif_crossed  50.9%   78.5s | 422/609  eta   7.2 min
+  shard 452 B verified n=3: mean_fp 2.21  certified 100.0%  multistable 33.9%
+  shard 453 B verified n=3: mean_fp 1.00  certified 100.0%  multistable 0.0%
+shard  414:    1285 samples      2579 FPs  cert  99.4%  bif_crossed  48.3%   86.4s | 423/609  eta   7.2 min
+  shard 454 B verified n=3: mean_fp 1.79  certified 100.0%  multistable 32.1%
+shard  432:    1426 samples      2989 FPs  cert  98.7%  bif_crossed  52.0%   56.4s | 424/609  eta   7.1 min
+  shard 455 B verified n=3: mean_fp 1.64  certified 100.0%  multistable 31.0%
+shard  420:    1318 samples      2617 FPs  cert  99.2%  bif_crossed  43.3%   79.1s | 425/609  eta   7.1 min
+shard  422:    1353 samples      2330 FPs  cert  99.4%  bif_crossed  43.6%   76.0s | 426/609  eta   7.0 min
+  shard 456 B verified n=3: mean_fp 1.59  certified 100.0%  multistable 24.1%
+shard  428:    1317 samples      2480 FPs  cert  98.9%  bif_crossed  38.3%   69.5s | 427/609  eta   7.0 min
+  shard 457 B verified n=3: mean_fp 1.56  certified 100.0%  multistable 26.8%
+  shard 458 B verified n=3: mean_fp 1.00  certified 100.0%  multistable 0.0%
+shard  425:    1315 samples      2550 FPs  cert  99.2%  bif_crossed  48.7%   72.2s | 428/609  eta   6.9 min
+  shard 459 B verified n=3: mean_fp 2.09  certified 100.0%  multistable 36.6%
+shard  434:    1385 samples      2499 FPs  cert  99.0%  bif_crossed  53.1%   59.7s | 429/609  eta   6.9 min
+shard  421:    1349 samples      2485 FPs  cert  99.3%  bif_crossed  40.9%   88.7s | 430/609  eta   6.9 min
+  shard 460 B verified n=3: mean_fp 1.64  certified 100.0%  multistable 27.1%
+  shard 461 B verified n=3: mean_fp 1.11  certified 100.0%  multistable 5.4%
+shard  426:    1481 samples      2289 FPs  cert  99.7%  bif_crossed  44.5%   79.1s | 431/609  eta   6.8 min
+  shard 462 B verified n=3: mean_fp 1.02  certified 100.0%  multistable 1.2%
+shard  439:    1378 samples      2684 FPs  cert  99.3%  bif_crossed  46.5%   44.2s | 432/609  eta   6.8 min
+  shard 463 B verified n=3: mean_fp 1.86  certified 100.0%  multistable 28.6%
+shard  418:    1271 samples      2433 FPs  cert  99.2%  bif_crossed  46.1%   98.5s | 433/609  eta   6.7 min
+  shard 464 B verified n=3: mean_fp 1.52  certified 100.0%  multistable 24.1%
+shard  431:    1370 samples      2601 FPs  cert  99.2%  bif_crossed  45.5%   75.6s | 434/609  eta   6.7 min
+shard  430:    1257 samples      2650 FPs  cert  99.1%  bif_crossed  47.2%   79.4s | 435/609  eta   6.6 min
+  shard 465 B verified n=3: mean_fp 1.32  certified 100.0%  multistable 13.7%
+  shard 466 B verified n=3: mean_fp 1.21  certified 100.0%  multistable 10.7%
+shard  436:    1262 samples      2332 FPs  cert  99.1%  bif_crossed  43.2%   59.7s | 436/609  eta   6.6 min
+  shard 467 B verified n=3: mean_fp 2.00  certified 100.0%  multistable 38.4%
+shard  438:    1357 samples      2445 FPs  cert  99.3%  bif_crossed  38.1%   58.1s | 437/609  eta   6.6 min
+  shard 468 B verified n=3: mean_fp 1.82  certified 100.0%  multistable 31.5%
+shard  443:    1485 samples      2814 FPs  cert  99.7%  bif_crossed  48.2%   52.2s | 438/609  eta   6.5 min
+  shard 469 B verified n=2: mean_fp 2.00  certified 100.0%  multistable 23.3%
+shard  442:    1435 samples      2833 FPs  cert  98.7%  bif_crossed  48.6%   54.8s | 439/609  eta   6.5 min
+  shard 470 B verified n=3: mean_fp 1.31  certified 100.0%  multistable 13.7%
+shard  451:    1330 samples      2685 FPs  cert  99.3%  bif_crossed  44.7%   42.5s | 440/609  eta   6.5 min
+  shard 471 B verified n=3: mean_fp 1.12  certified 100.0%  multistable 6.0%
+shard  427:    1305 samples      2878 FPs  cert  98.8%  bif_crossed  58.2%  106.9s | 441/609  eta   6.5 min
+shard  441:    1290 samples      2256 FPs  cert  99.7%  bif_crossed  49.0%   67.6s | 442/609  eta   6.4 min
+  shard 472 B verified n=3: mean_fp 1.77  certified 100.0%  multistable 28.6%
+  shard 473 B verified n=3: mean_fp 1.88  certified 100.0%  multistable 39.3%
+shard  440:    1376 samples      2474 FPs  cert  99.2%  bif_crossed  45.3%   71.3s | 443/609  eta   6.4 min
+  shard 474 B verified n=3: mean_fp 1.62  certified 100.0%  multistable 21.4%
+shard  445:    1444 samples      2671 FPs  cert  99.3%  bif_crossed  41.3%   63.3s | 444/609  eta   6.3 min
+shard  452:    1363 samples      2664 FPs  cert  99.1%  bif_crossed  46.4%   47.5s | 445/609  eta   6.3 min
+shard  447:    1343 samples      2195 FPs  cert  99.9%  bif_crossed  39.7%   54.2s | 446/609  eta   6.2 min
+  shard 475 B verified n=3: mean_fp 1.40  certified 100.0%  multistable 17.3%
+  shard 476 B verified n=3: mean_fp 2.50  certified 100.0%  multistable 54.5%
+shard  437:    1265 samples      2356 FPs  cert  98.9%  bif_crossed  39.8%   80.8s | 447/609  eta   6.2 min
+  shard 478 B verified n=3: mean_fp 1.36  certified 100.0%  multistable 14.3%
+  shard 477 B verified n=4: mean_fp 1.26  certified 100.0%  multistable 9.7%
+shard  455:    1246 samples      2164 FPs  cert  99.7%  bif_crossed  48.3%   59.1s | 448/609  eta   6.2 min
+  shard 479 B verified n=3: mean_fp 1.96  certified 100.0%  multistable 33.9%
+shard  444:    1399 samples      2524 FPs  cert  99.2%  bif_crossed  44.4%   78.8s | 449/609  eta   6.2 min
+shard  458:    1516 samples      2940 FPs  cert  99.1%  bif_crossed  42.2%   56.7s | 450/609  eta   6.1 min
+  shard 481 B verified n=3: mean_fp 1.79  certified 100.0%  multistable 33.9%
+  shard 480 B verified n=3: mean_fp 2.25  certified 100.0%  multistable 51.2%
+shard  435:    1324 samples      2624 FPs  cert  99.2%  bif_crossed  55.1%  101.0s | 451/609  eta   6.1 min
+  shard 482 B verified n=3: mean_fp 1.21  certified 100.0%  multistable 10.7%
+shard  449:    1486 samples      2659 FPs  cert  99.3%  bif_crossed  43.3%   68.5s | 452/609  eta   6.0 min
+  shard 483 B verified n=3: mean_fp 1.49  certified 100.0%  multistable 20.7%
+shard  468:    1426 samples      2476 FPs  cert  99.6%  bif_crossed  42.8%   47.0s | 453/609  eta   6.0 min
+shard  460:    1570 samples      2687 FPs  cert  99.4%  bif_crossed  45.0%   62.5s | 454/609  eta   6.0 min
+shard  450:    1350 samples      2563 FPs  cert  99.0%  bif_crossed  44.5%   78.1s | 455/609  eta   5.9 min
+  shard 484 B verified n=3: mean_fp 1.27  certified 100.0%  multistable 12.5%
+  shard 485 B verified n=3: mean_fp 1.88  certified 100.0%  multistable 37.5%
+  shard 486 B verified n=3: mean_fp 1.57  certified 100.0%  multistable 27.4%
+shard  467:    1424 samples      2595 FPs  cert  99.4%  bif_crossed  45.9%   55.5s | 456/609  eta   5.9 min
+  shard 487 B verified n=3: mean_fp 1.53  certified 100.0%  multistable 23.7%
+shard  462:    1344 samples      2324 FPs  cert  99.6%  bif_crossed  46.7%   65.6s | 457/609  eta   5.9 min
+  shard 488 B verified n=3: mean_fp 1.11  certified 100.0%  multistable 4.5%
+shard  459:    1361 samples      2380 FPs  cert  99.8%  bif_crossed  42.5%   75.6s | 458/609  eta   5.8 min
+shard  470:    1389 samples      2348 FPs  cert  99.8%  bif_crossed  44.1%   51.5s | 459/609  eta   5.8 min
+shard  471:    1341 samples      2236 FPs  cert  99.6%  bif_crossed  39.6%   43.0s | 460/609  eta   5.7 min
+  shard 490 B verified n=3: mean_fp 2.25  certified 100.0%  multistable 32.1%
+shard  453:    1359 samples      2442 FPs  cert  99.0%  bif_crossed  40.9%   84.2s | 461/609  eta   5.7 min
+  shard 491 B verified n=3: mean_fp 1.55  certified 100.0%  multistable 22.6%
+  shard 489 B verified n=3: mean_fp 2.02  certified 100.0%  multistable 38.7%
+  shard 492 B verified n=3: mean_fp 1.64  certified 100.0%  multistable 30.4%
+shard  457:    1374 samples      2715 FPs  cert  99.2%  bif_crossed  51.2%   81.0s | 462/609  eta   5.6 min
+shard  456:    1320 samples      2390 FPs  cert  98.9%  bif_crossed  48.9%   81.5s | 463/609  eta   5.6 min
+  shard 493 B verified n=3: mean_fp 1.07  certified 100.0%  multistable 3.6%
+  shard 494 B verified n=3: mean_fp 1.67  certified 100.0%  multistable 27.1%
+shard  448:    1302 samples      2449 FPs  cert  99.1%  bif_crossed  45.3%   89.8s | 464/609  eta   5.5 min
+shard  461:    1341 samples      2466 FPs  cert  99.5%  bif_crossed  49.8%   73.2s | 465/609  eta   5.5 min
+shard  454:    1309 samples      2424 FPs  cert  99.0%  bif_crossed  50.8%   86.4s | 466/609  eta   5.4 min
+  shard 495 B verified n=3: mean_fp 1.36  certified 100.0%  multistable 17.1%
+  shard 496 B verified n=3: mean_fp 2.12  certified 100.0%  multistable 46.4%
+  shard 497 B verified n=3: mean_fp 1.44  certified 100.0%  multistable 21.4%
+shard  466:    1439 samples      2337 FPs  cert  99.3%  bif_crossed  35.7%   72.4s | 467/609  eta   5.4 min
+  shard 498 B verified n=3: mean_fp 1.11  certified 100.0%  multistable 5.4%
+shard  446:    1333 samples      2819 FPs  cert  98.0%  bif_crossed  46.5%  103.1s | 468/609  eta   5.4 min
+shard  477:    1474 samples      2695 FPs  cert  99.1%  bif_crossed  44.3%   48.8s | 469/609  eta   5.3 min
+  shard 499 B verified n=3: mean_fp 1.64  certified 100.0%  multistable 26.8%
+  shard 500 B verified n=3: mean_fp 1.17  certified 100.0%  multistable 7.1%
+shard  465:    1290 samples      2496 FPs  cert  98.4%  bif_crossed  51.1%   77.7s | 470/609  eta   5.3 min
+  shard 501 B verified n=3: mean_fp 2.21  certified 100.0%  multistable 57.1%
+shard  463:    1311 samples      2677 FPs  cert  98.8%  bif_crossed  51.1%   82.8s | 471/609  eta   5.3 min
+  shard 502 B verified n=3: mean_fp 1.29  certified 100.0%  multistable 10.7%
+shard  481:    1368 samples      2532 FPs  cert  99.3%  bif_crossed  44.6%   43.1s | 472/609  eta   5.2 min
+shard  476:    1419 samples      2486 FPs  cert  99.6%  bif_crossed  45.7%   59.1s | 473/609  eta   5.2 min
+shard  475:    1490 samples      2605 FPs  cert  99.4%  bif_crossed  47.7%   60.7s | 474/609  eta   5.1 min
+  shard 504 B verified n=3: mean_fp 1.86  certified 100.0%  multistable 31.2%
+  shard 503 B verified n=4: mean_fp 1.88  certified 99.7%  multistable 27.3%
+  shard 505 B verified n=3: mean_fp 2.26  certified 100.0%  multistable 40.0%
+shard  474:    1446 samples      2499 FPs  cert  99.4%  bif_crossed  42.0%   65.5s | 475/609  eta   5.1 min
+  shard 506 B verified n=3: mean_fp 1.57  certified 100.0%  multistable 28.6%
+shard  472:    1399 samples      2383 FPs  cert  99.7%  bif_crossed  44.5%   68.5s | 476/609  eta   5.1 min
+  shard 507 B verified n=3: mean_fp 1.77  certified 100.0%  multistable 33.0%
+shard  464:    1332 samples      2292 FPs  cert  98.8%  bif_crossed  49.7%   94.5s | 477/609  eta   5.0 min
+  shard 508 B verified n=3: mean_fp 1.29  certified 100.0%  multistable 14.3%
+shard  473:    1420 samples      2459 FPs  cert  99.4%  bif_crossed  36.4%   74.2s | 478/609  eta   5.0 min
+  shard 509 B verified n=4: mean_fp 1.62  certified 100.0%  multistable 26.3%
+shard  484:    1398 samples      2375 FPs  cert  99.6%  bif_crossed  43.9%   49.8s | 479/609  eta   5.0 min
+shard  469:    1277 samples      2455 FPs  cert  98.7%  bif_crossed  44.8%   94.7s | 480/609  eta   4.9 min
+shard  479:    1289 samples      2461 FPs  cert  99.1%  bif_crossed  49.0%   64.7s | 481/609  eta   4.9 min
+  shard 512 B verified n=2: mean_fp 1.00  certified 100.0%  multistable 0.0%
+  shard 510 B verified n=3: mean_fp 1.62  certified 100.0%  multistable 25.0%
+  shard 511 B verified n=3: mean_fp 2.00  certified 100.0%  multistable 36.9%
+shard  480:    1428 samples      2956 FPs  cert  99.3%  bif_crossed  49.1%   68.7s | 482/609  eta   4.9 min
+  shard 513 B verified n=3: mean_fp 1.36  certified 100.0%  multistable 17.9%
+shard  487:    1318 samples      2628 FPs  cert  98.8%  bif_crossed  41.4%   53.3s | 483/609  eta   4.8 min
+  shard 514 B verified n=3: mean_fp 2.24  certified 97.9%  multistable 23.6%
+shard  485:    1271 samples      2123 FPs  cert  99.0%  bif_crossed  41.9%   57.7s | 484/609  eta   4.8 min
+  shard 515 B verified n=3: mean_fp 1.74  certified 100.0%  multistable 33.3%
+shard  478:    1309 samples      2328 FPs  cert  99.0%  bif_crossed  41.9%   87.9s | 485/609  eta   4.7 min
+  shard 516 B verified n=3: mean_fp 2.17  certified 99.1%  multistable 42.9%
+shard  483:    1383 samples      2395 FPs  cert  99.5%  bif_crossed  47.5%   74.8s | 486/609  eta   4.7 min
+  shard 517 B verified n=3: mean_fp 1.90  certified 100.0%  multistable 38.6%
+shard  490:    1355 samples      2349 FPs  cert  99.6%  bif_crossed  41.1%   60.5s | 487/609  eta   4.7 min
+  shard 518 B verified n=3: mean_fp 1.33  certified 100.0%  multistable 15.5%
+shard  491:    1464 samples      2670 FPs  cert  99.3%  bif_crossed  48.7%   61.2s | 488/609  eta   4.6 min
+  shard 519 B verified n=3: mean_fp 1.52  certified 100.0%  multistable 16.7%
+shard  482:    1407 samples      2454 FPs  cert  99.6%  bif_crossed  38.9%   82.6s | 489/609  eta   4.6 min
+  shard 520 B verified n=3: mean_fp 1.98  certified 100.0%  multistable 39.8%
+shard  494:    1372 samples      2570 FPs  cert  99.3%  bif_crossed  41.8%   65.5s | 490/609  eta   4.6 min
+shard  500:    1333 samples      2580 FPs  cert  99.2%  bif_crossed  40.5%   57.1s | 491/609  eta   4.5 min
+  shard 521 B verified n=3: mean_fp 1.54  certified 100.0%  multistable 21.8%
+shard  497:    1397 samples      2623 FPs  cert  99.3%  bif_crossed  45.2%   66.2s | 492/609  eta   4.5 min
+  shard 522 B verified n=3: mean_fp 1.32  certified 100.0%  multistable 14.3%
+  shard 523 B verified n=3: mean_fp 1.16  certified 100.0%  multistable 7.1%
+shard  503:    1332 samples      2566 FPs  cert  99.5%  bif_crossed  53.2%   53.0s | 493/609  eta   4.4 min
+shard  488:    1402 samples      2627 FPs  cert  99.4%  bif_crossed  45.4%   79.4s | 494/609  eta   4.4 min
+shard  498:    1369 samples      2608 FPs  cert  98.7%  bif_crossed  48.6%   67.0s | 495/609  eta   4.4 min
+shard  493:    1359 samples      2730 FPs  cert  99.0%  bif_crossed  43.6%   74.8s | 496/609  eta   4.3 min
+  shard 526 B verified n=3: mean_fp 1.69  certified 100.0%  multistable 31.0%
+  shard 525 B verified n=3: mean_fp 1.39  certified 100.0%  multistable 17.9%
+  shard 527 B verified n=3: mean_fp 1.81  certified 100.0%  multistable 33.3%
+  shard 524 B verified n=4: mean_fp 1.85  certified 100.0%  multistable 28.0%
+shard  496:    1384 samples      2565 FPs  cert  99.5%  bif_crossed  47.2%   74.3s | 497/609  eta   4.3 min
+  shard 528 B verified n=3: mean_fp 1.54  certified 100.0%  multistable 27.1%
+shard  486:    1431 samples      2694 FPs  cert  99.4%  bif_crossed  51.2%   94.4s | 498/609  eta   4.3 min
+  shard 529 B verified n=3: mean_fp 1.13  certified 100.0%  multistable 6.4%
+shard  492:    1353 samples      2422 FPs  cert  99.6%  bif_crossed  39.0%   87.8s | 499/609  eta   4.2 min
+  shard 530 B verified n=3: mean_fp 1.21  certified 100.0%  multistable 10.7%
+shard  489:    1432 samples      2542 FPs  cert  99.4%  bif_crossed  38.8%   90.4s | 500/609  eta   4.2 min
+  shard 531 B verified n=3: mean_fp 1.59  certified 100.0%  multistable 24.1%
+shard  504:    1253 samples      2366 FPs  cert  99.0%  bif_crossed  46.2%   68.9s | 501/609  eta   4.1 min
+shard  495:    1338 samples      2545 FPs  cert  99.2%  bif_crossed  52.0%   88.2s | 502/609  eta   4.1 min
+  shard 532 B verified n=3: mean_fp 1.71  certified 100.0%  multistable 32.1%
+shard  510:    1359 samples      2841 FPs  cert  99.0%  bif_crossed  51.2%   51.0s | 503/609  eta   4.0 min
+  shard 533 B verified n=3: mean_fp 1.18  certified 100.0%  multistable 8.9%
+  shard 534 B verified n=3: mean_fp 1.80  certified 100.0%  multistable 33.6%
+shard  502:    1432 samples      2656 FPs  cert  98.8%  bif_crossed  36.2%   78.1s | 504/609  eta   4.0 min
+  shard 535 B verified n=3: mean_fp 1.89  certified 100.0%  multistable 41.1%
+shard  514:    1399 samples      2536 FPs  cert  99.4%  bif_crossed  41.6%   47.9s | 505/609  eta   4.0 min
+  shard 536 B verified n=2: mean_fp 1.20  certified 100.0%  multistable 10.0%
+shard  505:    1353 samples      2470 FPs  cert  99.5%  bif_crossed  44.1%   74.3s | 506/609  eta   3.9 min
+  shard 537 B verified n=3: mean_fp 1.33  certified 100.0%  multistable 16.7%
+shard  512:    1413 samples      2538 FPs  cert  98.9%  bif_crossed  52.4%   58.3s | 507/609  eta   3.9 min
+  shard 538 B verified n=3: mean_fp 1.79  certified 100.0%  multistable 27.1%
+shard  515:    1375 samples      2381 FPs  cert  99.1%  bif_crossed  47.3%   52.4s | 508/609  eta   3.8 min
+  shard 539 B verified n=3: mean_fp 1.29  certified 100.0%  multistable 14.3%
+shard  508:    1344 samples      2182 FPs  cert  99.6%  bif_crossed  39.7%   75.3s | 509/609  eta   3.8 min
+  shard 540 B verified n=3: mean_fp 1.75  certified 100.0%  multistable 28.6%
+shard  518:    1445 samples      2492 FPs  cert  99.6%  bif_crossed  45.1%   47.1s | 510/609  eta   3.8 min
+  shard 541 B verified n=3: mean_fp 1.27  certified 100.0%  multistable 12.5%
+shard  506:    1305 samples      2527 FPs  cert  99.0%  bif_crossed  47.4%   84.8s | 511/609  eta   3.7 min
+  shard 542 B verified n=3: mean_fp 1.62  certified 100.0%  multistable 29.8%
+shard  501:    1291 samples      2462 FPs  cert  98.4%  bif_crossed  41.4%   98.1s | 512/609  eta   3.7 min
+  shard 543 B verified n=3: mean_fp 1.64  certified 100.0%  multistable 23.6%
+shard  509:    1318 samples      2439 FPs  cert  98.9%  bif_crossed  49.8%   81.6s | 513/609  eta   3.7 min
+shard  517:    1429 samples      2585 FPs  cert  99.7%  bif_crossed  40.2%   58.1s | 514/609  eta   3.6 min
+  shard 544 B verified n=3: mean_fp 1.14  certified 100.0%  multistable 7.1%
+  shard 545 B verified n=3: mean_fp 1.50  certified 100.0%  multistable 25.0%
+shard  499:    1326 samples      2406 FPs  cert  99.2%  bif_crossed  47.1%  109.4s | 515/609  eta   3.6 min
+  shard 546 B verified n=3: mean_fp 1.21  certified 100.0%  multistable 10.7%
+shard  521:    1323 samples      2439 FPs  cert  98.9%  bif_crossed  44.8%   60.6s | 516/609  eta   3.6 min
+  shard 547 B verified n=3: mean_fp 2.54  certified 100.0%  multistable 58.9%
+shard  507:    1361 samples      2717 FPs  cert  98.9%  bif_crossed  50.0%  102.3s | 517/609  eta   3.5 min
+  shard 548 B verified n=3: mean_fp 1.04  certified 100.0%  multistable 1.8%
+shard  513:    1377 samples      2476 FPs  cert  98.8%  bif_crossed  36.2%   86.4s | 518/609  eta   3.5 min
+shard  519:    1367 samples      2606 FPs  cert  99.0%  bif_crossed  45.4%   72.7s | 519/609  eta   3.4 min
+shard  523:    1369 samples      2044 FPs  cert  99.5%  bif_crossed  39.3%   64.1s | 520/609  eta   3.4 min
+  shard 549 B verified n=3: mean_fp 2.51  certified 100.0%  multistable 58.6%
+  shard 551 B verified n=3: mean_fp 1.19  certified 100.0%  multistable 9.5%
+  shard 550 B verified n=3: mean_fp 1.79  certified 100.0%  multistable 34.8%
+shard  524:    1406 samples      2547 FPs  cert  98.9%  bif_crossed  49.1%   64.6s | 521/609  eta   3.4 min
+  shard 552 B verified n=3: mean_fp 1.13  certified 100.0%  multistable 6.4%
+shard  522:    1374 samples      2649 FPs  cert  98.8%  bif_crossed  46.3%   73.0s | 522/609  eta   3.3 min
+  shard 553 B verified n=3: mean_fp 1.57  certified 100.0%  multistable 21.8%
+shard  526:    1383 samples      2384 FPs  cert  99.6%  bif_crossed  43.1%   69.9s | 523/609  eta   3.3 min
+  shard 554 B verified n=3: mean_fp 1.64  certified 100.0%  multistable 30.4%
+shard  511:    1451 samples      2746 FPs  cert  99.2%  bif_crossed  45.4%  105.8s | 524/609  eta   3.3 min
+  shard 555 B verified n=4: mean_fp 1.57  certified 100.0%  multistable 24.6%
+shard  527:    1434 samples      2527 FPs  cert  99.4%  bif_crossed  36.5%   73.2s | 525/609  eta   3.2 min
+shard  516:    1217 samples      2439 FPs  cert  98.8%  bif_crossed  50.9%   97.1s | 526/609  eta   3.2 min
+  shard 556 B verified n=3: mean_fp 1.81  certified 99.3%  multistable 32.9%
+  shard 557 B verified n=3: mean_fp 2.00  certified 100.0%  multistable 39.3%
+shard  534:    1305 samples      2548 FPs  cert  99.4%  bif_crossed  47.1%   60.0s | 527/609  eta   3.1 min
+shard  525:    1398 samples      2619 FPs  cert  99.5%  bif_crossed  46.0%   76.1s | 528/609  eta   3.1 min
+  shard 559 B verified n=3: mean_fp 1.46  certified 100.0%  multistable 17.9%
+  shard 558 B verified n=3: mean_fp 1.57  certified 100.0%  multistable 12.5%
+shard  529:    1523 samples      2819 FPs  cert  99.1%  bif_crossed  46.4%   66.3s | 529/609  eta   3.1 min
+  shard 560 B verified n=3: mean_fp 1.43  certified 100.0%  multistable 19.6%
+shard  520:    1314 samples      2613 FPs  cert  99.2%  bif_crossed  46.0%   92.8s | 530/609  eta   3.0 min
+  shard 561 B verified n=3: mean_fp 1.67  certified 100.0%  multistable 27.4%
+shard  528:    1283 samples      2457 FPs  cert  99.2%  bif_crossed  46.5%   79.1s | 531/609  eta   3.0 min
+  shard 562 B verified n=3: mean_fp 1.19  certified 100.0%  multistable 9.5%
+shard  532:    1314 samples      2522 FPs  cert  98.7%  bif_crossed  53.1%   70.9s | 532/609  eta   2.9 min
+shard  538:    1276 samples      2654 FPs  cert  99.1%  bif_crossed  46.3%   63.9s | 533/609  eta   2.9 min
+  shard 563 B verified n=4: mean_fp 1.56  certified 100.0%  multistable 25.7%
+  shard 564 B verified n=3: mean_fp 2.00  certified 100.0%  multistable 46.4%
+shard  541:    1346 samples      2461 FPs  cert  98.9%  bif_crossed  38.5%   58.2s | 534/609  eta   2.9 min
+  shard 565 B verified n=3: mean_fp 1.30  certified 100.0%  multistable 14.3%
+shard  536:    1356 samples      2352 FPs  cert  99.2%  bif_crossed  45.9%   71.1s | 535/609  eta   2.8 min
+  shard 566 B verified n=3: mean_fp 1.20  certified 98.2%  multistable 7.1%
+shard  533:    1401 samples      2275 FPs  cert  99.6%  bif_crossed  38.5%   81.1s | 536/609  eta   2.8 min
+shard  539:    1409 samples      2616 FPs  cert  98.9%  bif_crossed  45.4%   71.4s | 537/609  eta   2.8 min
+  shard 567 B verified n=3: mean_fp 1.41  certified 100.0%  multistable 17.9%
+  shard 568 B verified n=3: mean_fp 2.00  certified 100.0%  multistable 39.3%
+shard  531:    1397 samples      2925 FPs  cert  98.9%  bif_crossed  55.3%   84.3s | 538/609  eta   2.7 min
+  shard 569 B verified n=3: mean_fp 1.93  certified 100.0%  multistable 46.4%
+shard  535:    1311 samples      2667 FPs  cert  98.5%  bif_crossed  46.7%   81.6s | 539/609  eta   2.7 min
+  shard 570 B verified n=3: mean_fp 1.07  certified 100.0%  multistable 3.6%
+shard  543:    1265 samples      2593 FPs  cert  99.0%  bif_crossed  47.8%   73.0s | 540/609  eta   2.6 min
+  shard 571 B verified n=3: mean_fp 1.36  certified 100.0%  multistable 14.3%
+shard  537:    1435 samples      2538 FPs  cert  99.2%  bif_crossed  50.9%   87.5s | 541/609  eta   2.6 min
+shard  540:    1390 samples      2732 FPs  cert  99.1%  bif_crossed  46.0%   81.8s | 542/609  eta   2.6 min
+  shard 573 B verified n=3: mean_fp 1.31  certified 100.0%  multistable 15.7%
+  shard 572 B verified n=3: mean_fp 2.25  certified 99.2%  multistable 43.7%
+shard  545:    1295 samples      2381 FPs  cert  99.0%  bif_crossed  48.3%   76.0s | 543/609  eta   2.5 min
+  shard 574 B verified n=3: mean_fp 1.53  certified 100.0%  multistable 22.9%
+shard  548:    1445 samples      2317 FPs  cert  99.4%  bif_crossed  45.3%   64.9s | 544/609  eta   2.5 min
+  shard 575 B verified n=3: mean_fp 1.00  certified 100.0%  multistable 0.0%
+shard  530:    1277 samples      2619 FPs  cert  98.3%  bif_crossed  49.3%  106.6s | 545/609  eta   2.5 min
+  shard 576 B verified n=3: mean_fp 1.79  certified 100.0%  multistable 28.6%
+shard  553:    1390 samples      2469 FPs  cert  99.1%  bif_crossed  35.8%   53.4s | 546/609  eta   2.4 min
+shard  552:    1385 samples      2849 FPs  cert  99.3%  bif_crossed  50.9%   57.7s | 547/609  eta   2.4 min
+  shard 577 B verified n=3: mean_fp 1.64  certified 100.0%  multistable 23.0%
+  shard 578 B verified n=3: mean_fp 1.73  certified 100.0%  multistable 32.1%
+shard  547:    1372 samples      2727 FPs  cert  99.5%  bif_crossed  52.7%   73.5s | 548/609  eta   2.3 min
+  shard 579 B verified n=3: mean_fp 1.26  certified 100.0%  multistable 11.9%
+shard  544:    1417 samples      2464 FPs  cert  99.1%  bif_crossed  45.9%   88.6s | 549/609  eta   2.3 min
+  shard 580 B verified n=3: mean_fp 1.25  certified 100.0%  multistable 12.5%
+shard  542:    1264 samples      2520 FPs  cert  98.7%  bif_crossed  45.9%   93.3s | 550/609  eta   2.3 min
+  shard 581 B verified n=3: mean_fp 1.50  certified 100.0%  multistable 18.6%
+shard  549:    1317 samples      2626 FPs  cert  99.6%  bif_crossed  52.7%   75.6s | 551/609  eta   2.2 min
+  shard 582 B verified n=3: mean_fp 2.13  certified 98.8%  multistable 44.0%
+shard  550:    1373 samples      2492 FPs  cert  99.3%  bif_crossed  54.0%   76.1s | 552/609  eta   2.2 min
+shard  546:    1262 samples      2566 FPs  cert  98.8%  bif_crossed  52.7%   88.2s | 553/609  eta   2.1 min
+  shard 583 B verified n=2: mean_fp 1.00  certified 100.0%  multistable 0.0%
+  shard 584 B verified n=3: mean_fp 1.33  certified 100.0%  multistable 15.7%
+shard  563:    1327 samples      2242 FPs  cert  99.5%  bif_crossed  46.4%   51.0s | 554/609  eta   2.1 min
+  shard 585 B verified n=3: mean_fp 1.31  certified 100.0%  multistable 14.9%
+shard  559:    1417 samples      2955 FPs  cert  99.2%  bif_crossed  44.3%   63.1s | 555/609  eta   2.1 min
+  shard 586 B verified n=4: mean_fp 2.04  certified 99.6%  multistable 41.3%
+shard  565:    1335 samples      2446 FPs  cert  99.2%  bif_crossed  40.9%   53.8s | 556/609  eta   2.0 min
+  shard 587 B verified n=3: mean_fp 1.14  certified 100.0%  multistable 7.1%
+shard  551:    1251 samples      2432 FPs  cert  97.8%  bif_crossed  43.2%   85.7s | 557/609  eta   2.0 min
+  shard 588 B verified n=3: mean_fp 1.64  certified 100.0%  multistable 23.2%
+shard  564:    1354 samples      2513 FPs  cert  98.9%  bif_crossed  42.2%   57.7s | 558/609  eta   2.0 min
+  shard 589 B verified n=3: mean_fp 1.55  certified 100.0%  multistable 24.4%
+shard  555:    1331 samples      2217 FPs  cert  99.1%  bif_crossed  43.4%   79.2s | 559/609  eta   1.9 min
+  shard 590 B verified n=3: mean_fp 1.09  certified 100.0%  multistable 3.6%
+shard  557:    1359 samples      2740 FPs  cert  99.3%  bif_crossed  49.1%   78.3s | 560/609  eta   1.9 min
+  shard 591 B verified n=3: mean_fp 1.50  certified 100.0%  multistable 23.2%
+shard  556:    1338 samples      2416 FPs  cert  99.7%  bif_crossed  41.1%   79.3s | 561/609  eta   1.8 min
+shard  568:    1498 samples      2483 FPs  cert  99.9%  bif_crossed  51.9%   56.1s | 562/609  eta   1.8 min
+  shard 593 B verified n=3: mean_fp 1.64  certified 100.0%  multistable 26.8%
+  shard 592 B verified n=3: mean_fp 1.97  certified 100.0%  multistable 42.4%
+shard  554:    1328 samples      2514 FPs  cert  99.2%  bif_crossed  50.9%   85.1s | 563/609  eta   1.8 min
+  shard 594 B verified n=3: mean_fp 1.50  certified 100.0%  multistable 25.0%
+shard  566:    1431 samples      2464 FPs  cert  99.2%  bif_crossed  46.2%   68.2s | 564/609  eta   1.7 min
+shard  561:    1391 samples      2465 FPs  cert  99.6%  bif_crossed  46.1%   80.9s | 565/609  eta   1.7 min
+  shard 595 B verified n=3: mean_fp 1.63  certified 100.0%  multistable 20.7%
+  shard 596 B verified n=3: mean_fp 1.20  certified 100.0%  multistable 9.5%
+shard  560:    1370 samples      2509 FPs  cert  99.1%  bif_crossed  40.4%   89.3s | 566/609  eta   1.6 min
+shard  577:    1401 samples      2389 FPs  cert  99.7%  bif_crossed  44.3%   46.3s | 567/609  eta   1.6 min
+  shard 598 B verified n=3: mean_fp 1.40  certified 100.0%  multistable 17.9%
+  shard 597 B verified n=3: mean_fp 1.83  certified 100.0%  multistable 28.6%
+shard  558:    1247 samples      2212 FPs  cert  99.1%  bif_crossed  41.3%   94.1s | 568/609  eta   1.6 min
+  shard 599 B verified n=3: mean_fp 2.18  certified 100.0%  multistable 41.1%
+shard  574:    1363 samples      2562 FPs  cert  99.3%  bif_crossed  45.3%   55.5s | 569/609  eta   1.5 min
+  shard 600 B verified n=3: mean_fp 1.63  certified 100.0%  multistable 30.0%
+shard  562:    1299 samples      2500 FPs  cert  98.5%  bif_crossed  45.7%   91.2s | 570/609  eta   1.5 min
+  shard 601 B verified n=3: mean_fp 1.48  certified 100.0%  multistable 20.2%
+shard  578:    1311 samples      2298 FPs  cert  99.6%  bif_crossed  41.4%   52.9s | 571/609  eta   1.5 min
+shard  571:    1327 samples      2469 FPs  cert  99.1%  bif_crossed  44.2%   66.1s | 572/609  eta   1.4 min
+  shard 603 B verified n=3: mean_fp 1.50  certified 100.0%  multistable 19.6%
+  shard 602 B verified n=4: mean_fp 1.81  certified 98.7%  multistable 30.3%
+shard  573:    1512 samples      2730 FPs  cert  99.3%  bif_crossed  56.9%   72.2s | 573/609  eta   1.4 min
+  shard 604 B verified n=3: mean_fp 1.09  certified 100.0%  multistable 4.5%
+shard  570:    1344 samples      2520 FPs  cert  99.3%  bif_crossed  42.1%   82.6s | 574/609  eta   1.3 min
+shard  567:    1262 samples      2150 FPs  cert  99.2%  bif_crossed  42.9%   86.8s | 575/609  eta   1.3 min
+  shard 605 B verified n=3: mean_fp 1.87  certified 100.0%  multistable 35.7%
+  shard 606 B verified n=3: mean_fp 2.31  certified 100.0%  multistable 51.2%
+shard  572:    1430 samples      2890 FPs  cert  98.5%  bif_crossed  48.0%   78.5s | 576/609  eta   1.3 min
+shard  569:    1258 samples      2566 FPs  cert  99.0%  bif_crossed  45.6%   92.1s | 577/609  eta   1.2 min
+  shard 608 B verified n=3: mean_fp 1.79  certified 100.0%  multistable 35.7%
+  shard 607 B verified n=3: mean_fp 2.18  certified 99.3%  multistable 35.0%
+shard  585:    1395 samples      2606 FPs  cert  98.9%  bif_crossed  37.4%   57.0s | 578/609  eta   1.2 min
+shard  576:    1382 samples      2441 FPs  cert  99.3%  bif_crossed  41.9%   80.3s | 579/609  eta   1.2 min
+shard  587:    1303 samples      2583 FPs  cert  99.0%  bif_crossed  54.9%   57.2s | 580/609  eta   1.1 min
+shard  579:    1379 samples      2554 FPs  cert  98.8%  bif_crossed  49.3%   80.4s | 581/609  eta   1.1 min
+shard  589:    1322 samples      2714 FPs  cert  98.9%  bif_crossed  43.9%   60.6s | 582/609  eta   1.0 min
+shard  584:    1445 samples      2800 FPs  cert  99.1%  bif_crossed  43.9%   73.3s | 583/609  eta   1.0 min
+shard  580:    1294 samples      2452 FPs  cert  99.2%  bif_crossed  55.8%   81.7s | 584/609  eta   1.0 min
+shard  581:    1369 samples      2640 FPs  cert  98.9%  bif_crossed  42.1%   82.9s | 585/609  eta   0.9 min
+shard  575:    1285 samples      2329 FPs  cert  99.5%  bif_crossed  47.1%   93.2s | 586/609  eta   0.9 min
+shard  598:    1317 samples      2476 FPs  cert  99.6%  bif_crossed  51.8%   47.1s | 587/609  eta   0.8 min
+shard  588:    1363 samples      2593 FPs  cert  99.3%  bif_crossed  48.6%   72.6s | 588/609  eta   0.8 min
+shard  593:    1400 samples      2597 FPs  cert  99.6%  bif_crossed  51.1%   65.9s | 589/609  eta   0.8 min
+shard  586:    1245 samples      2421 FPs  cert  99.4%  bif_crossed  48.4%   80.1s | 590/609  eta   0.7 min
+shard  595:    1408 samples      2428 FPs  cert  99.4%  bif_crossed  47.9%   60.7s | 591/609  eta   0.7 min
+shard  583:    1459 samples      2816 FPs  cert  98.5%  bif_crossed  54.1%   86.5s | 592/609  eta   0.6 min
+shard  582:    1282 samples      2503 FPs  cert  99.3%  bif_crossed  45.2%   92.2s | 593/609  eta   0.6 min
+shard  602:    1356 samples      2645 FPs  cert  98.6%  bif_crossed  50.3%   51.3s | 594/609  eta   0.6 min
+shard  592:    1337 samples      2702 FPs  cert  99.0%  bif_crossed  45.1%   72.4s | 595/609  eta   0.5 min
+shard  590:    1405 samples      2689 FPs  cert  98.7%  bif_crossed  54.9%   78.5s | 596/609  eta   0.5 min
+shard  600:    1586 samples      2812 FPs  cert  99.1%  bif_crossed  38.0%   59.4s | 597/609  eta   0.5 min
+shard  594:    1304 samples      2417 FPs  cert  99.3%  bif_crossed  45.6%   77.7s | 598/609  eta   0.4 min
+shard  599:    1324 samples      2565 FPs  cert  99.0%  bif_crossed  44.6%   63.6s | 599/609  eta   0.4 min
+shard  603:    1306 samples      2349 FPs  cert  99.0%  bif_crossed  37.7%   60.4s | 600/609  eta   0.3 min
+shard  605:    1440 samples      2626 FPs  cert  99.5%  bif_crossed  50.4%   54.8s | 601/609  eta   0.3 min
+shard  604:    1346 samples      2546 FPs  cert  99.2%  bif_crossed  42.3%   55.7s | 602/609  eta   0.3 min
+shard  591:    1225 samples      2545 FPs  cert  98.8%  bif_crossed  53.6%   85.4s | 603/609  eta   0.2 min
+shard  597:    1434 samples      2380 FPs  cert  99.2%  bif_crossed  34.6%   72.2s | 604/609  eta   0.2 min
+shard  596:    1277 samples      2411 FPs  cert  99.1%  bif_crossed  43.0%   79.4s | 605/609  eta   0.2 min
+shard  601:    1413 samples      2401 FPs  cert  99.4%  bif_crossed  30.9%   68.1s | 606/609  eta   0.1 min
+shard  606:    1255 samples      2651 FPs  cert  99.4%  bif_crossed  54.9%   61.3s | 607/609  eta   0.1 min
+shard  608:    1185 samples      2110 FPs  cert  99.0%  bif_crossed  40.1%   56.2s | 608/609  eta   0.0 min
+shard  607:    1403 samples      2855 FPs  cert  98.6%  bif_crossed  47.0%   60.9s | 609/609  eta   0.0 min
+Corpus B: 825,733 samples in 23.1 min
+Loading 609 shard(s) from corpusB/shards …
+==============================================================
+Corpus B summary  (825,733 samples)
+==============================================================
+  Brouwer-certified   : 99.2%   (target > 70%)
+  bif_crossed         : 45.7%   (target 25-50%)
+  Stratum 0 (broad)   : 40.3%
+  Stratum 1 (near-bif): 47.4%   (target ~35%)
+  Stratum 2 (opposite): 12.4%   (target ~25%)
+  Bif type saddle-node: 7.0%
+  Bif type Hopf       : 10.2%
+
+  per n:  samples | certified% | bif_crossed%
+    n= 3:  76,125 |      99.9% |        39.1%
+    n= 4: 217,769 |      99.7% |        44.0%
+    n= 5: 265,359 |      99.4% |        46.6%
+    n= 6:  84,130 |      99.0% |        46.9%
+    n= 7:  81,396 |      98.5% |        48.4%
+    n= 8:  67,472 |      98.0% |        48.3%
+    n= 9:   7,402 |      97.6% |        49.1%
+    n=10:  26,080 |      95.9% |        51.0%
+==============================================================
+  wrote corpusB/analysis/coverage_b.png
+  wrote corpusB/analysis/quality_b.png
+
+All outputs in corpusB/analysis
+Done. End time: Wed Oct  7 13:59:06 EDT 2026

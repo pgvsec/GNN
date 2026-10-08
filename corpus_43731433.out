@@ -1,0 +1,1664 @@
+building topologies
+  n= 2:     21 graphs
+  n= 3:   1934 graphs
+  n= 4:   5614 graphs
+  n= 5:  10000 graphs
+  n= 6:   7000 graphs
+  n= 7:   5000 graphs
+  n= 8:   4000 graphs
+  n= 9:   3000 graphs
+  n=10:   2400 graphs
+graphs: 38969
+per n:  graphs |  neg-only  pos-only  both |  sparse  medium  dense | train/val/test
+  n= 2:     21 |        4        6    11 |     11      10      0 | 15/3/3
+  n= 3:   1934 |       96      106  1732 |     46    1888      0 | 1354/290/290
+  n= 4:   5614 |      569      823  4222 |   1970    2468   1176 | 3930/842/842
+  n= 5:  10000 |     1125     2500  6375 |   4146    3621   2233 | 7000/1500/1500
+  n= 6:   7000 |      788     1750  4462 |   2908    2546   1546 | 4900/1050/1050
+  n= 7:   5000 |      516     1250  3234 |   2086    1796   1118 | 3500/750/750
+  n= 8:   4000 |      319     1000  2681 |   1722    1357    921 | 2800/600/600
+  n= 9:   3000 |      233      750  2017 |   1298    1017    685 | 2100/450/450
+  n=10:   2400 |      154      600  1646 |   1037     794    569 | 1680/360/360
+wrote corpusA/topologies.npz
+38969 graphs, 609 shards, 609 to generate (0 already present), device cpu
+  shard 17 verified on n=2: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 77.9%
+  shard 60 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 71.8%
+  shard 55 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 81.8%
+  shard 19 verified on n=3: mean_fp 1.20 max_fp 3 certified 100.0% multistable 10.0% seeds converged 66.0%
+  shard 18 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 80.8%
+  shard 38 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 47.5%
+  shard 22 verified on n=3: mean_fp 1.40 max_fp 3 certified 100.0% multistable 20.0% seeds converged 47.5%
+  shard 21 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 64.6%
+  shard 40 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 73.0%
+  shard 9 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 60.4%
+  shard 27 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 70.3%
+  shard 2 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 79.3%
+  shard 63 verified on n=3: mean_fp 1.37 max_fp 7 certified 100.0% multistable 11.7% seeds converged 52.2%
+  shard 26 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 65.7%
+  shard 49 verified on n=3: mean_fp 1.30 max_fp 3 certified 100.0% multistable 13.3% seeds converged 55.9%
+  shard 1 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 52.5%
+  shard 31 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 66.3%
+  shard 28 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 69.3%
+  shard 33 verified on n=3: mean_fp 1.20 max_fp 3 certified 100.0% multistable 10.0% seeds converged 52.2%
+  shard 5 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 1.1% seeds converged 71.0%
+  shard 14 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 59.9%
+  shard 24 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 66.1%
+  shard 8 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 59.7%
+  shard 43 verified on n=3: mean_fp 1.22 max_fp 3 certified 100.0% multistable 11.1% seeds converged 61.3%
+  shard 12 verified on n=3: mean_fp 1.13 max_fp 5 certified 100.0% multistable 5.6% seeds converged 61.4%
+  shard 58 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 63.5%
+  shard 7 verified on n=3: mean_fp 1.07 max_fp 5 certified 100.0% multistable 2.5% seeds converged 67.7%
+  shard 16 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 65.7%
+  shard 39 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 66.1%
+  shard 48 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 66.3%
+  shard 0 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 57.2%
+  shard 20 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.6% seeds converged 52.5%
+  shard 45 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 70.6%
+  shard 57 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.6% seeds converged 54.2%
+  shard 54 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 63.1%
+  shard 6 verified on n=3: mean_fp 1.16 max_fp 3 certified 100.0% multistable 7.8% seeds converged 59.0%
+  shard 13 verified on n=3: mean_fp 1.08 max_fp 3 certified 100.0% multistable 4.2% seeds converged 60.5%
+  shard 52 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 68.4%
+  shard 41 verified on n=3: mean_fp 1.20 max_fp 5 certified 100.0% multistable 7.8% seeds converged 50.8%
+  shard 36 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 0.8% seeds converged 65.1%
+  shard 4 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.3% seeds converged 62.3%
+  shard 47 verified on n=3: mean_fp 1.08 max_fp 3 certified 100.0% multistable 4.2% seeds converged 64.6%
+  shard 32 verified on n=3: mean_fp 1.08 max_fp 3 certified 100.0% multistable 4.2% seeds converged 55.6%
+  shard 53 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 61.7%
+  shard 30 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.5% seeds converged 64.8%
+  shard 44 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 0.8% seeds converged 68.9%
+  shard 50 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 0.8% seeds converged 63.3%
+  shard 10 verified on n=3: mean_fp 1.07 max_fp 5 certified 100.0% multistable 2.7% seeds converged 69.6%
+  shard 23 verified on n=3: mean_fp 1.08 max_fp 3 certified 100.0% multistable 4.0% seeds converged 58.6%
+  shard 56 verified on n=3: mean_fp 1.12 max_fp 5 certified 100.0% multistable 5.3% seeds converged 67.3%
+  shard 34 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 4.2% seeds converged 63.4%
+  shard 59 verified on n=3: mean_fp 1.17 max_fp 5 certified 100.0% multistable 8.0% seeds converged 58.1%
+  shard 3 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.3% seeds converged 66.9%
+  shard 25 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 60.6%
+  shard 61 verified on n=3: mean_fp 1.11 max_fp 5 certified 100.0% multistable 4.4% seeds converged 69.2%
+  shard 11 verified on n=3: mean_fp 1.20 max_fp 5 certified 100.0% multistable 9.2% seeds converged 54.6%
+  shard 46 verified on n=3: mean_fp 1.12 max_fp 5 certified 100.0% multistable 5.6% seeds converged 60.2%
+  shard 37 verified on n=3: mean_fp 1.08 max_fp 3 certified 100.0% multistable 3.3% seeds converged 59.3%
+  shard 42 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.0% seeds converged 56.2%
+  shard 15 verified on n=3: mean_fp 1.19 max_fp 9 certified 100.0% multistable 7.3% seeds converged 63.2%
+  shard 62 verified on n=3: mean_fp 1.12 max_fp 3 certified 100.0% multistable 6.2% seeds converged 57.7%
+  shard 51 verified on n=4: mean_fp 1.08 max_fp 3 certified 100.0% multistable 3.8% seeds converged 55.3%
+  shard 29 verified on n=4: mean_fp 1.10 max_fp 7 certified 100.0% multistable 4.2% seeds converged 64.6%
+  shard 35 verified on n=4: mean_fp 1.10 max_fp 7 certified 100.0% multistable 4.4% seeds converged 59.2%
+shard   40:    2091 samples,     3939 fixed points, certified  99.9%,   94.4s | 1/609 done, eta  989.6 min
+  shard 64 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 58.8%
+shard    7:    2198 samples,     4459 fixed points, certified  99.5%,  101.8s | 2/609 done, eta  531.5 min
+  shard 65 verified on n=3: mean_fp 1.18 max_fp 9 certified 100.0% multistable 5.6% seeds converged 54.2%
+shard    5:    2100 samples,     4020 fixed points, certified  99.2%,  103.3s | 3/609 done, eta  358.7 min
+  shard 66 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.3% seeds converged 61.2%
+shard    4:    2293 samples,     4769 fixed points, certified  99.4%,  105.4s | 4/609 done, eta  274.0 min
+  shard 67 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 63.9%
+shard   14:    2309 samples,     4341 fixed points, certified  99.3%,  112.2s | 5/609 done, eta  232.4 min
+  shard 68 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.3% seeds converged 63.9%
+shard   60:    1964 samples,     4081 fixed points, certified  98.5%,  114.5s | 6/609 done, eta  197.3 min
+  shard 69 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 50.5%
+shard   61:    2538 samples,     5143 fixed points, certified  99.4%,  123.9s | 7/609 done, eta  182.4 min
+shard   13:    2143 samples,     3936 fixed points, certified  99.5%,  124.1s | 8/609 done, eta  159.4 min
+  shard 70 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.3% seeds converged 62.6%
+  shard 71 verified on n=3: mean_fp 1.24 max_fp 7 certified 100.0% multistable 10.5% seeds converged 58.4%
+shard   55:    2029 samples,     3991 fixed points, certified  99.8%,  130.3s | 9/609 done, eta  148.4 min
+  shard 72 verified on n=3: mean_fp 1.15 max_fp 5 certified 100.0% multistable 6.7% seeds converged 59.1%
+shard   58:    2069 samples,     3980 fixed points, certified  99.5%,  133.1s | 10/609 done, eta  136.1 min
+  shard 73 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 62.9%
+shard    9:    2206 samples,     4079 fixed points, certified  99.1%,  134.8s | 11/609 done, eta  125.1 min
+  shard 74 verified on n=3: mean_fp 1.27 max_fp 3 certified 100.0% multistable 13.3% seeds converged 45.2%
+shard   10:    2657 samples,     4805 fixed points, certified  99.8%,  135.1s | 12/609 done, eta  114.7 min
+  shard 75 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.3% seeds converged 63.2%
+shard   24:    2543 samples,     5040 fixed points, certified  99.7%,  135.9s | 13/609 done, eta  106.4 min
+  shard 76 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 60.8%
+shard    0:    2028 samples,     4055 fixed points, certified  99.0%,  142.9s | 14/609 done, eta  103.5 min
+  shard 77 verified on n=2: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.6% seeds converged 68.9%
+shard   63:    2312 samples,     4516 fixed points, certified  99.2%,  143.6s | 15/609 done, eta   96.9 min
+  shard 78 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.3% seeds converged 51.2%
+shard   51:    2057 samples,     4363 fixed points, certified  99.3%,  153.7s | 16/609 done, eta   97.0 min
+  shard 79 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 50.3%
+shard    8:    2298 samples,     4361 fixed points, certified  99.5%,  158.5s | 17/609 done, eta   93.9 min
+  shard 80 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 62.6%
+shard   25:    2395 samples,     4379 fixed points, certified  99.5%,  160.4s | 18/609 done, eta   89.6 min
+  shard 81 verified on n=2: mean_fp 1.28 max_fp 5 certified 100.0% multistable 11.1% seeds converged 61.8%
+shard   49:    1965 samples,     3717 fixed points, certified  99.4%,  168.3s | 19/609 done, eta   88.8 min
+shard   22:    1676 samples,     3598 fixed points, certified  98.7%,  170.1s | 20/609 done, eta   85.1 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 3:        13        20        36
+  n= 4:        47       106       148
+  n= 5:        56       131       173
+  n= 6:        64       143       167
+  n= 7:        61       163       152
+  n= 8:        78       217       170
+  n= 9:        69       176       135
+  n=10:        48       155       118
+  total:      2645 core-seconds
+  shard 82 verified on n=4: mean_fp 1.24 max_fp 5 certified 98.6% multistable 11.1% seeds converged 51.6%
+  shard 83 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 51.2%
+shard   65:    2101 samples,     4002 fixed points, certified  99.8%,   85.9s | 21/609 done, eta   89.1 min
+  shard 84 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 73.8%
+shard   64:    1986 samples,     3692 fixed points, certified  99.7%,   96.7s | 22/609 done, eta   86.5 min
+shard   33:    2016 samples,     3717 fixed points, certified  99.7%,  191.3s | 23/609 done, eta   82.6 min
+  shard 85 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 77.1%
+  shard 86 verified on n=3: mean_fp 1.22 max_fp 3 certified 100.0% multistable 11.1% seeds converged 56.3%
+shard   45:    2200 samples,     4043 fixed points, certified  99.6%,  197.4s | 24/609 done, eta   81.5 min
+  shard 87 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 3.9% seeds converged 57.2%
+shard    1:    2312 samples,     4362 fixed points, certified  99.7%,  200.5s | 25/609 done, eta   79.3 min
+shard   35:    2301 samples,     4264 fixed points, certified  99.7%,  201.0s | 26/609 done, eta   76.3 min
+  shard 88 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.6% seeds converged 58.5%
+  shard 89 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 2.2% seeds converged 68.4%
+shard   50:    2405 samples,     4788 fixed points, certified  99.4%,  206.5s | 27/609 done, eta   75.4 min
+shard   59:    2587 samples,     4893 fixed points, certified  99.5%,  206.6s | 28/609 done, eta   72.6 min
+  shard 90 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 69.1%
+shard   66:    2526 samples,     4829 fixed points, certified  99.5%,  104.1s | 29/609 done, eta   70.2 min
+  shard 92 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 62.3%
+shard   29:    2062 samples,     3738 fixed points, certified  99.5%,  209.9s | 30/609 done, eta   68.6 min
+  shard 93 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 49.6%
+  shard 91 verified on n=4: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 58.5%
+shard   69:    2168 samples,     4221 fixed points, certified  99.6%,   98.1s | 31/609 done, eta   67.1 min
+  shard 94 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 72.8%
+shard   42:    2314 samples,     4611 fixed points, certified  99.7%,  214.1s | 32/609 done, eta   65.3 min
+  shard 95 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 6.7% seeds converged 64.7%
+shard   62:    2436 samples,     4452 fixed points, certified  99.8%,  217.9s | 33/609 done, eta   64.3 min
+shard   67:    2105 samples,     3856 fixed points, certified  99.4%,  112.5s | 34/609 done, eta   62.4 min
+  shard 97 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 67.4%
+  shard 96 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 65.5%
+shard   17:    2526 samples,     5025 fixed points, certified  99.4%,  218.8s | 35/609 done, eta   60.7 min
+  shard 98 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 74.1%
+shard   37:    2371 samples,     4202 fixed points, certified  99.9%,  220.5s | 36/609 done, eta   59.4 min
+  shard 99 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 57.4%
+shard   47:    2305 samples,     4190 fixed points, certified  99.3%,  222.4s | 37/609 done, eta   58.1 min
+shard   48:    2086 samples,     3778 fixed points, certified  99.2%,  223.2s | 38/609 done, eta   56.7 min
+shard   21:    2505 samples,     4714 fixed points, certified  99.6%,  223.4s | 39/609 done, eta   55.2 min
+  shard 100 verified on n=3: mean_fp 1.22 max_fp 5 certified 100.0% multistable 10.0% seeds converged 53.9%
+  shard 102 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 62.4%
+  shard 101 verified on n=3: mean_fp 1.24 max_fp 5 certified 100.0% multistable 11.1% seeds converged 52.2%
+shard   26:    2045 samples,     3531 fixed points, certified  99.8%,  225.2s | 40/609 done, eta   54.2 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         0         0         0
+  n= 3:        26        43        78
+  n= 4:       125       283       375
+  n= 5:       161       348       443
+  n= 6:       176       353       400
+  n= 7:       162       391       370
+  n= 8:       192       513       385
+  n= 9:       150       371       240
+  n=10:       116       374       244
+  total:      6321 core-seconds
+  shard 103 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 58.5%
+shard   34:    2138 samples,     4098 fixed points, certified  99.7%,  227.1s | 41/609 done, eta   53.2 min
+  shard 104 verified on n=3: mean_fp 1.23 max_fp 5 certified 100.0% multistable 10.7% seeds converged 62.1%
+shard    2:    2219 samples,     4031 fixed points, certified  99.6%,  228.9s | 42/609 done, eta   52.2 min
+shard   56:    2419 samples,     4371 fixed points, certified  99.5%,  228.9s | 43/609 done, eta   50.9 min
+shard   31:    2270 samples,     4666 fixed points, certified  99.7%,  229.9s | 44/609 done, eta   49.9 min
+  shard 107 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 70.4%
+  shard 106 verified on n=3: mean_fp 1.16 max_fp 3 certified 100.0% multistable 7.8% seeds converged 57.9%
+  shard 105 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 64.7%
+shard    3:    2318 samples,     4094 fixed points, certified  99.2%,  232.5s | 45/609 done, eta   49.2 min
+shard   54:    2133 samples,     4156 fixed points, certified  99.2%,  232.6s | 46/609 done, eta   48.1 min
+  shard 109 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 69.4%
+shard   71:    2425 samples,     5000 fixed points, certified  99.1%,  109.0s | 47/609 done, eta   47.1 min
+  shard 110 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.6% seeds converged 61.2%
+  shard 108 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 59.7%
+shard    6:    2341 samples,     4622 fixed points, certified  99.5%,  236.3s | 48/609 done, eta   46.7 min
+shard   68:    2140 samples,     3960 fixed points, certified  99.5%,  126.1s | 49/609 done, eta   46.0 min
+  shard 112 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 73.0%
+  shard 111 verified on n=4: mean_fp 1.06 max_fp 3 certified 100.0% multistable 2.9% seeds converged 60.3%
+shard   46:    2538 samples,     4789 fixed points, certified  99.6%,  242.8s | 50/609 done, eta   45.9 min
+  shard 113 verified on n=3: mean_fp 1.13 max_fp 5 certified 100.0% multistable 5.8% seeds converged 55.8%
+shard   20:    2279 samples,     4496 fixed points, certified  99.6%,  244.4s | 51/609 done, eta   45.2 min
+  shard 114 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 54.5%
+shard   44:    2514 samples,     4551 fixed points, certified  99.6%,  244.9s | 52/609 done, eta   44.3 min
+  shard 115 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 67.1%
+shard   11:    2203 samples,     4141 fixed points, certified  99.2%,  248.2s | 53/609 done, eta   44.0 min
+  shard 116 verified on n=3: mean_fp 1.24 max_fp 7 certified 100.0% multistable 10.0% seeds converged 53.4%
+shard   12:    2402 samples,     4428 fixed points, certified  99.5%,  251.9s | 54/609 done, eta   43.7 min
+  shard 117 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 73.9%
+shard   15:    2246 samples,     4164 fixed points, certified  99.6%,  254.1s | 55/609 done, eta   43.2 min
+  shard 118 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 0.8% seeds converged 69.2%
+shard   53:    2272 samples,     4452 fixed points, certified  98.9%,  256.6s | 56/609 done, eta   42.8 min
+shard   52:    2500 samples,     4767 fixed points, certified  99.4%,  257.6s | 57/609 done, eta   42.1 min
+  shard 120 verified on n=2: mean_fp 1.22 max_fp 3 certified 100.0% multistable 11.1% seeds converged 66.2%
+shard   32:    2494 samples,     4919 fixed points, certified  99.7%,  258.0s | 58/609 done, eta   41.4 min
+  shard 119 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 4.8% seeds converged 57.2%
+  shard 121 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 60.6%
+shard   16:    2231 samples,     3887 fixed points, certified  99.5%,  260.0s | 59/609 done, eta   40.9 min
+shard   70:    2320 samples,     4444 fixed points, certified  99.4%,  136.9s | 60/609 done, eta   40.3 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         0         0         0
+  n= 3:        45        73       130
+  n= 4:       219       490       640
+  n= 5:       278       606       744
+  n= 6:       291       576       683
+  n= 7:       267       655       616
+  n= 8:       317       826       617
+  n= 9:       259       676       415
+  n=10:       214       684       506
+  total:     10827 core-seconds
+  shard 123 verified on n=2: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 82.2%
+shard   28:    1912 samples,     3567 fixed points, certified  99.5%,  261.0s | 61/609 done, eta   39.6 min
+  shard 122 verified on n=3: mean_fp 1.23 max_fp 5 certified 100.0% multistable 10.0% seeds converged 59.1%
+  shard 124 verified on n=3: mean_fp 1.19 max_fp 3 certified 100.0% multistable 9.3% seeds converged 58.4%
+shard   77:    2387 samples,     4680 fixed points, certified  99.2%,  121.4s | 62/609 done, eta   39.3 min
+  shard 125 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 67.9%
+shard   73:    2304 samples,     4539 fixed points, certified  99.2%,  132.4s | 63/609 done, eta   38.8 min
+  shard 126 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 73.3%
+shard   19:    1941 samples,     3539 fixed points, certified  99.6%,  267.7s | 64/609 done, eta   38.5 min
+  shard 127 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 66.8%
+shard   38:    1851 samples,     4312 fixed points, certified  99.1%,  272.6s | 65/609 done, eta   38.5 min
+shard   74:    2031 samples,     4318 fixed points, certified  99.5%,  137.9s | 66/609 done, eta   37.8 min
+  shard 129 verified on n=3: mean_fp 1.15 max_fp 5 certified 100.0% multistable 6.7% seeds converged 54.4%
+shard   72:    2165 samples,     4497 fixed points, certified  99.5%,  144.4s | 67/609 done, eta   37.5 min
+  shard 130 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 69.6%
+shard   41:    2058 samples,     4481 fixed points, certified  98.9%,  276.9s | 68/609 done, eta   37.2 min
+  shard 128 verified on n=4: mean_fp 1.12 max_fp 3 certified 100.0% multistable 6.2% seeds converged 54.1%
+  shard 131 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 59.1%
+shard   43:    2193 samples,     4716 fixed points, certified  99.0%,  284.9s | 69/609 done, eta   37.6 min
+shard   78:    2271 samples,     4458 fixed points, certified  99.6%,  141.6s | 70/609 done, eta   37.0 min
+  shard 133 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 70.1%
+shard   75:    2411 samples,     4951 fixed points, certified  99.7%,  150.5s | 71/609 done, eta   36.5 min
+  shard 132 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 69.7%
+  shard 134 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 58.2%
+shard   27:    1982 samples,     3511 fixed points, certified  99.6%,  286.6s | 72/609 done, eta   36.0 min
+  shard 135 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 55.8%
+shard   39:    2035 samples,     3695 fixed points, certified  99.5%,  288.8s | 73/609 done, eta   35.7 min
+shard   84:    2213 samples,     4324 fixed points, certified  99.4%,  101.4s | 74/609 done, eta   35.2 min
+  shard 137 verified on n=3: mean_fp 1.14 max_fp 3 certified 100.0% multistable 7.2% seeds converged 61.1%
+  shard 136 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 61.5%
+shard   30:    2123 samples,     4017 fixed points, certified  99.2%,  293.3s | 75/609 done, eta   35.2 min
+shard   23:    2231 samples,     4136 fixed points, certified  99.6%,  294.6s | 76/609 done, eta   34.8 min
+  shard 139 verified on n=3: mean_fp 1.33 max_fp 3 certified 100.0% multistable 16.7% seeds converged 45.7%
+  shard 138 verified on n=3: mean_fp 1.06 max_fp 3 certified 100.0% multistable 2.9% seeds converged 65.3%
+shard   36:    1938 samples,     3602 fixed points, certified  99.3%,  295.7s | 77/609 done, eta   34.4 min
+shard   79:    2246 samples,     4275 fixed points, certified  99.7%,  143.0s | 78/609 done, eta   34.0 min
+shard   76:    1960 samples,     3838 fixed points, certified  99.5%,  161.4s | 79/609 done, eta   33.6 min
+  shard 142 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.5% seeds converged 63.8%
+  shard 141 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.4% seeds converged 68.5%
+  shard 140 verified on n=4: mean_fp 1.15 max_fp 3 certified 100.0% multistable 7.3% seeds converged 56.7%
+shard   80:    2331 samples,     4466 fixed points, certified  99.4%,  145.4s | 80/609 done, eta   33.9 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         0         1         1
+  n= 3:        59        96       170
+  n= 4:       277       633       820
+  n= 5:       365       808       990
+  n= 6:       398       788       929
+  n= 7:       374       919       874
+  n= 8:       447      1167       896
+  n= 9:       362       938       606
+  n=10:       325      1034       748
+  total:     15028 core-seconds
+  shard 143 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.7% seeds converged 63.1%
+shard   85:    1888 samples,     3859 fixed points, certified  99.3%,  116.4s | 81/609 done, eta   33.8 min
+  shard 144 verified on n=3: mean_fp 1.20 max_fp 3 certified 100.0% multistable 10.0% seeds converged 54.6%
+shard   81:    2502 samples,     4754 fixed points, certified  99.4%,  151.3s | 82/609 done, eta   33.7 min
+  shard 145 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 65.8%
+shard   94:    2222 samples,     3914 fixed points, certified  99.3%,  102.6s | 83/609 done, eta   33.6 min
+  shard 146 verified on n=3: mean_fp 1.12 max_fp 3 certified 100.0% multistable 5.8% seeds converged 63.7%
+shard   92:    2379 samples,     4728 fixed points, certified  99.4%,  112.0s | 84/609 done, eta   33.6 min
+  shard 147 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 64.9%
+shard   82:    1740 samples,     3742 fixed points, certified  98.8%,  155.5s | 85/609 done, eta   33.6 min
+  shard 148 verified on n=3: mean_fp 1.38 max_fp 3 certified 100.0% multistable 18.9% seeds converged 57.5%
+shard   97:    2198 samples,     4130 fixed points, certified  99.4%,  107.4s | 86/609 done, eta   33.3 min
+  shard 149 verified on n=3: mean_fp 1.23 max_fp 5 certified 100.0% multistable 10.0% seeds converged 57.0%
+shard   83:    1643 samples,     3132 fixed points, certified  99.5%,  159.0s | 87/609 done, eta   33.2 min
+  shard 150 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.5% seeds converged 57.5%
+shard   95:    1903 samples,     3431 fixed points, certified  99.7%,  140.7s | 88/609 done, eta   35.3 min
+  shard 151 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.0% seeds converged 55.8%
+shard  110:    2204 samples,     4194 fixed points, certified  99.5%,  132.9s | 89/609 done, eta   36.0 min
+  shard 152 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 50.0%
+shard   57:    2190 samples,     3939 fixed points, certified  99.5%,  373.4s | 90/609 done, eta   36.2 min
+  shard 153 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 61.0%
+shard  137:    2627 samples,     4900 fixed points, certified  99.6%,   98.2s | 91/609 done, eta   37.1 min
+  shard 154 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 65.3%
+shard  126:    2183 samples,     4146 fixed points, certified  99.4%,  131.1s | 92/609 done, eta   37.4 min
+  shard 155 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 69.0%
+shard   88:    2099 samples,     4116 fixed points, certified  99.7%,  196.9s | 93/609 done, eta   37.0 min
+  shard 156 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 1.1% seeds converged 65.3%
+shard  125:    2261 samples,     4652 fixed points, certified  98.9%,  136.5s | 94/609 done, eta   36.9 min
+  shard 157 verified on n=3: mean_fp 1.18 max_fp 5 certified 100.0% multistable 8.3% seeds converged 59.1%
+shard  146:    2395 samples,     4350 fixed points, certified  99.6%,   88.1s | 95/609 done, eta   36.7 min
+  shard 158 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 64.3%
+shard  123:    1873 samples,     3602 fixed points, certified  99.1%,  144.3s | 96/609 done, eta   36.4 min
+  shard 159 verified on n=3: mean_fp 1.08 max_fp 3 certified 100.0% multistable 4.2% seeds converged 56.6%
+shard  130:    1876 samples,     3893 fixed points, certified  98.9%,  134.0s | 97/609 done, eta   36.2 min
+  shard 160 verified on n=3: mean_fp 1.16 max_fp 5 certified 100.0% multistable 7.6% seeds converged 62.6%
+shard   86:    2326 samples,     4594 fixed points, certified  99.5%,  220.3s | 98/609 done, eta   36.1 min
+shard  147:    2200 samples,     4120 fixed points, certified  99.5%,   92.6s | 99/609 done, eta   35.7 min
+  shard 161 verified on n=3: mean_fp 1.11 max_fp 5 certified 100.0% multistable 4.4% seeds converged 56.9%
+  shard 162 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 53.0%
+shard  129:    2514 samples,     5306 fixed points, certified  99.4%,  141.3s | 100/609 done, eta   35.4 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         1         1         2
+  n= 3:        68       115       207
+  n= 4:       328       743       981
+  n= 5:       432       958      1183
+  n= 6:       480       961      1109
+  n= 7:       441      1075      1026
+  n= 8:       525      1376      1184
+  n= 9:       432      1126       729
+  n=10:       377      1226       877
+  total:     17962 core-seconds
+shard  133:    2425 samples,     4805 fixed points, certified  99.6%,  129.2s | 101/609 done, eta   35.0 min
+  shard 163 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 70.0%
+shard  142:    2370 samples,     4105 fixed points, certified  99.9%,  118.2s | 102/609 done, eta   34.7 min
+  shard 165 verified on n=3: mean_fp 1.18 max_fp 7 certified 100.0% multistable 6.7% seeds converged 56.5%
+  shard 164 verified on n=4: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.6% seeds converged 56.1%
+shard  144:    2184 samples,     4719 fixed points, certified  99.0%,  111.2s | 103/609 done, eta   34.6 min
+  shard 166 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 74.1%
+shard   87:    2325 samples,     4516 fixed points, certified  99.2%,  222.2s | 104/609 done, eta   34.2 min
+  shard 167 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 72.5%
+shard  134:    2205 samples,     4048 fixed points, certified  99.6%,  136.8s | 105/609 done, eta   34.0 min
+  shard 168 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 57.7%
+shard  101:    1991 samples,     4086 fixed points, certified  99.4%,  201.4s | 106/609 done, eta   33.8 min
+  shard 169 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 60.0%
+shard   93:    2067 samples,     4314 fixed points, certified  99.5%,  221.5s | 107/609 done, eta   34.0 min
+  shard 170 verified on n=3: mean_fp 1.08 max_fp 3 certified 100.0% multistable 4.0% seeds converged 55.9%
+shard  149:    2176 samples,     4464 fixed points, certified  99.4%,  107.9s | 108/609 done, eta   33.7 min
+shard  112:    2259 samples,     4713 fixed points, certified  98.9%,  195.0s | 109/609 done, eta   33.4 min
+shard  102:    2169 samples,     4059 fixed points, certified  99.6%,  210.0s | 110/609 done, eta   33.0 min
+  shard 171 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 1.1% seeds converged 67.0%
+  shard 173 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 1.1% seeds converged 72.0%
+  shard 172 verified on n=3: mean_fp 1.11 max_fp 5 certified 100.0% multistable 5.0% seeds converged 62.7%
+shard  106:    2821 samples,     5380 fixed points, certified  99.5%,  209.4s | 111/609 done, eta   33.0 min
+  shard 174 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 61.9%
+shard   89:    2275 samples,     4298 fixed points, certified  98.8%,  241.5s | 112/609 done, eta   33.0 min
+shard  145:    2652 samples,     4813 fixed points, certified  99.6%,  131.5s | 113/609 done, eta   32.7 min
+  shard 175 verified on n=3: mean_fp 1.24 max_fp 7 certified 100.0% multistable 10.6% seeds converged 60.3%
+  shard 176 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 64.0%
+shard  148:    2388 samples,     4392 fixed points, certified  99.6%,  127.4s | 114/609 done, eta   32.9 min
+  shard 177 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 64.2%
+shard   91:    1958 samples,     3706 fixed points, certified  99.4%,  247.2s | 115/609 done, eta   32.7 min
+shard   18:    1766 samples,     3108 fixed points, certified  98.9%,  453.9s | 116/609 done, eta   32.4 min
+  shard 178 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 63.2%
+  shard 179 verified on n=3: mean_fp 1.16 max_fp 5 certified 100.0% multistable 7.3% seeds converged 50.7%
+shard  119:    2417 samples,     4877 fixed points, certified  99.2%,  200.3s | 117/609 done, eta   32.3 min
+shard  141:    2419 samples,     4661 fixed points, certified  99.4%,  160.4s | 118/609 done, eta   31.9 min
+  shard 181 verified on n=3: mean_fp 1.20 max_fp 3 certified 100.0% multistable 10.0% seeds converged 59.4%
+  shard 180 verified on n=3: mean_fp 1.08 max_fp 3 certified 100.0% multistable 4.0% seeds converged 61.7%
+shard  108:    2156 samples,     4107 fixed points, certified  99.6%,  228.9s | 119/609 done, eta   31.9 min
+  shard 182 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 61.0%
+shard   96:    2064 samples,     3941 fixed points, certified  99.3%,  247.5s | 120/609 done, eta   31.8 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         1         1         2
+  n= 3:        85       147       435
+  n= 4:       393       886      1180
+  n= 5:       518      1153      1429
+  n= 6:       592      1201      1390
+  n= 7:       534      1295      1244
+  n= 8:       638      1680      1434
+  n= 9:       519      1320       855
+  n=10:       448      1448      1037
+  total:     21863 core-seconds
+  shard 183 verified on n=3: mean_fp 1.17 max_fp 5 certified 100.0% multistable 6.7% seeds converged 63.6%
+shard  151:    2285 samples,     4592 fixed points, certified  99.5%,  111.2s | 121/609 done, eta   31.5 min
+  shard 184 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 67.1%
+shard  104:    2189 samples,     4413 fixed points, certified  99.3%,  239.7s | 122/609 done, eta   31.3 min
+  shard 185 verified on n=2: mean_fp 1.06 max_fp 3 certified 100.0% multistable 2.8% seeds converged 65.8%
+shard  111:    2031 samples,     3701 fixed points, certified  99.3%,  232.3s | 123/609 done, eta   31.1 min
+  shard 186 verified on n=3: mean_fp 1.12 max_fp 3 certified 100.0% multistable 5.8% seeds converged 61.5%
+shard  113:    2527 samples,     4841 fixed points, certified  99.2%,  230.4s | 124/609 done, eta   31.1 min
+  shard 187 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 66.4%
+shard  103:    2000 samples,     4212 fixed points, certified  99.0%,  249.4s | 125/609 done, eta   30.8 min
+shard  107:    2256 samples,     4084 fixed points, certified  99.6%,  245.1s | 126/609 done, eta   30.6 min
+shard  114:    2005 samples,     3692 fixed points, certified  99.9%,  231.4s | 127/609 done, eta   30.3 min
+shard  150:    2294 samples,     4947 fixed points, certified  99.3%,  146.8s | 128/609 done, eta   30.0 min
+  shard 189 verified on n=3: mean_fp 1.21 max_fp 5 certified 100.0% multistable 10.0% seeds converged 58.3%
+shard  105:    2757 samples,     5908 fixed points, certified  99.1%,  247.6s | 129/609 done, eta   29.8 min
+  shard 191 verified on n=3: mean_fp 1.20 max_fp 3 certified 100.0% multistable 10.0% seeds converged 55.4%
+  shard 192 verified on n=3: mean_fp 1.20 max_fp 3 certified 100.0% multistable 10.0% seeds converged 60.5%
+  shard 190 verified on n=3: mean_fp 1.20 max_fp 11 certified 100.0% multistable 6.0% seeds converged 58.5%
+  shard 188 verified on n=4: mean_fp 1.08 max_fp 3 certified 100.0% multistable 4.2% seeds converged 59.2%
+shard  143:    2421 samples,     4791 fixed points, certified  99.0%,  174.4s | 130/609 done, eta   29.6 min
+  shard 193 verified on n=3: mean_fp 1.22 max_fp 3 certified 100.0% multistable 11.1% seeds converged 56.8%
+shard   90:    2080 samples,     3873 fixed points, certified  99.1%,  274.4s | 131/609 done, eta   29.4 min
+  shard 194 verified on n=3: mean_fp 1.15 max_fp 5 certified 100.0% multistable 6.7% seeds converged 56.5%
+shard   99:    2234 samples,     4413 fixed points, certified  99.2%,  261.4s | 132/609 done, eta   29.2 min
+  shard 195 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 58.3%
+shard  154:    2147 samples,     4449 fixed points, certified  99.5%,   95.3s | 133/609 done, eta   29.0 min
+shard  117:    2055 samples,     4032 fixed points, certified  99.4%,  230.8s | 134/609 done, eta   28.7 min
+  shard 196 verified on n=2: mean_fp 1.28 max_fp 5 certified 100.0% multistable 11.1% seeds converged 53.8%
+shard   98:    1760 samples,     3398 fixed points, certified  99.3%,  267.6s | 135/609 done, eta   28.7 min
+  shard 198 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 63.2%
+  shard 197 verified on n=4: mean_fp 1.13 max_fp 5 certified 100.0% multistable 6.2% seeds converged 50.8%
+shard  152:    2448 samples,     4419 fixed points, certified  99.7%,  123.1s | 136/609 done, eta   28.5 min
+  shard 199 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.3% seeds converged 53.7%
+shard  128:    1991 samples,     3723 fixed points, certified  99.8%,  217.7s | 137/609 done, eta   28.3 min
+  shard 200 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.3% seeds converged 54.7%
+shard  158:    2214 samples,     3923 fixed points, certified  99.6%,   97.2s | 138/609 done, eta   28.7 min
+  shard 201 verified on n=3: mean_fp 1.16 max_fp 5 certified 100.0% multistable 6.7% seeds converged 62.3%
+shard  116:    2225 samples,     4211 fixed points, certified  99.2%,  257.3s | 139/609 done, eta   28.7 min
+shard  122:    2126 samples,     3652 fixed points, certified  99.6%,  246.1s | 140/609 done, eta   28.4 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         1         1         2
+  n= 3:        99       175       482
+  n= 4:       467      1061      1408
+  n= 5:       620      1376      1704
+  n= 6:       713      1442      1665
+  n= 7:       635      1549      1490
+  n= 8:       754      1973      1687
+  n= 9:       641      1610      1039
+  n=10:       520      1716      1211
+  total:     26042 core-seconds
+  shard 202 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.5% seeds converged 58.4%
+shard  121:    2099 samples,     3772 fixed points, certified  99.6%,  248.7s | 141/609 done, eta   28.2 min
+  shard 203 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 58.5%
+  shard 204 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 62.9%
+shard  115:    2301 samples,     4349 fixed points, certified  99.3%,  262.9s | 142/609 done, eta   28.0 min
+  shard 205 verified on n=3: mean_fp 1.19 max_fp 5 certified 100.0% multistable 8.7% seeds converged 62.0%
+shard  162:    2156 samples,     4159 fixed points, certified  99.5%,   97.4s | 143/609 done, eta   27.8 min
+  shard 206 verified on n=3: mean_fp 1.12 max_fp 3 certified 100.0% multistable 5.8% seeds converged 65.5%
+shard  155:    2341 samples,     4474 fixed points, certified  99.2%,  114.4s | 144/609 done, eta   27.7 min
+  shard 207 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 57.6%
+shard  157:    2436 samples,     4862 fixed points, certified  99.3%,  113.2s | 145/609 done, eta   27.6 min
+  shard 208 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 58.3%
+shard  127:    1983 samples,     3624 fixed points, certified  99.3%,  252.7s | 146/609 done, eta   27.7 min
+  shard 209 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 65.0%
+shard  160:    2366 samples,     4231 fixed points, certified  99.5%,  114.5s | 147/609 done, eta   27.6 min
+shard  100:    2196 samples,     4024 fixed points, certified  99.5%,  301.3s | 148/609 done, eta   27.4 min
+  shard 210 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 64.8%
+  shard 211 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 62.9%
+shard  166:    2048 samples,     3767 fixed points, certified  99.5%,  105.6s | 149/609 done, eta   27.1 min
+  shard 212 verified on n=3: mean_fp 1.19 max_fp 3 certified 100.0% multistable 9.3% seeds converged 63.3%
+shard  118:    2184 samples,     4037 fixed points, certified  99.0%,  272.0s | 150/609 done, eta   27.0 min
+  shard 213 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 55.7%
+shard  135:    2258 samples,     4239 fixed points, certified  99.6%,  241.2s | 151/609 done, eta   26.8 min
+shard  120:    2057 samples,     4021 fixed points, certified  99.6%,  270.3s | 152/609 done, eta   26.6 min
+  shard 215 verified on n=3: mean_fp 1.18 max_fp 3 certified 100.0% multistable 8.9% seeds converged 60.4%
+  shard 214 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.3% seeds converged 60.2%
+shard  159:    2243 samples,     4247 fixed points, certified  99.4%,  125.6s | 153/609 done, eta   26.5 min
+shard  124:    2063 samples,     3895 fixed points, certified  99.6%,  270.0s | 154/609 done, eta   26.3 min
+  shard 216 verified on n=3: mean_fp 1.49 max_fp 5 certified 100.0% multistable 21.1% seeds converged 52.1%
+  shard 217 verified on n=3: mean_fp 1.11 max_fp 5 certified 100.0% multistable 5.2% seeds converged 61.0%
+shard  109:    2274 samples,     4323 fixed points, certified  99.2%,  301.5s | 155/609 done, eta   26.2 min
+  shard 218 verified on n=3: mean_fp 1.22 max_fp 3 certified 100.0% multistable 11.1% seeds converged 67.4%
+shard  131:    2422 samples,     4752 fixed points, certified  99.5%,  258.4s | 156/609 done, eta   26.1 min
+  shard 219 verified on n=3: mean_fp 1.20 max_fp 3 certified 100.0% multistable 10.0% seeds converged 49.3%
+shard  163:    2018 samples,     3805 fixed points, certified  99.5%,  123.0s | 157/609 done, eta   25.9 min
+  shard 220 verified on n=3: mean_fp 1.27 max_fp 3 certified 100.0% multistable 11.7% seeds converged 52.9%
+shard  138:    2377 samples,     4578 fixed points, certified  99.5%,  246.5s | 158/609 done, eta   25.8 min
+shard  139:    2208 samples,     4413 fixed points, certified  99.2%,  245.8s | 159/609 done, eta   25.6 min
+  shard 222 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 60.3%
+shard  140:    1881 samples,     3838 fixed points, certified  99.4%,  247.5s | 160/609 done, eta   25.6 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         1         1         2
+  n= 3:       114       203       526
+  n= 4:       544      1233      1642
+  n= 5:       727      1602      1981
+  n= 6:       811      1632      1881
+  n= 7:       756      1837      1765
+  n= 8:       875      2290      1949
+  n= 9:       746      1879      1212
+  n=10:       615      1998      1432
+  total:     30254 core-seconds
+  shard 221 verified on n=4: mean_fp 1.26 max_fp 9 certified 100.0% multistable 8.8% seeds converged 49.9%
+  shard 223 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.1% seeds converged 60.0%
+shard  164:    1873 samples,     3653 fixed points, certified  99.2%,  144.4s | 161/609 done, eta   26.1 min
+  shard 224 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.3% seeds converged 56.3%
+shard  165:    2210 samples,     4116 fixed points, certified  99.7%,  145.1s | 162/609 done, eta   25.9 min
+  shard 225 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 0.8% seeds converged 70.9%
+shard  132:    2204 samples,     4622 fixed points, certified  98.6%,  282.2s | 163/609 done, eta   26.0 min
+  shard 226 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 71.1%
+shard  168:    2048 samples,     3756 fixed points, certified  99.3%,  153.1s | 164/609 done, eta   26.2 min
+  shard 227 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 69.5%
+shard  176:    2375 samples,     4311 fixed points, certified  99.8%,  135.6s | 165/609 done, eta   26.1 min
+  shard 228 verified on n=2: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 89.7%
+shard  196:    1779 samples,     3437 fixed points, certified  99.2%,   98.9s | 166/609 done, eta   26.0 min
+shard  184:    2418 samples,     4421 fixed points, certified  99.3%,  115.7s | 167/609 done, eta   25.8 min
+  shard 229 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 70.3%
+  shard 230 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 71.8%
+shard  136:    2008 samples,     3960 fixed points, certified  99.6%,  295.0s | 168/609 done, eta   25.7 min
+  shard 231 verified on n=3: mean_fp 1.12 max_fp 3 certified 100.0% multistable 5.8% seeds converged 63.5%
+shard  171:    2397 samples,     4087 fixed points, certified  99.5%,  152.6s | 169/609 done, eta   25.6 min
+  shard 232 verified on n=3: mean_fp 1.23 max_fp 7 certified 100.0% multistable 8.3% seeds converged 60.8%
+shard  181:    2083 samples,     4125 fixed points, certified  99.3%,  149.8s | 170/609 done, eta   26.3 min
+shard  201:    2240 samples,     4466 fixed points, certified  99.3%,  106.9s | 171/609 done, eta   26.1 min
+  shard 233 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 67.8%
+  shard 234 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.6% seeds converged 60.6%
+shard  177:    1953 samples,     3871 fixed points, certified  99.1%,  161.9s | 172/609 done, eta   26.1 min
+shard  199:    2008 samples,     4164 fixed points, certified  99.2%,  124.1s | 173/609 done, eta   25.9 min
+  shard 236 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 67.8%
+  shard 235 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 60.6%
+shard  153:    2345 samples,     4755 fixed points, certified  99.5%,  244.1s | 174/609 done, eta   25.9 min
+  shard 237 verified on n=2: mean_fp 1.06 max_fp 3 certified 100.0% multistable 2.8% seeds converged 59.9%
+shard  206:    1976 samples,     3900 fixed points, certified  99.2%,  111.5s | 175/609 done, eta   25.8 min
+  shard 238 verified on n=3: mean_fp 1.20 max_fp 5 certified 100.0% multistable 9.2% seeds converged 57.8%
+shard  193:    2399 samples,     4884 fixed points, certified  99.3%,  145.2s | 176/609 done, eta   25.7 min
+shard  156:    2497 samples,     4443 fixed points, certified  99.5%,  226.1s | 177/609 done, eta   25.5 min
+  shard 240 verified on n=3: mean_fp 1.08 max_fp 3 certified 100.0% multistable 4.0% seeds converged 67.7%
+  shard 239 verified on n=4: mean_fp 1.04 max_fp 5 certified 100.0% multistable 1.5% seeds converged 58.5%
+shard  170:    2521 samples,     4925 fixed points, certified  99.6%,  197.2s | 178/609 done, eta   25.5 min
+  shard 241 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 60.0%
+shard  207:    2331 samples,     4424 fixed points, certified  99.0%,  120.3s | 179/609 done, eta   25.4 min
+  shard 242 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 69.6%
+shard  208:    2141 samples,     4171 fixed points, certified  99.3%,  119.2s | 180/609 done, eta   25.3 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         1         1         3
+  n= 3:       127       227       566
+  n= 4:       604      1366      1818
+  n= 5:       795      1760      2169
+  n= 6:       901      1822      2111
+  n= 7:       847      2061      1969
+  n= 8:       965      2528      2206
+  n= 9:       820      2059      1355
+  n=10:       672      2163      1567
+  total:     33483 core-seconds
+  shard 243 verified on n=3: mean_fp 1.12 max_fp 3 certified 100.0% multistable 5.8% seeds converged 69.4%
+shard  191:    2119 samples,     4214 fixed points, certified  99.5%,  160.5s | 181/609 done, eta   25.2 min
+  shard 244 verified on n=3: mean_fp 1.08 max_fp 3 certified 100.0% multistable 4.2% seeds converged 65.1%
+shard  180:    2387 samples,     4466 fixed points, certified  99.3%,  183.9s | 182/609 done, eta   25.2 min
+  shard 245 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.7% seeds converged 63.3%
+shard  210:    2228 samples,     4102 fixed points, certified  99.2%,  131.1s | 183/609 done, eta   25.5 min
+  shard 246 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.3% seeds converged 70.7%
+shard  220:    2408 samples,     4445 fixed points, certified  99.7%,  121.6s | 184/609 done, eta   25.5 min
+  shard 247 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 59.2%
+shard  172:    2497 samples,     4898 fixed points, certified  99.6%,  225.7s | 185/609 done, eta   25.3 min
+  shard 248 verified on n=3: mean_fp 1.27 max_fp 3 certified 100.0% multistable 13.3% seeds converged 59.5%
+shard  216:    2134 samples,     4012 fixed points, certified  99.5%,  134.2s | 186/609 done, eta   25.3 min
+  shard 249 verified on n=3: mean_fp 1.13 max_fp 5 certified 100.0% multistable 5.0% seeds converged 50.6%
+shard  169:    2290 samples,     4528 fixed points, certified  99.6%,  242.6s | 187/609 done, eta   25.2 min
+  shard 250 verified on n=3: mean_fp 1.15 max_fp 3 certified 100.0% multistable 7.5% seeds converged 60.7%
+shard  212:    2196 samples,     4087 fixed points, certified  99.5%,  145.2s | 188/609 done, eta   25.1 min
+  shard 251 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 58.1%
+shard  229:    2172 samples,     4357 fixed points, certified  99.2%,   89.4s | 189/609 done, eta   25.0 min
+  shard 252 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 1.1% seeds converged 70.0%
+shard  167:    1788 samples,     3030 fixed points, certified  99.4%,  257.9s | 190/609 done, eta   25.0 min
+  shard 253 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.6% seeds converged 61.0%
+shard  224:    2299 samples,     4463 fixed points, certified  99.5%,  121.4s | 191/609 done, eta   24.9 min
+  shard 254 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 66.6%
+shard  173:    2069 samples,     4196 fixed points, certified  99.0%,  247.7s | 192/609 done, eta   24.8 min
+shard  161:    2110 samples,     4371 fixed points, certified  99.6%,  269.6s | 193/609 done, eta   24.6 min
+  shard 255 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.0% seeds converged 65.2%
+  shard 256 verified on n=3: mean_fp 1.13 max_fp 5 certified 100.0% multistable 5.6% seeds converged 62.7%
+shard  175:    2480 samples,     4626 fixed points, certified  99.6%,  243.8s | 194/609 done, eta   24.6 min
+  shard 257 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 63.8%
+shard  174:    2297 samples,     4091 fixed points, certified  99.6%,  249.2s | 195/609 done, eta   24.4 min
+  shard 258 verified on n=3: mean_fp 1.22 max_fp 3 certified 100.0% multistable 11.1% seeds converged 56.6%
+shard  186:    2172 samples,     4153 fixed points, certified  99.2%,  225.9s | 196/609 done, eta   24.5 min
+  shard 259 verified on n=3: mean_fp 1.16 max_fp 3 certified 100.0% multistable 8.0% seeds converged 55.5%
+shard  234:    2482 samples,     4303 fixed points, certified  99.5%,   93.2s | 197/609 done, eta   24.5 min
+  shard 260 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 65.8%
+shard  202:    2815 samples,     5195 fixed points, certified  99.6%,  198.3s | 198/609 done, eta   24.5 min
+  shard 261 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 63.2%
+shard  225:    2169 samples,     4306 fixed points, certified  98.9%,  147.8s | 199/609 done, eta   24.4 min
+  shard 262 verified on n=2: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 75.1%
+shard  192:    1959 samples,     3793 fixed points, certified  99.4%,  234.1s | 200/609 done, eta   24.3 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         1         1         3
+  n= 3:       143       258       615
+  n= 4:       670      1516      2013
+  n= 5:       882      1953      2403
+  n= 6:       997      2003      2314
+  n= 7:       953      2324      2202
+  n= 8:      1061      2754      2378
+  n= 9:       920      2337      1520
+  n=10:       759      2425      1801
+  total:     37206 core-seconds
+shard  200:    2278 samples,     4303 fixed points, certified  98.9%,  220.6s | 201/609 done, eta   24.2 min
+  shard 263 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.5% seeds converged 64.9%
+  shard 264 verified on n=3: mean_fp 1.15 max_fp 3 certified 100.0% multistable 7.5% seeds converged 63.1%
+shard  197:    2156 samples,     4181 fixed points, certified  99.5%,  230.8s | 202/609 done, eta   24.1 min
+  shard 265 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 58.7%
+shard  232:    2222 samples,     4419 fixed points, certified  99.4%,  128.7s | 203/609 done, eta   23.9 min
+  shard 266 verified on n=3: mean_fp 1.27 max_fp 3 certified 100.0% multistable 13.3% seeds converged 53.5%
+shard  187:    2102 samples,     4028 fixed points, certified  99.2%,  245.0s | 204/609 done, eta   23.9 min
+shard  238:    2160 samples,     4305 fixed points, certified  99.3%,   97.9s | 205/609 done, eta   23.7 min
+  shard 267 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 65.6%
+  shard 268 verified on n=2: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.3% seeds converged 54.3%
+shard  230:    2013 samples,     4420 fixed points, certified  98.9%,  137.5s | 206/609 done, eta   23.6 min
+shard  190:    2404 samples,     4801 fixed points, certified  99.5%,  243.6s | 207/609 done, eta   23.4 min
+  shard 269 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 68.5%
+shard  236:    2127 samples,     3625 fixed points, certified  99.8%,  106.7s | 208/609 done, eta   23.2 min
+  shard 270 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 63.8%
+  shard 271 verified on n=3: mean_fp 1.22 max_fp 5 certified 100.0% multistable 8.9% seeds converged 60.3%
+shard  185:    2274 samples,     4558 fixed points, certified  99.2%,  254.0s | 209/609 done, eta   23.1 min
+  shard 272 verified on n=2: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 86.8%
+shard  198:    2255 samples,     4497 fixed points, certified  99.3%,  239.5s | 210/609 done, eta   23.1 min
+  shard 273 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.6% seeds converged 62.5%
+shard  183:    1875 samples,     3719 fixed points, certified  99.6%,  261.9s | 211/609 done, eta   23.0 min
+  shard 274 verified on n=3: mean_fp 1.08 max_fp 3 certified 100.0% multistable 4.2% seeds converged 62.8%
+shard  205:    2412 samples,     4610 fixed points, certified  99.4%,  221.0s | 212/609 done, eta   22.8 min
+  shard 275 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 64.0%
+shard  188:    1836 samples,     3297 fixed points, certified  99.7%,  264.9s | 213/609 done, eta   23.0 min
+shard  203:    2312 samples,     4369 fixed points, certified  99.4%,  233.7s | 214/609 done, eta   22.9 min
+  shard 276 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 62.9%
+shard  194:    2152 samples,     4237 fixed points, certified  98.9%,  259.8s | 215/609 done, eta   22.7 min
+  shard 277 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 65.7%
+  shard 278 verified on n=3: mean_fp 1.20 max_fp 3 certified 100.0% multistable 10.0% seeds converged 55.1%
+shard  214:    2392 samples,     4408 fixed points, certified  99.4%,  219.9s | 216/609 done, eta   22.8 min
+shard  219:    2132 samples,     4082 fixed points, certified  99.8%,  212.9s | 217/609 done, eta   22.6 min
+  shard 279 verified on n=3: mean_fp 1.18 max_fp 3 certified 100.0% multistable 8.9% seeds converged 61.1%
+  shard 280 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 80.0%
+shard  227:    1928 samples,     3529 fixed points, certified  99.0%,  175.2s | 218/609 done, eta   22.5 min
+  shard 281 verified on n=3: mean_fp 1.18 max_fp 3 certified 100.0% multistable 8.9% seeds converged 52.8%
+shard  189:    2035 samples,     4220 fixed points, certified  99.5%,  276.5s | 219/609 done, eta   22.4 min
+shard  213:    2236 samples,     4810 fixed points, certified  99.1%,  225.7s | 220/609 done, eta   22.3 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         1         2         3
+  n= 3:       156       282       656
+  n= 4:       744      1680      2245
+  n= 5:       984      2172      2686
+  n= 6:      1123      2251      2611
+  n= 7:      1060      2574      2465
+  n= 8:      1181      3042      2639
+  n= 9:      1016      2623      1703
+  n=10:       853      2722      1987
+  total:     41461 core-seconds
+  shard 282 verified on n=3: mean_fp 1.34 max_fp 6 certified 98.9% multistable 12.2% seeds converged 61.8%
+shard  221:    1999 samples,     4160 fixed points, certified  99.6%,  212.7s | 221/609 done, eta   22.1 min
+  shard 284 verified on n=3: mean_fp 1.23 max_fp 7 certified 100.0% multistable 8.3% seeds converged 51.9%
+  shard 283 verified on n=3: mean_fp 1.16 max_fp 5 certified 100.0% multistable 7.8% seeds converged 53.1%
+shard  239:    2015 samples,     3672 fixed points, certified  99.3%,  130.9s | 222/609 done, eta   22.0 min
+  shard 285 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 57.7%
+shard  251:    2619 samples,     5035 fixed points, certified  99.6%,   86.0s | 223/609 done, eta   21.9 min
+  shard 286 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 61.8%
+shard  222:    2469 samples,     4778 fixed points, certified  99.8%,  217.9s | 224/609 done, eta   21.8 min
+  shard 287 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 65.9%
+shard  235:    2419 samples,     4636 fixed points, certified  99.4%,  147.0s | 225/609 done, eta   21.7 min
+  shard 288 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 71.7%
+shard  179:    2225 samples,     4637 fixed points, certified  99.3%,  306.8s | 226/609 done, eta   21.6 min
+  shard 289 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 73.6%
+shard  242:    1904 samples,     3713 fixed points, certified  99.4%,  130.9s | 227/609 done, eta   21.5 min
+shard  243:    2185 samples,     4135 fixed points, certified  99.5%,  129.2s | 228/609 done, eta   21.3 min
+  shard 290 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.7% seeds converged 66.0%
+  shard 291 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 57.6%
+shard  182:    1716 samples,     3409 fixed points, certified  99.2%,  301.6s | 229/609 done, eta   21.2 min
+  shard 292 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 72.8%
+shard  217:    2443 samples,     4552 fixed points, certified  99.5%,  233.4s | 230/609 done, eta   21.1 min
+shard  233:    2021 samples,     3682 fixed points, certified  99.3%,  157.5s | 231/609 done, eta   20.9 min
+  shard 293 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 62.5%
+  shard 294 verified on n=3: mean_fp 1.12 max_fp 5 certified 100.0% multistable 5.0% seeds converged 49.7%
+shard  223:    2720 samples,     5316 fixed points, certified  99.2%,  222.5s | 232/609 done, eta   20.8 min
+  shard 295 verified on n=3: mean_fp 1.16 max_fp 3 certified 100.0% multistable 7.8% seeds converged 52.7%
+shard  244:    2297 samples,     4568 fixed points, certified  99.5%,  135.3s | 233/609 done, eta   20.8 min
+  shard 296 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 63.4%
+shard  178:    2132 samples,     4254 fixed points, certified  99.1%,  319.0s | 234/609 done, eta   20.7 min
+  shard 297 verified on n=3: mean_fp 1.22 max_fp 3 certified 100.0% multistable 10.0% seeds converged 57.5%
+shard  218:    2417 samples,     4393 fixed points, certified  99.6%,  240.1s | 235/609 done, eta   20.6 min
+shard  252:    1784 samples,     3275 fixed points, certified  99.3%,  103.6s | 236/609 done, eta   20.5 min
+  shard 299 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 53.7%
+  shard 298 verified on n=3: mean_fp 1.15 max_fp 5 certified 100.0% multistable 7.1% seeds converged 57.3%
+shard  247:    2207 samples,     4044 fixed points, certified  99.6%,  124.9s | 237/609 done, eta   20.6 min
+  shard 300 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 73.7%
+shard  215:    2042 samples,     4159 fixed points, certified  99.2%,  257.0s | 238/609 done, eta   20.5 min
+  shard 301 verified on n=3: mean_fp 1.11 max_fp 5 certified 100.0% multistable 5.0% seeds converged 64.0%
+shard  204:    2097 samples,     4588 fixed points, certified  98.7%,  285.3s | 239/609 done, eta   20.5 min
+  shard 302 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.7% seeds converged 72.0%
+shard  260:    2062 samples,     3818 fixed points, certified  99.7%,   97.9s | 240/609 done, eta   20.5 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         1         2         3
+  n= 3:       170       310       700
+  n= 4:       808      1826      2444
+  n= 5:      1076      2379      2943
+  n= 6:      1219      2440      2833
+  n= 7:      1158      2832      2707
+  n= 8:      1283      3330      2829
+  n= 9:      1115      2854      1851
+  n=10:       939      3031      2219
+  total:     45301 core-seconds
+shard  249:    2595 samples,     5165 fixed points, certified  99.0%,  134.2s | 241/609 done, eta   20.4 min
+  shard 304 verified on n=3: mean_fp 1.33 max_fp 3 certified 100.0% multistable 16.7% seeds converged 50.9%
+  shard 303 verified on n=3: mean_fp 1.08 max_fp 3 certified 100.0% multistable 3.8% seeds converged 59.2%
+shard  195:    1805 samples,     3656 fixed points, certified  99.3%,  319.1s | 242/609 done, eta   20.3 min
+  shard 305 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 55.5%
+shard  246:    2279 samples,     4138 fixed points, certified  99.3%,  153.0s | 243/609 done, eta   20.3 min
+  shard 306 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 54.7%
+shard  240:    2342 samples,     4332 fixed points, certified  99.5%,  184.8s | 244/609 done, eta   20.2 min
+  shard 307 verified on n=3: mean_fp 1.13 max_fp 5 certified 100.0% multistable 5.8% seeds converged 56.1%
+shard  226:    2110 samples,     4172 fixed points, certified  99.2%,  247.4s | 245/609 done, eta   20.3 min
+  shard 308 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 59.6%
+shard  266:    1936 samples,     3661 fixed points, certified  99.1%,  103.9s | 246/609 done, eta   20.2 min
+shard  228:    2197 samples,     3812 fixed points, certified  99.4%,  239.8s | 247/609 done, eta   20.1 min
+  shard 309 verified on n=3: mean_fp 1.16 max_fp 3 certified 100.0% multistable 7.3% seeds converged 54.3%
+  shard 310 verified on n=3: mean_fp 1.12 max_fp 5 certified 100.0% multistable 5.0% seeds converged 63.5%
+shard  268:    2147 samples,     4053 fixed points, certified  99.4%,  100.9s | 248/609 done, eta   20.0 min
+  shard 311 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 0.8% seeds converged 67.1%
+shard  211:    2012 samples,     4178 fixed points, certified  99.2%,  297.4s | 249/609 done, eta   19.9 min
+  shard 312 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 62.6%
+shard  254:    2104 samples,     4075 fixed points, certified  99.4%,  159.5s | 250/609 done, eta   20.2 min
+  shard 313 verified on n=3: mean_fp 1.47 max_fp 9 certified 100.0% multistable 13.3% seeds converged 56.0%
+shard  245:    2417 samples,     4549 fixed points, certified  99.4%,  200.8s | 251/609 done, eta   20.1 min
+  shard 314 verified on n=3: mean_fp 1.36 max_fp 3 certified 100.0% multistable 17.8% seeds converged 51.1%
+shard  269:    2026 samples,     4096 fixed points, certified  99.1%,  129.5s | 252/609 done, eta   20.1 min
+  shard 315 verified on n=3: mean_fp 1.20 max_fp 7 certified 100.0% multistable 7.8% seeds converged 56.9%
+shard  250:    2157 samples,     4190 fixed points, certified  99.6%,  184.2s | 253/609 done, eta   20.0 min
+  shard 316 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 59.6%
+shard  286:    2112 samples,     3963 fixed points, certified  99.5%,   99.7s | 254/609 done, eta   20.0 min
+  shard 317 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.6% seeds converged 58.3%
+shard  271:    2090 samples,     4297 fixed points, certified  99.2%,  139.5s | 255/609 done, eta   20.0 min
+  shard 318 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 56.6%
+shard  231:    2032 samples,     3973 fixed points, certified  98.8%,  285.4s | 256/609 done, eta   20.1 min
+  shard 319 verified on n=3: mean_fp 1.20 max_fp 3 certified 100.0% multistable 10.0% seeds converged 57.6%
+shard  291:    2459 samples,     5086 fixed points, certified  99.8%,  116.2s | 257/609 done, eta   20.1 min
+  shard 320 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 58.9%
+shard  299:    1988 samples,     3877 fixed points, certified  98.9%,  106.7s | 258/609 done, eta   20.1 min
+  shard 321 verified on n=3: mean_fp 1.20 max_fp 3 certified 100.0% multistable 10.0% seeds converged 60.2%
+shard  262:    1918 samples,     3654 fixed points, certified  98.7%,  183.7s | 259/609 done, eta   20.2 min
+shard  261:    2423 samples,     4542 fixed points, certified  99.5%,  188.6s | 260/609 done, eta   20.0 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         2         2        97
+  n= 3:       182       332       736
+  n= 4:       862      1953      2626
+  n= 5:      1160      2564      3169
+  n= 6:      1314      2637      3060
+  n= 7:      1249      3067      2939
+  n= 8:      1380      3562      3029
+  n= 9:      1203      3088      2006
+  n=10:      1001      3276      2381
+  total:     48875 core-seconds
+  shard 322 verified on n=3: mean_fp 1.13 max_fp 5 certified 100.0% multistable 5.0% seeds converged 58.7%
+shard  303:    2635 samples,     5132 fixed points, certified  99.5%,   94.4s | 261/609 done, eta   19.9 min
+  shard 324 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 60.7%
+  shard 323 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 0.8% seeds converged 61.4%
+shard  237:    2200 samples,     4291 fixed points, certified  99.4%,  277.2s | 262/609 done, eta   19.8 min
+  shard 325 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 60.9%
+shard  285:    2127 samples,     4000 fixed points, certified  99.7%,  141.5s | 263/609 done, eta   19.7 min
+  shard 326 verified on n=3: mean_fp 1.27 max_fp 7 certified 100.0% multistable 6.7% seeds converged 47.0%
+shard  290:    2211 samples,     4117 fixed points, certified  99.2%,  134.2s | 264/609 done, eta   19.6 min
+shard  281:    2440 samples,     4729 fixed points, certified  99.2%,  146.0s | 265/609 done, eta   19.5 min
+  shard 327 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 62.9%
+  shard 328 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 56.3%
+shard  263:    2424 samples,     4596 fixed points, certified  99.6%,  189.7s | 266/609 done, eta   19.4 min
+  shard 329 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 0.0% seeds converged 65.7%
+shard  241:    2089 samples,     3859 fixed points, certified  99.6%,  276.9s | 267/609 done, eta   19.4 min
+  shard 330 verified on n=4: mean_fp 1.13 max_fp 5 certified 100.0% multistable 6.2% seeds converged 52.4%
+shard  264:    2060 samples,     4037 fixed points, certified  99.5%,  205.7s | 268/609 done, eta   19.5 min
+shard  259:    2299 samples,     4681 fixed points, certified  99.2%,  222.1s | 269/609 done, eta   19.4 min
+  shard 331 verified on n=3: mean_fp 1.20 max_fp 3 certified 100.0% multistable 10.0% seeds converged 67.5%
+shard  300:    2033 samples,     3606 fixed points, certified  99.2%,  133.4s | 270/609 done, eta   19.3 min
+  shard 333 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 63.4%
+  shard 332 verified on n=3: mean_fp 1.12 max_fp 5 certified 100.0% multistable 5.0% seeds converged 53.2%
+shard  256:    2585 samples,     4945 fixed points, certified  99.7%,  236.7s | 271/609 done, eta   19.1 min
+shard  255:    2226 samples,     4288 fixed points, certified  99.5%,  237.4s | 272/609 done, eta   19.0 min
+  shard 335 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.5% seeds converged 68.9%
+shard  294:    2537 samples,     5176 fixed points, certified  99.0%,  155.9s | 273/609 done, eta   18.9 min
+shard  296:    2162 samples,     4584 fixed points, certified  98.8%,  149.0s | 274/609 done, eta   18.8 min
+  shard 336 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 61.6%
+  shard 337 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 64.1%
+shard  270:    2261 samples,     3966 fixed points, certified  99.2%,  203.9s | 275/609 done, eta   18.8 min
+  shard 338 verified on n=3: mean_fp 1.24 max_fp 5 certified 100.0% multistable 10.7% seeds converged 53.1%
+shard  311:    1997 samples,     3762 fixed points, certified  99.1%,  106.6s | 276/609 done, eta   18.7 min
+  shard 339 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 62.5%
+  shard 334 verified on n=4: mean_fp 1.06 max_fp 3 certified 100.0% multistable 2.8% seeds converged 61.7%
+shard  253:    2147 samples,     4315 fixed points, certified  99.4%,  250.6s | 277/609 done, eta   18.6 min
+  shard 340 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 67.0%
+shard  258:    2112 samples,     4315 fixed points, certified  99.1%,  246.8s | 278/609 done, eta   18.6 min
+  shard 341 verified on n=3: mean_fp 1.27 max_fp 3 certified 100.0% multistable 13.3% seeds converged 58.1%
+shard  288:    2080 samples,     4140 fixed points, certified  99.3%,  177.7s | 279/609 done, eta   18.6 min
+  shard 342 verified on n=2: mean_fp 1.06 max_fp 3 certified 100.0% multistable 2.8% seeds converged 68.5%
+shard  209:    2017 samples,     4282 fixed points, certified  99.0%,  418.1s | 280/609 done, eta   18.4 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         2         3        97
+  n= 3:       199       364       787
+  n= 4:       924      2102      2818
+  n= 5:      1264      2793      3461
+  n= 6:      1420      2862      3319
+  n= 7:      1345      3296      3162
+  n= 8:      1498      3842      3293
+  n= 9:      1292      3322      2160
+  n=10:      1072      3474      2707
+  total:     52878 core-seconds
+  shard 343 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 82.9%
+shard  304:    2028 samples,     3840 fixed points, certified  99.2%,  139.9s | 281/609 done, eta   18.3 min
+  shard 344 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 55.9%
+shard  309:    2010 samples,     3775 fixed points, certified  99.7%,  121.2s | 282/609 done, eta   18.2 min
+  shard 345 verified on n=3: mean_fp 1.15 max_fp 3 certified 100.0% multistable 7.5% seeds converged 55.1%
+shard  317:    2439 samples,     4576 fixed points, certified  99.6%,   86.1s | 283/609 done, eta   18.1 min
+  shard 346 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 67.4%
+shard  248:    1914 samples,     4232 fixed points, certified  98.6%,  283.6s | 284/609 done, eta   18.0 min
+  shard 347 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 1.1% seeds converged 62.2%
+shard  283:    2789 samples,     5160 fixed points, certified  99.6%,  194.7s | 285/609 done, eta   18.0 min
+  shard 348 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.3% seeds converged 50.5%
+shard  306:    2054 samples,     3847 fixed points, certified  99.1%,  141.0s | 286/609 done, eta   17.9 min
+shard  273:    2367 samples,     4938 fixed points, certified  99.4%,  222.8s | 287/609 done, eta   17.8 min
+  shard 349 verified on n=3: mean_fp 1.20 max_fp 5 certified 100.0% multistable 8.3% seeds converged 62.3%
+  shard 350 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 60.9%
+shard  275:    2225 samples,     4132 fixed points, certified  99.6%,  221.2s | 288/609 done, eta   17.7 min
+  shard 351 verified on n=3: mean_fp 1.20 max_fp 5 certified 100.0% multistable 9.2% seeds converged 54.4%
+shard  257:    2197 samples,     4255 fixed points, certified  99.6%,  265.6s | 289/609 done, eta   17.6 min
+  shard 352 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 71.8%
+shard  265:    1800 samples,     3617 fixed points, certified  98.8%,  244.0s | 290/609 done, eta   17.6 min
+  shard 353 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 66.6%
+shard  267:    2454 samples,     4704 fixed points, certified  99.5%,  248.7s | 291/609 done, eta   17.7 min
+  shard 354 verified on n=3: mean_fp 1.27 max_fp 3 certified 100.0% multistable 13.3% seeds converged 61.9%
+shard  313:    2112 samples,     4216 fixed points, certified  99.3%,  127.8s | 292/609 done, eta   17.6 min
+shard  310:    2163 samples,     4060 fixed points, certified  99.4%,  149.6s | 293/609 done, eta   17.5 min
+  shard 355 verified on n=3: mean_fp 1.20 max_fp 3 certified 100.0% multistable 8.9% seeds converged 52.9%
+  shard 356 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 63.8%
+shard  287:    2191 samples,     3945 fixed points, certified  99.3%,  211.6s | 294/609 done, eta   17.4 min
+  shard 357 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.7% seeds converged 56.0%
+shard  284:    2192 samples,     4166 fixed points, certified  99.5%,  218.7s | 295/609 done, eta   17.3 min
+  shard 358 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.3% seeds converged 67.1%
+shard  301:    2267 samples,     3859 fixed points, certified  99.6%,  187.9s | 296/609 done, eta   17.2 min
+  shard 359 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 64.9%
+shard  280:    2342 samples,     4095 fixed points, certified  99.7%,  227.4s | 297/609 done, eta   17.1 min
+  shard 360 verified on n=3: mean_fp 1.08 max_fp 3 certified 100.0% multistable 4.2% seeds converged 62.2%
+shard  279:    2260 samples,     4601 fixed points, certified  99.1%,  230.5s | 298/609 done, eta   17.1 min
+shard  321:    1885 samples,     3789 fixed points, certified  99.6%,   98.2s | 299/609 done, eta   17.0 min
+  shard 362 verified on n=3: mean_fp 1.42 max_fp 9 certified 100.0% multistable 13.3% seeds converged 56.2%
+  shard 361 verified on n=4: mean_fp 1.07 max_fp 3 certified 100.0% multistable 2.8% seeds converged 56.1%
+shard  274:    2339 samples,     4435 fixed points, certified  99.4%,  256.7s | 300/609 done, eta   16.9 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         2         3        97
+  n= 3:       214       393       834
+  n= 4:       995      2259      3020
+  n= 5:      1365      3004      3717
+  n= 6:      1517      3059      3539
+  n= 7:      1463      3581      3443
+  n= 8:      1613      4139      3522
+  n= 9:      1380      3600      2314
+  n=10:      1136      3686      2859
+  total:     56755 core-seconds
+  shard 363 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 61.6%
+shard  318:    2273 samples,     4475 fixed points, certified  99.5%,  126.7s | 301/609 done, eta   16.9 min
+  shard 364 verified on n=3: mean_fp 1.13 max_fp 7 certified 100.0% multistable 5.2% seeds converged 57.8%
+shard  292:    2158 samples,     3999 fixed points, certified  99.5%,  227.6s | 302/609 done, eta   16.8 min
+  shard 365 verified on n=2: mean_fp 1.06 max_fp 3 certified 100.0% multistable 2.8% seeds converged 66.5%
+shard  315:    1925 samples,     3682 fixed points, certified  99.4%,  142.1s | 303/609 done, eta   16.7 min
+  shard 366 verified on n=3: mean_fp 1.18 max_fp 5 certified 100.0% multistable 7.8% seeds converged 56.7%
+shard  277:    2237 samples,     4278 fixed points, certified  99.2%,  253.0s | 304/609 done, eta   16.7 min
+  shard 367 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 0.8% seeds converged 68.8%
+shard  278:    2026 samples,     3842 fixed points, certified  99.6%,  253.9s | 305/609 done, eta   16.6 min
+  shard 368 verified on n=3: mean_fp 1.33 max_fp 5 certified 100.0% multistable 15.6% seeds converged 49.6%
+shard  276:    2244 samples,     4261 fixed points, certified  99.4%,  256.1s | 306/609 done, eta   16.5 min
+  shard 369 verified on n=3: mean_fp 1.10 max_fp 5 certified 100.0% multistable 4.3% seeds converged 61.6%
+shard  282:    2397 samples,     4550 fixed points, certified  99.5%,  247.4s | 307/609 done, eta   16.4 min
+  shard 370 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.6% seeds converged 62.8%
+shard  320:    2140 samples,     3997 fixed points, certified  99.3%,  123.7s | 308/609 done, eta   16.4 min
+  shard 371 verified on n=3: mean_fp 1.21 max_fp 3 certified 100.0% multistable 10.7% seeds converged 56.4%
+shard  295:    2278 samples,     4846 fixed points, certified  99.3%,  238.3s | 309/609 done, eta   16.3 min
+  shard 372 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 56.7%
+shard  298:    2284 samples,     4321 fixed points, certified  99.5%,  231.3s | 310/609 done, eta   16.2 min
+  shard 373 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 68.1%
+shard  324:    2315 samples,     4768 fixed points, certified  99.2%,  114.5s | 311/609 done, eta   16.1 min
+  shard 374 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 71.9%
+shard  308:    2306 samples,     4422 fixed points, certified  99.6%,  198.2s | 312/609 done, eta   16.1 min
+  shard 375 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 61.2%
+shard  327:    2124 samples,     4003 fixed points, certified  99.4%,  118.8s | 313/609 done, eta   16.0 min
+  shard 376 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 59.3%
+shard  326:    2105 samples,     4160 fixed points, certified  99.2%,  123.7s | 314/609 done, eta   16.0 min
+  shard 377 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 64.8%
+shard  339:    2234 samples,     4203 fixed points, certified  99.4%,   94.4s | 315/609 done, eta   15.9 min
+  shard 378 verified on n=3: mean_fp 1.17 max_fp 5 certified 100.0% multistable 8.0% seeds converged 59.0%
+shard  346:    2628 samples,     4651 fixed points, certified  99.7%,   91.2s | 316/609 done, eta   16.0 min
+  shard 379 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 75.1%
+shard  345:    2557 samples,     5385 fixed points, certified  99.6%,   95.1s | 317/609 done, eta   15.9 min
+shard  297:    2470 samples,     4623 fixed points, certified  99.7%,  262.2s | 318/609 done, eta   15.8 min
+  shard 380 verified on n=3: mean_fp 1.11 max_fp 5 certified 100.0% multistable 4.4% seeds converged 62.5%
+  shard 381 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 66.4%
+shard  333:    2393 samples,     4480 fixed points, certified  99.5%,  123.9s | 319/609 done, eta   15.8 min
+  shard 382 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.0% seeds converged 74.7%
+shard  336:    2265 samples,     4578 fixed points, certified  99.5%,  124.7s | 320/609 done, eta   15.8 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         2         3        97
+  n= 3:       229       420       877
+  n= 4:      1063      2418      3226
+  n= 5:      1451      3194      3949
+  n= 6:      1617      3254      3766
+  n= 7:      1566      3842      3697
+  n= 8:      1720      4409      3740
+  n= 9:      1444      3790      2420
+  n=10:      1193      3837      2980
+  total:     60202 core-seconds
+  shard 383 verified on n=3: mean_fp 1.12 max_fp 3 certified 100.0% multistable 5.8% seeds converged 57.7%
+shard  337:    2240 samples,     4045 fixed points, certified  99.7%,  126.7s | 321/609 done, eta   15.7 min
+  shard 384 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.3% seeds converged 52.4%
+shard  293:    2063 samples,     4087 fixed points, certified  99.3%,  285.2s | 322/609 done, eta   15.6 min
+  shard 385 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 60.4%
+shard  307:    2254 samples,     4492 fixed points, certified  99.4%,  242.5s | 323/609 done, eta   15.6 min
+  shard 386 verified on n=3: mean_fp 1.47 max_fp 5 certified 100.0% multistable 20.0% seeds converged 52.4%
+shard  322:    1935 samples,     3940 fixed points, certified  99.5%,  159.8s | 324/609 done, eta   15.5 min
+  shard 387 verified on n=3: mean_fp 1.20 max_fp 7 certified 100.0% multistable 6.7% seeds converged 52.0%
+shard  328:    1960 samples,     3952 fixed points, certified  99.8%,  158.7s | 325/609 done, eta   15.4 min
+  shard 388 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 68.4%
+shard  302:    2288 samples,     4027 fixed points, certified  99.5%,  267.3s | 326/609 done, eta   15.4 min
+shard  316:    2152 samples,     4420 fixed points, certified  99.4%,  208.2s | 327/609 done, eta   15.3 min
+  shard 389 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 6.7% seeds converged 64.7%
+  shard 390 verified on n=3: mean_fp 1.06 max_fp 3 certified 100.0% multistable 2.9% seeds converged 60.6%
+shard  305:    2334 samples,     4776 fixed points, certified  99.5%,  265.8s | 328/609 done, eta   15.3 min
+  shard 391 verified on n=3: mean_fp 1.18 max_fp 6 certified 99.2% multistable 6.7% seeds converged 55.9%
+shard  323:    2066 samples,     3925 fixed points, certified  99.6%,  180.8s | 329/609 done, eta   15.3 min
+  shard 392 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 70.4%
+shard  349:    2103 samples,     3960 fixed points, certified  99.5%,  134.6s | 330/609 done, eta   15.3 min
+  shard 393 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 59.7%
+shard  362:    2190 samples,     4302 fixed points, certified  99.1%,  110.7s | 331/609 done, eta   15.3 min
+  shard 394 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 63.3%
+shard  289:    1955 samples,     4051 fixed points, certified  98.7%,  336.1s | 332/609 done, eta   15.3 min
+  shard 395 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 0.8% seeds converged 69.9%
+shard  344:    2152 samples,     4394 fixed points, certified  99.5%,  158.9s | 333/609 done, eta   15.2 min
+shard  374:    1895 samples,     3483 fixed points, certified  99.7%,   90.8s | 334/609 done, eta   15.1 min
+  shard 397 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 55.2%
+  shard 396 verified on n=3: mean_fp 1.17 max_fp 5 certified 100.0% multistable 7.5% seeds converged 58.7%
+shard  364:    2562 samples,     4852 fixed points, certified  99.8%,  123.9s | 335/609 done, eta   15.2 min
+  shard 398 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 66.7%
+shard  356:    2517 samples,     4696 fixed points, certified  99.4%,  149.7s | 336/609 done, eta   15.2 min
+  shard 399 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 57.1%
+shard  378:    2181 samples,     3720 fixed points, certified  99.6%,  101.1s | 337/609 done, eta   15.1 min
+shard  332:    2305 samples,     4207 fixed points, certified  99.7%,  205.6s | 338/609 done, eta   15.0 min
+  shard 401 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 61.3%
+  shard 400 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.5% seeds converged 66.1%
+shard  272:    2565 samples,     4913 fixed points, certified  99.4%,  402.0s | 339/609 done, eta   14.9 min
+  shard 402 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 66.2%
+shard  314:    2037 samples,     4167 fixed points, certified  99.1%,  283.2s | 340/609 done, eta   14.9 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         2         3       231
+  n= 3:       243       448       922
+  n= 4:      1131      2578      3429
+  n= 5:      1533      3377      4168
+  n= 6:      1727      3476      4013
+  n= 7:      1655      4057      3903
+  n= 8:      1844      4731      4025
+  n= 9:      1535      4042      2588
+  n=10:      1266      4087      3180
+  total:     64193 core-seconds
+  shard 403 verified on n=3: mean_fp 1.40 max_fp 3 certified 100.0% multistable 20.0% seeds converged 56.5%
+shard  380:    2508 samples,     4377 fixed points, certified  99.6%,   92.3s | 341/609 done, eta   14.8 min
+  shard 404 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 67.9%
+shard  355:    2098 samples,     4457 fixed points, certified  99.1%,  162.0s | 342/609 done, eta   14.7 min
+  shard 405 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 68.4%
+shard  376:    2291 samples,     4846 fixed points, certified  99.1%,  116.8s | 343/609 done, eta   14.7 min
+  shard 406 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.3% seeds converged 61.7%
+shard  319:    1787 samples,     3120 fixed points, certified  99.7%,  265.7s | 344/609 done, eta   14.6 min
+  shard 407 verified on n=3: mean_fp 1.18 max_fp 3 certified 100.0% multistable 8.9% seeds converged 63.2%
+shard  366:    2069 samples,     3981 fixed points, certified  99.4%,  148.1s | 345/609 done, eta   14.6 min
+  shard 408 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 60.3%
+shard  329:    2159 samples,     4274 fixed points, certified  99.5%,  239.7s | 346/609 done, eta   14.5 min
+shard  379:    2265 samples,     4427 fixed points, certified  99.3%,  108.1s | 347/609 done, eta   14.4 min
+  shard 409 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.0% seeds converged 64.6%
+  shard 410 verified on n=3: mean_fp 1.30 max_fp 5 certified 100.0% multistable 13.3% seeds converged 52.5%
+shard  371:    2499 samples,     4803 fixed points, certified  99.3%,  145.1s | 348/609 done, eta   14.4 min
+shard  330:    2067 samples,     4125 fixed points, certified  99.2%,  242.7s | 349/609 done, eta   14.3 min
+  shard 411 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.7% seeds converged 54.1%
+  shard 412 verified on n=3: mean_fp 1.18 max_fp 5 certified 100.0% multistable 8.3% seeds converged 59.1%
+shard  312:    2300 samples,     4420 fixed points, certified  99.7%,  329.1s | 350/609 done, eta   14.2 min
+  shard 413 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.7% seeds converged 57.5%
+shard  338:    2133 samples,     4484 fixed points, certified  99.1%,  228.3s | 351/609 done, eta   14.1 min
+  shard 414 verified on n=3: mean_fp 1.20 max_fp 3 certified 100.0% multistable 10.0% seeds converged 61.2%
+shard  342:    2248 samples,     4089 fixed points, certified  99.6%,  216.3s | 352/609 done, eta   14.1 min
+  shard 415 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 69.1%
+shard  377:    2248 samples,     4069 fixed points, certified  99.4%,  139.6s | 353/609 done, eta   14.0 min
+  shard 416 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 61.5%
+shard  348:    2047 samples,     3988 fixed points, certified  99.6%,  213.6s | 354/609 done, eta   14.0 min
+  shard 417 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 67.7%
+shard  358:    2235 samples,     4281 fixed points, certified  99.6%,  191.7s | 355/609 done, eta   13.9 min
+  shard 418 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.7% seeds converged 56.4%
+shard  351:    2238 samples,     4684 fixed points, certified  99.5%,  214.7s | 356/609 done, eta   13.8 min
+  shard 419 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 80.7%
+shard  334:    2340 samples,     4644 fixed points, certified  99.4%,  247.8s | 357/609 done, eta   13.8 min
+  shard 420 verified on n=3: mean_fp 1.20 max_fp 3 certified 100.0% multistable 10.0% seeds converged 64.1%
+shard  382:    2364 samples,     4010 fixed points, certified  99.7%,  129.9s | 358/609 done, eta   13.7 min
+  shard 421 verified on n=3: mean_fp 1.33 max_fp 3 certified 100.0% multistable 16.7% seeds converged 43.1%
+shard  353:    2121 samples,     3885 fixed points, certified  99.4%,  215.7s | 359/609 done, eta   13.7 min
+  shard 422 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 5.0% seeds converged 52.0%
+shard  340:    2264 samples,     3958 fixed points, certified  99.6%,  248.4s | 360/609 done, eta   13.6 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         2         3       231
+  n= 3:       256       473       960
+  n= 4:      1202      2738      3644
+  n= 5:      1636      3596      4433
+  n= 6:      1837      3696      4264
+  n= 7:      1755      4298      4146
+  n= 8:      1953      4994      4293
+  n= 9:      1617      4275      2756
+  n=10:      1343      4334      3355
+  total:     68089 core-seconds
+  shard 423 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 66.6%
+shard  384:    2357 samples,     4311 fixed points, certified  99.7%,  135.1s | 361/609 done, eta   13.6 min
+  shard 424 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 69.5%
+shard  335:    2393 samples,     4593 fixed points, certified  99.5%,  265.2s | 362/609 done, eta   13.5 min
+  shard 425 verified on n=3: mean_fp 1.20 max_fp 5 certified 100.0% multistable 8.9% seeds converged 60.6%
+shard  357:    2300 samples,     4025 fixed points, certified  99.6%,  215.9s | 363/609 done, eta   13.4 min
+  shard 426 verified on n=3: mean_fp 1.20 max_fp 3 certified 100.0% multistable 10.0% seeds converged 42.7%
+shard  359:    2228 samples,     4013 fixed points, certified  99.2%,  214.6s | 364/609 done, eta   13.4 min
+  shard 427 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 58.7%
+shard  383:    2329 samples,     4275 fixed points, certified  99.3%,  145.1s | 365/609 done, eta   13.3 min
+  shard 428 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 72.0%
+shard  325:    2267 samples,     4569 fixed points, certified  99.4%,  297.3s | 366/609 done, eta   13.2 min
+  shard 429 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 64.3%
+shard  394:    2274 samples,     4266 fixed points, certified  99.6%,  103.6s | 367/609 done, eta   13.2 min
+  shard 430 verified on n=3: mean_fp 1.12 max_fp 3 certified 100.0% multistable 5.8% seeds converged 62.2%
+shard  393:    2123 samples,     3875 fixed points, certified  99.8%,  122.0s | 368/609 done, eta   13.2 min
+  shard 431 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.7% seeds converged 70.1%
+shard  400:    2364 samples,     5211 fixed points, certified  98.9%,   89.4s | 369/609 done, eta   13.2 min
+  shard 432 verified on n=3: mean_fp 1.06 max_fp 3 certified 100.0% multistable 2.2% seeds converged 64.8%
+shard  397:    1819 samples,     3829 fixed points, certified  98.8%,  114.9s | 370/609 done, eta   13.1 min
+shard  388:    2440 samples,     4671 fixed points, certified  99.4%,  158.2s | 371/609 done, eta   13.0 min
+shard  360:    2527 samples,     5066 fixed points, certified  99.4%,  238.5s | 372/609 done, eta   12.9 min
+  shard 433 verified on n=3: mean_fp 1.16 max_fp 3 certified 100.0% multistable 7.8% seeds converged 58.7%
+shard  352:    2119 samples,     4097 fixed points, certified  99.4%,  262.9s | 373/609 done, eta   12.8 min
+shard  367:    2167 samples,     3842 fixed points, certified  99.3%,  222.2s | 374/609 done, eta   12.8 min
+  shard 437 verified on n=3: mean_fp 1.27 max_fp 3 certified 100.0% multistable 13.3% seeds converged 60.3%
+  shard 436 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 57.1%
+  shard 435 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 62.0%
+  shard 434 verified on n=4: mean_fp 1.19 max_fp 7 certified 99.5% multistable 7.4% seeds converged 46.2%
+shard  368:    2147 samples,     4256 fixed points, certified  99.7%,  226.0s | 375/609 done, eta   12.7 min
+  shard 438 verified on n=3: mean_fp 1.12 max_fp 3 certified 100.0% multistable 5.8% seeds converged 57.4%
+shard  387:    1996 samples,     4065 fixed points, certified  99.1%,  171.4s | 376/609 done, eta   12.7 min
+  shard 439 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.5% seeds converged 58.8%
+shard  341:    2163 samples,     4692 fixed points, certified  99.4%,  290.0s | 377/609 done, eta   12.6 min
+  shard 440 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 66.4%
+shard  347:    2034 samples,     3854 fixed points, certified  99.4%,  284.1s | 378/609 done, eta   12.5 min
+  shard 441 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 63.3%
+shard  404:    2235 samples,     4504 fixed points, certified  99.5%,  103.9s | 379/609 done, eta   12.5 min
+  shard 442 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.3% seeds converged 61.8%
+shard  398:    2045 samples,     4019 fixed points, certified  99.3%,  123.3s | 380/609 done, eta   12.4 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         2         3       231
+  n= 3:       269       498      1000
+  n= 4:      1274      2898      3861
+  n= 5:      1731      3799      4682
+  n= 6:      1929      3883      4471
+  n= 7:      1848      4535      4364
+  n= 8:      2061      5265      4506
+  n= 9:      1731      4586      2931
+  n=10:      1399      4559      3556
+  total:     71872 core-seconds
+  shard 443 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 70.7%
+shard  386:    2020 samples,     3802 fixed points, certified  99.8%,  183.8s | 381/609 done, eta   12.3 min
+  shard 444 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.6% seeds converged 60.4%
+shard  369:    2251 samples,     4511 fixed points, certified  99.4%,  241.5s | 382/609 done, eta   12.3 min
+shard  350:    1892 samples,     3901 fixed points, certified  99.2%,  289.8s | 383/609 done, eta   12.2 min
+  shard 445 verified on n=3: mean_fp 1.19 max_fp 3 certified 100.0% multistable 9.5% seeds converged 56.9%
+  shard 446 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 55.0%
+shard  410:    2008 samples,     4047 fixed points, certified  99.5%,   99.8s | 384/609 done, eta   12.1 min
+  shard 447 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 68.4%
+shard  372:    1911 samples,     3487 fixed points, certified  99.6%,  237.1s | 385/609 done, eta   12.1 min
+  shard 448 verified on n=3: mean_fp 1.73 max_fp 7 certified 100.0% multistable 26.7% seeds converged 30.5%
+shard  361:    1952 samples,     4209 fixed points, certified  98.8%,  266.2s | 386/609 done, eta   12.0 min
+shard  381:    2400 samples,     4396 fixed points, certified  99.8%,  212.2s | 387/609 done, eta   12.0 min
+  shard 449 verified on n=4: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.6% seeds converged 55.6%
+  shard 450 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 62.6%
+shard  375:    2358 samples,     4160 fixed points, certified  99.4%,  236.6s | 388/609 done, eta   11.9 min
+  shard 451 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 65.0%
+shard  365:    1774 samples,     3430 fixed points, certified  99.5%,  274.9s | 389/609 done, eta   12.0 min
+shard  363:    2102 samples,     3893 fixed points, certified  99.1%,  282.4s | 390/609 done, eta   11.9 min
+  shard 452 verified on n=3: mean_fp 1.10 max_fp 5 certified 100.0% multistable 4.2% seeds converged 71.5%
+shard  406:    2520 samples,     5342 fixed points, certified  99.6%,  135.3s | 391/609 done, eta   11.8 min
+  shard 453 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 68.8%
+  shard 454 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 1.1% seeds converged 68.7%
+shard  430:    2222 samples,     4067 fixed points, certified  99.6%,   82.4s | 392/609 done, eta   11.8 min
+  shard 455 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 58.4%
+shard  331:    1955 samples,     3777 fixed points, certified  99.7%,  361.8s | 393/609 done, eta   11.7 min
+  shard 456 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 60.4%
+shard  354:    2090 samples,     4062 fixed points, certified  99.5%,  313.9s | 394/609 done, eta   11.7 min
+shard  370:    1908 samples,     3939 fixed points, certified  99.3%,  282.5s | 395/609 done, eta   11.6 min
+  shard 458 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 59.2%
+  shard 457 verified on n=3: mean_fp 1.15 max_fp 3 certified 100.0% multistable 7.3% seeds converged 57.6%
+shard  408:    2365 samples,     4647 fixed points, certified  99.2%,  143.3s | 396/609 done, eta   11.5 min
+  shard 459 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 62.0%
+shard  411:    2121 samples,     3875 fixed points, certified  99.7%,  137.5s | 397/609 done, eta   11.5 min
+  shard 460 verified on n=3: mean_fp 1.20 max_fp 5 certified 100.0% multistable 8.9% seeds converged 54.1%
+shard  399:    2173 samples,     4256 fixed points, certified  99.4%,  168.5s | 398/609 done, eta   11.4 min
+  shard 461 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 66.1%
+shard  396:    2169 samples,     4139 fixed points, certified  99.1%,  189.9s | 399/609 done, eta   11.3 min
+  shard 462 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 61.3%
+shard  415:    2185 samples,     3792 fixed points, certified  99.5%,  135.6s | 400/609 done, eta   11.3 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         2         3       232
+  n= 3:       282       522      1039
+  n= 4:      1335      3037      4058
+  n= 5:      1820      3998      4922
+  n= 6:      2046      4121      4743
+  n= 7:      1957      4814      4631
+  n= 8:      2179      5609      4724
+  n= 9:      1852      4917      3149
+  n=10:      1475      4804      3876
+  total:     76147 core-seconds
+  shard 463 verified on n=3: mean_fp 1.27 max_fp 3 certified 100.0% multistable 13.3% seeds converged 47.2%
+shard  432:    2403 samples,     4085 fixed points, certified  99.7%,   84.9s | 401/609 done, eta   11.2 min
+shard  405:    1593 samples,     3035 fixed points, certified  98.8%,  167.4s | 402/609 done, eta   11.2 min
+  shard 464 verified on n=4: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 62.7%
+  shard 465 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 61.5%
+shard  416:    2169 samples,     4252 fixed points, certified  99.6%,  143.6s | 403/609 done, eta   11.1 min
+  shard 466 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 60.5%
+shard  392:    2369 samples,     4093 fixed points, certified  99.7%,  230.3s | 404/609 done, eta   11.1 min
+  shard 467 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 77.9%
+shard  373:    2095 samples,     4113 fixed points, certified  98.5%,  303.3s | 405/609 done, eta   11.0 min
+  shard 468 verified on n=2: mean_fp 1.06 max_fp 3 certified 100.0% multistable 2.8% seeds converged 81.7%
+shard  433:    2596 samples,     5109 fixed points, certified  98.8%,   97.4s | 406/609 done, eta   10.9 min
+  shard 469 verified on n=3: mean_fp 1.25 max_fp 9 certified 100.0% multistable 10.0% seeds converged 58.0%
+shard  421:    2019 samples,     3752 fixed points, certified  99.1%,  155.1s | 407/609 done, eta   11.0 min
+  shard 470 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 64.4%
+shard  403:    2158 samples,     4199 fixed points, certified  99.6%,  206.1s | 408/609 done, eta   11.0 min
+  shard 471 verified on n=3: mean_fp 1.08 max_fp 5 certified 100.0% multistable 3.3% seeds converged 64.8%
+shard  390:    2751 samples,     5277 fixed points, certified  99.1%,  273.0s | 409/609 done, eta   10.9 min
+  shard 472 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 62.6%
+shard  428:    2353 samples,     5086 fixed points, certified  99.5%,  142.6s | 410/609 done, eta   10.8 min
+  shard 473 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 58.3%
+shard  431:    2372 samples,     4119 fixed points, certified  99.7%,  132.5s | 411/609 done, eta   10.8 min
+  shard 474 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 62.6%
+shard  389:    2016 samples,     4019 fixed points, certified  99.7%,  282.0s | 412/609 done, eta   10.7 min
+  shard 475 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 80.2%
+shard  391:    2347 samples,     5202 fixed points, certified  99.0%,  276.2s | 413/609 done, eta   10.6 min
+shard  424:    2132 samples,     3964 fixed points, certified  99.4%,  160.9s | 414/609 done, eta   10.6 min
+  shard 476 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 59.2%
+shard  442:    2239 samples,     4407 fixed points, certified  98.9%,  113.6s | 415/609 done, eta   10.5 min
+  shard 478 verified on n=3: mean_fp 1.27 max_fp 5 certified 100.0% multistable 11.7% seeds converged 52.2%
+  shard 477 verified on n=4: mean_fp 1.04 max_fp 5 certified 100.0% multistable 1.7% seeds converged 59.8%
+shard  447:    2061 samples,     4312 fixed points, certified  99.4%,  106.7s | 416/609 done, eta   10.4 min
+  shard 479 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 77.7%
+shard  395:    2341 samples,     4191 fixed points, certified  99.6%,  254.8s | 417/609 done, eta   10.4 min
+  shard 480 verified on n=3: mean_fp 1.17 max_fp 7 certified 100.0% multistable 7.5% seeds converged 58.0%
+shard  434:    1975 samples,     4086 fixed points, certified  99.1%,  150.3s | 418/609 done, eta   10.4 min
+shard  439:    2250 samples,     4611 fixed points, certified  99.5%,  140.9s | 419/609 done, eta   10.3 min
+  shard 481 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 55.0%
+shard  443:    1951 samples,     3648 fixed points, certified  99.5%,  131.3s | 420/609 done, eta   10.3 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         2         3       232
+  n= 3:       295       546      1083
+  n= 4:      1405      3192      4263
+  n= 5:      1895      4172      5129
+  n= 6:      2144      4322      4970
+  n= 7:      2042      5032      4851
+  n= 8:      2289      5900      4982
+  n= 9:      1937      5114      3278
+  n=10:      1542      5029      4050
+  total:     79700 core-seconds
+  shard 482 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 60.4%
+shard  414:    2174 samples,     4332 fixed points, certified  99.4%,  213.3s | 421/609 done, eta   10.2 min
+  shard 483 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 1.1% seeds converged 75.0%
+  shard 484 verified on n=4: mean_fp 1.10 max_fp 4 certified 99.6% multistable 4.6% seeds converged 57.1%
+shard  401:    1981 samples,     3966 fixed points, certified  99.2%,  250.7s | 422/609 done, eta   10.2 min
+  shard 485 verified on n=3: mean_fp 1.16 max_fp 7 certified 100.0% multistable 5.6% seeds converged 59.8%
+shard  385:    1893 samples,     3557 fixed points, certified  99.2%,  328.2s | 423/609 done, eta   10.1 min
+  shard 486 verified on n=3: mean_fp 1.12 max_fp 3 certified 100.0% multistable 4.2% seeds converged 63.2%
+shard  455:    2407 samples,     5067 fixed points, certified  99.4%,  103.9s | 424/609 done, eta   10.1 min
+  shard 487 verified on n=3: mean_fp 1.08 max_fp 5 certified 100.0% multistable 3.3% seeds converged 62.3%
+shard  426:    2143 samples,     4075 fixed points, certified  99.5%,  195.2s | 425/609 done, eta   10.0 min
+  shard 488 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 74.5%
+shard  454:    2368 samples,     4292 fixed points, certified  99.5%,  119.2s | 426/609 done, eta    9.9 min
+  shard 489 verified on n=3: mean_fp 1.12 max_fp 5 certified 100.0% multistable 5.0% seeds converged 62.1%
+shard  407:    2731 samples,     5890 fixed points, certified  99.5%,  255.2s | 427/609 done, eta    9.9 min
+  shard 490 verified on n=3: mean_fp 1.12 max_fp 3 certified 100.0% multistable 6.0% seeds converged 62.2%
+shard  409:    2621 samples,     4963 fixed points, certified  99.4%,  255.8s | 428/609 done, eta    9.9 min
+  shard 491 verified on n=3: mean_fp 1.22 max_fp 3 certified 100.0% multistable 11.1% seeds converged 52.7%
+shard  469:    2342 samples,     5101 fixed points, certified  99.1%,   87.2s | 429/609 done, eta    9.8 min
+  shard 492 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 66.2%
+shard  417:    2150 samples,     4123 fixed points, certified  99.6%,  238.5s | 430/609 done, eta    9.7 min
+shard  422:    1994 samples,     3857 fixed points, certified  99.5%,  226.3s | 431/609 done, eta    9.7 min
+  shard 493 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 60.0%
+  shard 494 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 59.7%
+shard  437:    2064 samples,     3777 fixed points, certified  99.7%,  190.7s | 432/609 done, eta    9.6 min
+  shard 495 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 61.6%
+shard  343:    1728 samples,     3222 fixed points, certified  99.8%,  469.4s | 433/609 done, eta    9.6 min
+shard  427:    1965 samples,     3869 fixed points, certified  99.2%,  220.5s | 434/609 done, eta    9.5 min
+  shard 497 verified on n=2: mean_fp 1.06 max_fp 3 certified 100.0% multistable 2.8% seeds converged 65.5%
+shard  464:    1685 samples,     3123 fixed points, certified  99.1%,  112.6s | 435/609 done, eta    9.4 min
+  shard 496 verified on n=3: mean_fp 1.10 max_fp 5 certified 100.0% multistable 4.2% seeds converged 53.7%
+  shard 498 verified on n=3: mean_fp 1.08 max_fp 3 certified 100.0% multistable 4.0% seeds converged 56.5%
+shard  412:    2428 samples,     4918 fixed points, certified  99.5%,  263.6s | 436/609 done, eta    9.4 min
+shard  460:    2213 samples,     4265 fixed points, certified  99.4%,  127.5s | 437/609 done, eta    9.3 min
+  shard 500 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 58.5%
+  shard 499 verified on n=3: mean_fp 1.13 max_fp 5 certified 100.0% multistable 5.6% seeds converged 57.0%
+shard  459:    1981 samples,     4119 fixed points, certified  99.3%,  136.9s | 438/609 done, eta    9.3 min
+shard  429:    2100 samples,     3974 fixed points, certified  99.5%,  227.6s | 439/609 done, eta    9.2 min
+  shard 501 verified on n=3: mean_fp 1.11 max_fp 5 certified 100.0% multistable 4.4% seeds converged 64.8%
+shard  438:    2598 samples,     4543 fixed points, certified  99.9%,  200.0s | 440/609 done, eta    9.1 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         2         3       232
+  n= 3:       308       570      1327
+  n= 4:      1481      3366      4499
+  n= 5:      2008      4412      5423
+  n= 6:      2245      4525      5189
+  n= 7:      2144      5269      5068
+  n= 8:      2414      6197      5244
+  n= 9:      2006      5303      3394
+  n=10:      1643      5336      4314
+  total:     83922 core-seconds
+  shard 503 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 65.3%
+  shard 502 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 60.7%
+shard  462:    2519 samples,     5085 fixed points, certified  99.8%,  136.2s | 441/609 done, eta    9.1 min
+  shard 504 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.3% seeds converged 61.9%
+shard  418:    1995 samples,     4090 fixed points, certified  99.3%,  263.3s | 442/609 done, eta    9.0 min
+  shard 505 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 62.3%
+shard  423:    2086 samples,     3998 fixed points, certified  99.6%,  254.7s | 443/609 done, eta    9.0 min
+shard  402:    2074 samples,     3604 fixed points, certified  98.9%,  308.4s | 444/609 done, eta    8.9 min
+  shard 506 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.6% seeds converged 55.7%
+  shard 507 verified on n=3: mean_fp 1.24 max_fp 3 certified 100.0% multistable 12.2% seeds converged 60.3%
+shard  463:    2087 samples,     3830 fixed points, certified  99.7%,  144.8s | 445/609 done, eta    8.8 min
+  shard 508 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 65.4%
+shard  465:    2196 samples,     4164 fixed points, certified  99.4%,  141.4s | 446/609 done, eta    8.8 min
+shard  466:    2013 samples,     3814 fixed points, certified  99.7%,  136.4s | 447/609 done, eta    8.7 min
+  shard 509 verified on n=3: mean_fp 1.27 max_fp 5 certified 100.0% multistable 12.2% seeds converged 50.1%
+shard  461:    2412 samples,     4475 fixed points, certified  99.3%,  152.8s | 448/609 done, eta    8.6 min
+  shard 511 verified on n=3: mean_fp 1.40 max_fp 3 certified 100.0% multistable 20.0% seeds converged 50.1%
+  shard 510 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.3% seeds converged 69.4%
+shard  435:    2466 samples,     5048 fixed points, certified  99.5%,  229.4s | 449/609 done, eta    8.6 min
+shard  420:    2167 samples,     4510 fixed points, certified  99.5%,  278.0s | 450/609 done, eta    8.5 min
+  shard 512 verified on n=3: mean_fp 1.20 max_fp 3 certified 100.0% multistable 8.3% seeds converged 48.6%
+  shard 513 verified on n=3: mean_fp 1.15 max_fp 3 certified 100.0% multistable 7.3% seeds converged 58.9%
+shard  413:    2180 samples,     3983 fixed points, certified  99.6%,  295.7s | 451/609 done, eta    8.5 min
+  shard 514 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 61.4%
+shard  444:    2186 samples,     4208 fixed points, certified  99.4%,  213.0s | 452/609 done, eta    8.4 min
+  shard 515 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 65.9%
+shard  479:    1805 samples,     3324 fixed points, certified  99.6%,  101.1s | 453/609 done, eta    8.3 min
+  shard 516 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 72.0%
+shard  441:    2555 samples,     4540 fixed points, certified  99.7%,  223.5s | 454/609 done, eta    8.3 min
+  shard 517 verified on n=3: mean_fp 1.03 max_fp 3 certified 100.0% multistable 1.7% seeds converged 53.4%
+shard  478:    2391 samples,     4586 fixed points, certified  99.5%,  106.0s | 455/609 done, eta    8.2 min
+  shard 518 verified on n=3: mean_fp 1.18 max_fp 3 certified 100.0% multistable 8.9% seeds converged 67.8%
+shard  436:    2081 samples,     4078 fixed points, certified  99.4%,  249.7s | 456/609 done, eta    8.2 min
+  shard 519 verified on n=3: mean_fp 1.15 max_fp 3 certified 100.0% multistable 7.5% seeds converged 57.4%
+shard  473:    2305 samples,     4294 fixed points, certified  99.9%,  134.8s | 457/609 done, eta    8.2 min
+  shard 520 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 65.7%
+shard  470:    2120 samples,     4214 fixed points, certified  99.3%,  145.5s | 458/609 done, eta    8.1 min
+  shard 521 verified on n=3: mean_fp 1.33 max_fp 3 certified 100.0% multistable 16.7% seeds converged 45.5%
+shard  449:    1985 samples,     4063 fixed points, certified  99.3%,  227.4s | 459/609 done, eta    8.0 min
+  shard 522 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.7% seeds converged 59.5%
+shard  474:    2424 samples,     4824 fixed points, certified  99.6%,  138.2s | 460/609 done, eta    8.0 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         2         3       232
+  n= 3:       321       596      1369
+  n= 4:      1552      3524      4711
+  n= 5:      2102      4620      5679
+  n= 6:      2351      4738      5438
+  n= 7:      2223      5470      5264
+  n= 8:      2538      6546      5495
+  n= 9:      2113      5563      3567
+  n=10:      1720      5575      4490
+  total:     87802 core-seconds
+  shard 523 verified on n=3: mean_fp 1.10 max_fp 3 certified 100.0% multistable 5.0% seeds converged 59.7%
+shard  448:    2088 samples,     4201 fixed points, certified  98.9%,  236.6s | 461/609 done, eta    7.9 min
+shard  425:    2088 samples,     4152 fixed points, certified  99.2%,  294.0s | 462/609 done, eta    7.9 min
+  shard 524 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 62.5%
+  shard 525 verified on n=3: mean_fp 1.20 max_fp 3 certified 100.0% multistable 10.0% seeds converged 51.9%
+shard  492:    2019 samples,     3710 fixed points, certified  99.8%,   86.8s | 463/609 done, eta    7.8 min
+  shard 526 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.3% seeds converged 70.9%
+shard  477:    2033 samples,     3974 fixed points, certified  99.2%,  144.6s | 464/609 done, eta    7.8 min
+  shard 527 verified on n=3: mean_fp 1.19 max_fp 3 certified 100.0% multistable 8.7% seeds converged 60.2%
+shard  451:    2261 samples,     4190 fixed points, certified  99.7%,  241.6s | 465/609 done, eta    7.7 min
+  shard 528 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 46.6%
+shard  440:    2159 samples,     3661 fixed points, certified  99.6%,  270.0s | 466/609 done, eta    7.7 min
+shard  487:    2177 samples,     4109 fixed points, certified  99.5%,  114.6s | 467/609 done, eta    7.6 min
+  shard 530 verified on n=3: mean_fp 1.15 max_fp 3 certified 100.0% multistable 7.5% seeds converged 59.4%
+  shard 529 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 58.0%
+shard  489:    2162 samples,     3985 fixed points, certified  99.4%,  114.1s | 468/609 done, eta    7.6 min
+  shard 531 verified on n=3: mean_fp 1.13 max_fp 5 certified 100.0% multistable 5.3% seeds converged 69.1%
+shard  453:    2014 samples,     3853 fixed points, certified  99.8%,  237.9s | 469/609 done, eta    7.5 min
+shard  481:    2078 samples,     4028 fixed points, certified  99.5%,  141.5s | 470/609 done, eta    7.4 min
+  shard 532 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 68.4%
+  shard 533 verified on n=3: mean_fp 1.12 max_fp 3 certified 100.0% multistable 6.0% seeds converged 60.0%
+shard  467:    1967 samples,     3699 fixed points, certified  99.7%,  208.6s | 471/609 done, eta    7.4 min
+  shard 534 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 3.3% seeds converged 57.0%
+shard  483:    2381 samples,     4428 fixed points, certified  99.4%,  148.4s | 472/609 done, eta    7.3 min
+  shard 535 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.5% seeds converged 61.8%
+shard  446:    2132 samples,     4123 fixed points, certified  99.0%,  278.5s | 473/609 done, eta    7.3 min
+shard  452:    2267 samples,     4544 fixed points, certified  99.0%,  251.5s | 474/609 done, eta    7.2 min
+  shard 537 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 72.1%
+  shard 536 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 57.6%
+shard  498:    2441 samples,     5286 fixed points, certified  99.4%,  111.0s | 475/609 done, eta    7.2 min
+  shard 538 verified on n=3: mean_fp 1.16 max_fp 3 certified 100.0% multistable 7.8% seeds converged 58.2%
+shard  457:    2358 samples,     4778 fixed points, certified  99.2%,  243.1s | 476/609 done, eta    7.1 min
+  shard 539 verified on n=2: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 94.2%
+shard  482:    2176 samples,     4115 fixed points, certified  99.4%,  173.2s | 477/609 done, eta    7.1 min
+  shard 540 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 59.9%
+shard  504:    2243 samples,     4183 fixed points, certified  99.4%,  125.7s | 478/609 done, eta    7.1 min
+  shard 541 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 46.4%
+shard  500:    1970 samples,     3807 fixed points, certified  99.2%,  139.5s | 479/609 done, eta    7.0 min
+  shard 542 verified on n=3: mean_fp 1.12 max_fp 3 certified 100.0% multistable 6.1% seeds converged 66.9%
+shard  450:    2050 samples,     3991 fixed points, certified  99.1%,  306.1s | 480/609 done, eta    7.0 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         2         3       232
+  n= 3:       334       622      1411
+  n= 4:      1614      3661      4895
+  n= 5:      2202      4829      5956
+  n= 6:      2451      4957      5692
+  n= 7:      2314      5704      5485
+  n= 8:      2647      6822      5701
+  n= 9:      2215      5858      3735
+  n=10:      1795      5828      4703
+  total:     91669 core-seconds
+shard  516:    2178 samples,     3989 fixed points, certified  99.4%,  105.6s | 481/609 done, eta    6.9 min
+  shard 543 verified on n=3: mean_fp 1.08 max_fp 3 certified 100.0% multistable 4.2% seeds converged 65.4%
+shard  501:    2111 samples,     3916 fixed points, certified  99.5%,  135.8s | 482/609 done, eta    6.8 min
+  shard 544 verified on n=3: mean_fp 1.10 max_fp 9 certified 100.0% multistable 2.9% seeds converged 62.6%
+  shard 545 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 58.0%
+shard  445:    2312 samples,     4811 fixed points, certified  99.1%,  318.7s | 483/609 done, eta    6.8 min
+  shard 546 verified on n=3: mean_fp 1.29 max_fp 7 certified 100.0% multistable 12.2% seeds converged 54.3%
+shard  518:    2312 samples,     4561 fixed points, certified  99.3%,  111.4s | 484/609 done, eta    6.7 min
+  shard 547 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 60.5%
+shard  471:    2243 samples,     4322 fixed points, certified  99.6%,  235.7s | 485/609 done, eta    6.7 min
+  shard 548 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 62.9%
+shard  510:    2046 samples,     3706 fixed points, certified  99.7%,  132.4s | 486/609 done, eta    6.6 min
+  shard 549 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.3% seeds converged 65.4%
+shard  508:    2426 samples,     4445 fixed points, certified  99.3%,  149.3s | 487/609 done, eta    6.6 min
+shard  456:    2500 samples,     4937 fixed points, certified  99.3%,  305.4s | 488/609 done, eta    6.6 min
+  shard 550 verified on n=3: mean_fp 1.13 max_fp 5 certified 100.0% multistable 5.6% seeds converged 62.3%
+  shard 551 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 0.6% seeds converged 70.4%
+shard  509:    2497 samples,     5085 fixed points, certified  99.4%,  150.1s | 489/609 done, eta    6.5 min
+  shard 552 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.3% seeds converged 62.7%
+shard  458:    2249 samples,     4191 fixed points, certified  99.2%,  308.6s | 490/609 done, eta    6.4 min
+  shard 553 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.3% seeds converged 61.6%
+shard  511:    1791 samples,     3763 fixed points, certified  99.6%,  152.1s | 491/609 done, eta    6.4 min
+  shard 554 verified on n=2: mean_fp 1.28 max_fp 7 certified 100.0% multistable 8.3% seeds converged 53.1%
+shard  475:    2092 samples,     4081 fixed points, certified  99.7%,  251.1s | 492/609 done, eta    6.3 min
+shard  530:    2294 samples,     4553 fixed points, certified  99.3%,   98.4s | 493/609 done, eta    6.3 min
+  shard 556 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 65.8%
+  shard 555 verified on n=3: mean_fp 1.08 max_fp 5 certified 100.0% multistable 3.3% seeds converged 62.5%
+shard  472:    2071 samples,     3692 fixed points, certified  99.6%,  263.9s | 494/609 done, eta    6.2 min
+  shard 557 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 62.1%
+shard  480:    2572 samples,     5068 fixed points, certified  99.3%,  245.5s | 495/609 done, eta    6.1 min
+  shard 558 verified on n=3: mean_fp 1.13 max_fp 7 certified 100.0% multistable 4.4% seeds converged 68.7%
+shard  485:    2629 samples,     5164 fixed points, certified  99.5%,  226.2s | 496/609 done, eta    6.1 min
+  shard 559 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 57.4%
+shard  468:    2092 samples,     4245 fixed points, certified  99.1%,  291.1s | 497/609 done, eta    6.0 min
+shard  419:    2041 samples,     3981 fixed points, certified  98.8%,  436.3s | 498/609 done, eta    6.0 min
+  shard 560 verified on n=3: mean_fp 1.15 max_fp 3 certified 100.0% multistable 7.5% seeds converged 57.2%
+shard  476:    2199 samples,     4131 fixed points, certified  99.5%,  258.3s | 499/609 done, eta    5.9 min
+  shard 561 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 65.9%
+  shard 562 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.6% seeds converged 68.6%
+shard  520:    2136 samples,     3956 fixed points, certified  99.7%,  137.5s | 500/609 done, eta    5.8 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         2         3       232
+  n= 3:       349       650      1646
+  n= 4:      1689      3837      5119
+  n= 5:      2294      5031      6215
+  n= 6:      2551      5165      5938
+  n= 7:      2419      5974      5738
+  n= 8:      2768      7142      5944
+  n= 9:      2320      6136      3902
+  n=10:      1859      6032      5026
+  total:     95982 core-seconds
+  shard 563 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 62.0%
+shard  496:    2203 samples,     4284 fixed points, certified  99.7%,  200.1s | 501/609 done, eta    5.8 min
+shard  521:    1702 samples,     3219 fixed points, certified  99.3%,  137.2s | 502/609 done, eta    5.7 min
+  shard 565 verified on n=2: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 79.5%
+  shard 564 verified on n=3: mean_fp 1.18 max_fp 3 certified 100.0% multistable 8.9% seeds converged 55.3%
+shard  523:    2448 samples,     4503 fixed points, certified  99.6%,  136.2s | 503/609 done, eta    5.7 min
+  shard 566 verified on n=3: mean_fp 1.18 max_fp 5 certified 100.0% multistable 7.8% seeds converged 55.9%
+shard  486:    2394 samples,     4533 fixed points, certified  99.7%,  239.5s | 504/609 done, eta    5.6 min
+  shard 567 verified on n=3: mean_fp 1.40 max_fp 3 certified 100.0% multistable 20.0% seeds converged 46.6%
+shard  526:    2515 samples,     4697 fixed points, certified  99.2%,  141.6s | 505/609 done, eta    5.6 min
+  shard 568 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 66.3%
+shard  484:    2009 samples,     4036 fixed points, certified  98.9%,  262.8s | 506/609 done, eta    5.5 min
+  shard 569 verified on n=3: mean_fp 1.10 max_fp 7 certified 100.0% multistable 3.3% seeds converged 61.1%
+shard  488:    2183 samples,     4203 fixed points, certified  99.2%,  251.0s | 507/609 done, eta    5.5 min
+  shard 570 verified on n=3: mean_fp 1.15 max_fp 5 certified 100.0% multistable 6.7% seeds converged 64.6%
+shard  527:    2116 samples,     4510 fixed points, certified  99.3%,  149.1s | 508/609 done, eta    5.4 min
+  shard 571 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 64.9%
+shard  490:    2318 samples,     4310 fixed points, certified  99.4%,  249.3s | 509/609 done, eta    5.4 min
+  shard 572 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 59.1%
+shard  497:    2452 samples,     4738 fixed points, certified  99.6%,  234.6s | 510/609 done, eta    5.3 min
+  shard 573 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.6% seeds converged 64.0%
+shard  535:    2286 samples,     4216 fixed points, certified  99.3%,  130.9s | 511/609 done, eta    5.3 min
+  shard 574 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.3% seeds converged 51.7%
+shard  505:    2147 samples,     4213 fixed points, certified  99.6%,  219.4s | 512/609 done, eta    5.2 min
+  shard 575 verified on n=3: mean_fp 1.05 max_fp 3 certified 100.0% multistable 2.7% seeds converged 65.5%
+shard  538:    1938 samples,     4076 fixed points, certified  98.4%,  127.4s | 513/609 done, eta    5.1 min
+  shard 576 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 62.3%
+shard  531:    2052 samples,     4427 fixed points, certified  98.7%,  148.1s | 514/609 done, eta    5.1 min
+shard  493:    2297 samples,     4101 fixed points, certified  99.6%,  250.8s | 515/609 done, eta    5.0 min
+  shard 577 verified on n=3: mean_fp 1.06 max_fp 3 certified 100.0% multistable 2.8% seeds converged 68.8%
+  shard 578 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 57.5%
+shard  544:    2403 samples,     4382 fixed points, certified  99.6%,   97.2s | 516/609 done, eta    5.0 min
+  shard 579 verified on n=3: mean_fp 1.16 max_fp 3 certified 100.0% multistable 7.8% seeds converged 53.1%
+shard  547:    2281 samples,     4266 fixed points, certified  99.5%,   92.5s | 517/609 done, eta    4.9 min
+  shard 580 verified on n=2: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 86.9%
+shard  499:    2192 samples,     4260 fixed points, certified  99.5%,  248.0s | 518/609 done, eta    4.9 min
+  shard 581 verified on n=3: mean_fp 1.22 max_fp 5 certified 100.0% multistable 10.0% seeds converged 57.5%
+shard  506:    1946 samples,     3995 fixed points, certified  98.9%,  232.8s | 519/609 done, eta    4.8 min
+shard  533:    2074 samples,     4116 fixed points, certified  99.3%,  159.1s | 520/609 done, eta    4.8 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         2         4       233
+  n= 3:       368       686      1706
+  n= 4:      1742      3955      5286
+  n= 5:      2389      5240      6459
+  n= 6:      2636      5338      6128
+  n= 7:      2523      6235      5986
+  n= 8:      2871      7432      6157
+  n= 9:      2407      6388      4036
+  n=10:      1923      6303      5256
+  total:     99689 core-seconds
+shard  495:    2147 samples,     3987 fixed points, certified  99.7%,  259.3s | 521/609 done, eta    4.7 min
+  shard 583 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 61.9%
+  shard 582 verified on n=3: mean_fp 1.16 max_fp 5 certified 99.5% multistable 6.7% seeds converged 57.3%
+  shard 584 verified on n=3: mean_fp 1.16 max_fp 3 certified 100.0% multistable 7.8% seeds converged 61.7%
+shard  515:    2176 samples,     3877 fixed points, certified  99.6%,  220.5s | 522/609 done, eta    4.6 min
+shard  502:    2250 samples,     4232 fixed points, certified  99.4%,  249.2s | 523/609 done, eta    4.6 min
+  shard 585 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 64.1%
+  shard 586 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 56.9%
+shard  512:    2080 samples,     3623 fixed points, certified  99.5%,  231.9s | 524/609 done, eta    4.5 min
+  shard 587 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.3% seeds converged 59.8%
+shard  494:    2244 samples,     4231 fixed points, certified  99.3%,  278.2s | 525/609 done, eta    4.5 min
+  shard 588 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 68.8%
+shard  540:    2446 samples,     5285 fixed points, certified  99.3%,  147.2s | 526/609 done, eta    4.4 min
+shard  542:    2329 samples,     4522 fixed points, certified  99.2%,  132.6s | 527/609 done, eta    4.4 min
+  shard 590 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 70.0%
+  shard 589 verified on n=3: mean_fp 1.16 max_fp 3 certified 100.0% multistable 7.8% seeds converged 64.4%
+shard  513:    2172 samples,     3975 fixed points, certified  99.7%,  247.9s | 528/609 done, eta    4.3 min
+  shard 591 verified on n=3: mean_fp 1.15 max_fp 5 certified 100.0% multistable 5.8% seeds converged 60.6%
+shard  491:    2114 samples,     3786 fixed points, certified  99.6%,  298.8s | 529/609 done, eta    4.3 min
+  shard 592 verified on n=3: mean_fp 1.33 max_fp 5 certified 100.0% multistable 13.3% seeds converged 37.0%
+shard  524:    2170 samples,     3812 fixed points, certified  99.7%,  219.0s | 530/609 done, eta    4.2 min
+  shard 593 verified on n=3: mean_fp 1.08 max_fp 3 certified 100.0% multistable 4.0% seeds converged 56.6%
+shard  503:    2169 samples,     4200 fixed points, certified  99.3%,  277.7s | 531/609 done, eta    4.2 min
+  shard 594 verified on n=3: mean_fp 1.09 max_fp 3 certified 100.0% multistable 4.4% seeds converged 64.2%
+shard  556:    2048 samples,     3892 fixed points, certified  99.3%,  108.1s | 532/609 done, eta    4.1 min
+  shard 595 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 70.2%
+shard  522:    2252 samples,     4202 fixed points, certified  98.8%,  232.3s | 533/609 done, eta    4.1 min
+shard  541:    2079 samples,     3937 fixed points, certified  99.2%,  154.4s | 534/609 done, eta    4.0 min
+  shard 597 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 74.4%
+  shard 596 verified on n=3: mean_fp 1.13 max_fp 3 certified 100.0% multistable 6.7% seeds converged 65.4%
+shard  514:    2192 samples,     4224 fixed points, certified  99.5%,  260.9s | 535/609 done, eta    3.9 min
+  shard 598 verified on n=3: mean_fp 1.02 max_fp 3 certified 100.0% multistable 1.1% seeds converged 73.5%
+shard  545:    2083 samples,     4116 fixed points, certified  99.2%,  157.7s | 536/609 done, eta    3.9 min
+  shard 599 verified on n=3: mean_fp 1.17 max_fp 3 certified 100.0% multistable 8.3% seeds converged 59.5%
+shard  534:    2355 samples,     4522 fixed points, certified  99.7%,  210.5s | 537/609 done, eta    3.9 min
+  shard 600 verified on n=3: mean_fp 1.47 max_fp 5 certified 100.0% multistable 20.0% seeds converged 52.8%
+shard  568:    2149 samples,     4439 fixed points, certified  98.8%,  101.1s | 538/609 done, eta    3.8 min
+  shard 601 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 63.7%
+shard  532:    2450 samples,     4943 fixed points, certified  99.7%,  224.7s | 539/609 done, eta    3.7 min
+  shard 602 verified on n=3: mean_fp 1.11 max_fp 3 certified 100.0% multistable 5.6% seeds converged 64.8%
+shard  528:    2262 samples,     4229 fixed points, certified  99.4%,  239.5s | 540/609 done, eta    3.7 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         2         4       233
+  n= 3:       382       713      1750
+  n= 4:      1822      4134      5531
+  n= 5:      2490      5452      6724
+  n= 6:      2751      5560      6372
+  n= 7:      2625      6482      6209
+  n= 8:      2994      7738      6416
+  n= 9:      2512      6642      4203
+  n=10:      2029      6681      5492
+  total:    103940 core-seconds
+shard  517:    2027 samples,     3785 fixed points, certified  99.4%,  280.3s | 541/609 done, eta    3.6 min
+  shard 603 verified on n=3: mean_fp 1.04 max_fp 3 certified 100.0% multistable 2.2% seeds converged 67.1%
+  shard 604 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 57.1%
+shard  552:    1999 samples,     4086 fixed points, certified  99.3%,  146.8s | 542/609 done, eta    3.6 min
+  shard 605 verified on n=3: mean_fp 1.08 max_fp 3 certified 100.0% multistable 4.2% seeds converged 53.3%
+shard  565:    2218 samples,     3989 fixed points, certified  99.5%,  131.7s | 543/609 done, eta    3.5 min
+  shard 606 verified on n=3: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 72.9%
+shard  525:    2452 samples,     5282 fixed points, certified  99.1%,  263.0s | 544/609 done, eta    3.5 min
+shard  563:    2190 samples,     4411 fixed points, certified  99.4%,  135.7s | 545/609 done, eta    3.4 min
+  shard 608 verified on n=2: mean_fp 1.00 max_fp 1 certified 100.0% multistable 0.0% seeds converged 83.8%
+  shard 607 verified on n=3: mean_fp 1.07 max_fp 3 certified 100.0% multistable 3.3% seeds converged 67.0%
+shard  566:    2061 samples,     3978 fixed points, certified  99.3%,  133.5s | 546/609 done, eta    3.4 min
+shard  507:    2194 samples,     4341 fixed points, certified  99.4%,  314.6s | 547/609 done, eta    3.3 min
+shard  580:    2454 samples,     4808 fixed points, certified  99.4%,   92.0s | 548/609 done, eta    3.2 min
+shard  550:    2531 samples,     4702 fixed points, certified  99.6%,  164.7s | 549/609 done, eta    3.2 min
+shard  519:    2111 samples,     4279 fixed points, certified  99.4%,  285.4s | 550/609 done, eta    3.1 min
+shard  579:    2361 samples,     4989 fixed points, certified  99.7%,   99.5s | 551/609 done, eta    3.1 min
+shard  554:    2199 samples,     4127 fixed points, certified  99.2%,  160.0s | 552/609 done, eta    3.0 min
+shard  574:    2613 samples,     5181 fixed points, certified  99.7%,  124.9s | 553/609 done, eta    3.0 min
+shard  546:    2211 samples,     4454 fixed points, certified  99.1%,  215.9s | 554/609 done, eta    2.9 min
+shard  576:    2132 samples,     4016 fixed points, certified  99.2%,  124.8s | 555/609 done, eta    2.9 min
+shard  549:    2292 samples,     4351 fixed points, certified  99.6%,  203.7s | 556/609 done, eta    2.8 min
+shard  537:    2009 samples,     3532 fixed points, certified  99.6%,  260.6s | 557/609 done, eta    2.8 min
+shard  571:    2129 samples,     4284 fixed points, certified  99.4%,  141.9s | 558/609 done, eta    2.7 min
+shard  564:    2557 samples,     5153 fixed points, certified  99.5%,  175.0s | 559/609 done, eta    2.7 min
+shard  577:    2399 samples,     4587 fixed points, certified  99.2%,  134.6s | 560/609 done, eta    2.6 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         3         4       234
+  n= 3:       396       741      1795
+  n= 4:      1890      4285      5734
+  n= 5:      2570      5634      6934
+  n= 6:      2839      5744      6597
+  n= 7:      2704      6695      6396
+  n= 8:      3091      7989      6695
+  n= 9:      2598      6883      4345
+  n=10:      2115      6937      5680
+  total:    107528 core-seconds
+shard  529:    2373 samples,     4888 fixed points, certified  99.0%,  289.2s | 561/609 done, eta    2.5 min
+shard  543:    2240 samples,     3836 fixed points, certified  99.5%,  230.4s | 562/609 done, eta    2.5 min
+shard  551:    2405 samples,     4471 fixed points, certified  99.2%,  203.9s | 563/609 done, eta    2.4 min
+shard  558:    2164 samples,     3619 fixed points, certified  99.8%,  192.5s | 564/609 done, eta    2.4 min
+shard  589:    2208 samples,     4028 fixed points, certified  99.6%,  105.2s | 565/609 done, eta    2.3 min
+shard  548:    2358 samples,     4856 fixed points, certified  99.4%,  224.4s | 566/609 done, eta    2.3 min
+shard  583:    2347 samples,     4377 fixed points, certified  99.4%,  129.1s | 567/609 done, eta    2.2 min
+shard  590:    2103 samples,     3820 fixed points, certified  99.1%,  111.8s | 568/609 done, eta    2.2 min
+shard  557:    2196 samples,     3827 fixed points, certified  99.4%,  204.7s | 569/609 done, eta    2.1 min
+shard  561:    2292 samples,     4420 fixed points, certified  99.4%,  201.2s | 570/609 done, eta    2.1 min
+shard  597:    2173 samples,     4140 fixed points, certified  99.2%,  102.7s | 571/609 done, eta    2.0 min
+shard  570:    2000 samples,     3594 fixed points, certified  99.8%,  175.5s | 572/609 done, eta    2.0 min
+shard  569:    2264 samples,     4220 fixed points, certified  99.5%,  180.8s | 573/609 done, eta    1.9 min
+shard  559:    1985 samples,     4212 fixed points, certified  99.4%,  209.5s | 574/609 done, eta    1.8 min
+shard  536:    2259 samples,     4480 fixed points, certified  99.1%,  291.9s | 575/609 done, eta    1.8 min
+shard  595:    2419 samples,     4763 fixed points, certified  99.2%,  114.6s | 576/609 done, eta    1.7 min
+shard  562:    2373 samples,     4633 fixed points, certified  99.1%,  217.5s | 577/609 done, eta    1.7 min
+shard  575:    2459 samples,     4544 fixed points, certified  99.7%,  174.1s | 578/609 done, eta    1.6 min
+shard  601:    2262 samples,     4134 fixed points, certified  99.7%,   96.4s | 579/609 done, eta    1.6 min
+shard  573:    2023 samples,     4001 fixed points, certified  99.2%,  181.5s | 580/609 done, eta    1.5 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         3         4       234
+  n= 3:       411       768      1840
+  n= 4:      1967      4460      5966
+  n= 5:      2675      5863      7205
+  n= 6:      2956      5976      6862
+  n= 7:      2808      6924      6608
+  n= 8:      3198      8299      6895
+  n= 9:      2667      7056      4447
+  n=10:      2165      7109      5800
+  total:    111165 core-seconds
+shard  599:    2062 samples,     3885 fixed points, certified  99.5%,  111.9s | 581/609 done, eta    1.5 min
+shard  587:    2392 samples,     4714 fixed points, certified  99.3%,  152.4s | 582/609 done, eta    1.4 min
+shard  539:    2367 samples,     4243 fixed points, certified  99.2%,  304.0s | 583/609 done, eta    1.4 min
+shard  560:    2011 samples,     3777 fixed points, certified  99.5%,  229.2s | 584/609 done, eta    1.3 min
+shard  582:    2353 samples,     4515 fixed points, certified  99.4%,  169.2s | 585/609 done, eta    1.3 min
+shard  605:    2204 samples,     4685 fixed points, certified  99.4%,  102.2s | 586/609 done, eta    1.2 min
+shard  594:    2066 samples,     4025 fixed points, certified  99.1%,  140.5s | 587/609 done, eta    1.2 min
+shard  581:    2156 samples,     4045 fixed points, certified  99.7%,  179.1s | 588/609 done, eta    1.1 min
+shard  596:    2373 samples,     4241 fixed points, certified  99.3%,  139.5s | 589/609 done, eta    1.0 min
+shard  567:    1963 samples,     3986 fixed points, certified  99.4%,  226.4s | 590/609 done, eta    1.0 min
+shard  584:    2106 samples,     4235 fixed points, certified  99.4%,  181.9s | 591/609 done, eta    0.9 min
+shard  592:    2205 samples,     4632 fixed points, certified  99.6%,  154.0s | 592/609 done, eta    0.9 min
+shard  578:    2041 samples,     3861 fixed points, certified  99.2%,  199.9s | 593/609 done, eta    0.8 min
+shard  591:    2151 samples,     3923 fixed points, certified  99.5%,  160.2s | 594/609 done, eta    0.8 min
+shard  603:    2455 samples,     4387 fixed points, certified  99.6%,  125.3s | 595/609 done, eta    0.7 min
+shard  598:    2037 samples,     3897 fixed points, certified  99.3%,  149.1s | 596/609 done, eta    0.7 min
+shard  588:    2146 samples,     4223 fixed points, certified  99.4%,  178.7s | 597/609 done, eta    0.6 min
+shard  607:    2408 samples,     4881 fixed points, certified  99.3%,  117.7s | 598/609 done, eta    0.6 min
+shard  572:    2299 samples,     4473 fixed points, certified  99.8%,  221.4s | 599/609 done, eta    0.5 min
+shard  586:    2050 samples,     4452 fixed points, certified  99.3%,  205.9s | 600/609 done, eta    0.5 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         3         5       348
+  n= 3:       428       801      1891
+  n= 4:      2049      4650      6200
+  n= 5:      2786      6105      7480
+  n= 6:      3067      6182      7108
+  n= 7:      2900      7129      6798
+  n= 8:      3295      8539      7062
+  n= 9:      2725      7197      4528
+  n=10:      2207      7235      5895
+  total:    114613 core-seconds
+shard  555:    1950 samples,     3885 fixed points, certified  99.2%,  282.6s | 601/609 done, eta    0.4 min
+shard  608:    2388 samples,     4532 fixed points, certified  99.7%,  134.6s | 602/609 done, eta    0.4 min
+shard  585:    2238 samples,     4407 fixed points, certified  98.9%,  213.6s | 603/609 done, eta    0.3 min
+shard  593:    2213 samples,     4245 fixed points, certified  99.3%,  190.2s | 604/609 done, eta    0.3 min
+shard  604:    2380 samples,     4318 fixed points, certified  99.6%,  162.7s | 605/609 done, eta    0.2 min
+shard  600:    1773 samples,     4183 fixed points, certified  98.6%,  172.6s | 606/609 done, eta    0.2 min
+shard  553:    2148 samples,     4022 fixed points, certified  99.6%,  311.7s | 607/609 done, eta    0.1 min
+shard  602:    2215 samples,     4084 fixed points, certified  99.7%,  173.0s | 608/609 done, eta    0.1 min
+shard  606:    2517 samples,     4939 fixed points, certified  99.5%,  177.5s | 609/609 done, eta    0.0 min
+generated 1343836 samples in 32.0 min
+core-seconds by n:  broad    switch  boundary   (all workers summed)
+  n= 2:         3         5       419
+  n= 3:       435       815      2001
+  n= 4:      2080      4725      6291
+  n= 5:      2833      6198      7585
+  n= 6:      3115      6271      7207
+  n= 7:      2935      7211      6864
+  n= 8:      3357      8705      7195
+  n= 9:      2757      7280      4575
+  n=10:      2227      7319      6023
+  total:    116432 core-seconds
+merged 20/609 shards
+merged 40/609 shards
+merged 60/609 shards
+merged 80/609 shards
+merged 100/609 shards
+merged 120/609 shards
+merged 140/609 shards
+merged 160/609 shards
+merged 180/609 shards
+merged 200/609 shards
+merged 220/609 shards
+merged 240/609 shards
+merged 260/609 shards
+merged 280/609 shards
+merged 300/609 shards
+merged 320/609 shards
+merged 340/609 shards
+merged 360/609 shards
+merged 380/609 shards
+merged 400/609 shards
+merged 420/609 shards
+merged 440/609 shards
+merged 460/609 shards
+merged 480/609 shards
+merged 500/609 shards
+merged 520/609 shards
+merged 540/609 shards
+merged 560/609 shards
+merged 580/609 shards
+merged 600/609 shards
+merged 609/609 shards
+graphs   : 38969
+samples  : 1343836
+fp rows  : 2591008
+Brouwer-certified samples : 99.4%
+samples with zero FPs     : 0.00%
+per n:  samples | certified % | mean n_fp
+  n= 2:      2424 |  100.0 | 1.57
+  n= 3:    193320 |   99.9 | 1.78
+  n= 4:    449120 |   99.7 | 1.93
+  n= 5:    300000 |   99.5 | 1.96
+  n= 6:    175000 |   99.2 | 1.94
+  n= 7:    100000 |   98.9 | 1.99
+  n= 8:     63988 |   98.5 | 2.03
+  n= 9:     36000 |   97.8 | 1.99
+  n=10:     23984 |   96.8 | 2.07
+n_fp percentiles 50/90/99/99.9 : 1 / 3 / 7 / 11   max 24
+suggested max_fp (p99 + 3)     : 10
+dropped at max_fp=16          : 0.00% of samples
+  phase 0 (broad   ):    408712 samples | mean n_fp 1.10 | certified 100.0%
+  phase 1 (switch  ):    668520 samples | mean n_fp 2.06 | certified 99.2%
+  phase 2 (boundary):    266604 samples | mean n_fp 2.87 | certified 98.9%
+structure: pointers tile every array, all three splits are populated
+verify: 2000 samples, 3924 fixed points | |residual| median 1.60e-08  p99 5.16e-08  max 8.53e-08 | outside box 0 | certified flag differs from index sum in 0 samples (non-hyperbolic points)
+Corpus A summary (Python generator)
+cache: corpusA/cache
+graphs 38,969   samples 1,343,836   fixed points 2,591,008
+Thomas coding: 1 positive-only, 2 negative-only, 3 both (MATLAB convention)
+
+per n:  graphs | tc=1 tc=2 tc=3 | sparse medium dense | samples  mean_fp  consistent%
+  n= 2:     21 |    6    4    11 |     11     10     0 |     2424     1.57      100.0
+  n= 3:   1934 |  106   96  1732 |     46   1888     0 |   193320     1.78       99.9
+  n= 4:   5614 |  823  569  4222 |   1970   2468  1176 |   449120     1.93       99.7
+  n= 5:  10000 | 2500 1125  6375 |   4146   3621  2233 |   300000     1.96       99.5
+  n= 6:   7000 | 1750  788  4462 |   2908   2546  1546 |   175000     1.94       99.2
+  n= 7:   5000 | 1250  516  3234 |   2086   1796  1118 |   100000     1.99       98.9
+  n= 8:   4000 | 1000  319  2681 |   1722   1357   921 |    63988     2.03       98.5
+  n= 9:   3000 |  750  233  2017 |   1298   1017   685 |    36000     1.99       97.8
+  n=10:   2400 |  600  154  1646 |   1037    794   569 |    23984     2.07       96.8
+
+fixed points per sample: mean 1.93, percentiles 50/90/99/99.9 = 1/3/7/11, max 24
+samples with exactly 1 fixed point 65.1%, with >= 3 34.8%, with >= 2 stable 32.6%
+Brouwer categories: (A) consistent 99.40%  (B) suspect: sum != 1 0.60%  (C) near-bifurcation 0.00%
+
+per phase:  samples  mean_fp  consistent%  >=2 stable%
+  Phase 0 (broad)        408712     1.10       100.0         4.6
+  Phase 1 (switch)       668520     2.06        99.2        38.1
+  Phase 2 (boundary)     266604     2.87        98.9        61.6
+
+splits (by graph): train 27,279 graphs / 939,581 samples  validation 5,845 graphs / 202,219 samples  test 5,845 graphs / 202,036 samples
+stored residual |f|/(|P R|+K x): median 1.65e-15, p99 8.91e-14, max 4.52e-11
+wrote figures and summary to corpusA/analysis
