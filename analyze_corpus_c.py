@@ -33,6 +33,7 @@ STAB_NAMES = {
     5: "non-hyperbolic",
 }
 STAB_STABLE = {0, 1}   # classes counted as "stable attractor"
+ZEROEIG_NEAR_SN = 1e-3   # min|lambda|/rho below this counts as near a saddle-node
 
 
 def load_shards(corpus_dir: Path) -> dict:
@@ -234,7 +235,9 @@ def compute_stats(cats: dict, shard_rows: list[dict]) -> dict:
 
     # Hopf / zero-eigenvalue flags
     frac_hopf = float(np.mean(bfp_hopf > 0)) if n_bfp > 0 else None
-    frac_zeig = float(np.mean(bfp_zeroeig > 0)) if n_bfp > 0 else None
+    # zeroeig = min|lambda| / spectral radius (solver.py), so "> 0" is always true. Report the
+    # fraction close to a saddle-node (zero eigenvalue) instead, plus the distribution.
+    frac_zeig = float(np.mean(bfp_zeroeig < ZEROEIG_NEAR_SN)) if n_bfp > 0 else None
 
     fp_stats = {
         "stab_dist":         stab_dist,
@@ -244,6 +247,7 @@ def compute_stats(cats: dict, shard_rows: list[dict]) -> dict:
         "resid_pct":         percentiles(bfp_resid) if n_bfp > 0 else {},
         "frac_hopf":         frac_hopf,
         "frac_zero_eig":     frac_zeig,
+        "zero_eig_pct":      percentiles(bfp_zeroeig) if n_bfp > 0 else {},
         "branches_per_scc_hist": br_per_scc_hist,
     }
 

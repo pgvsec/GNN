@@ -69,7 +69,7 @@ Each shard is a .npz file containing:
   bfp_charpoly    [BF, N_MAX]   float32  char poly coefficients
   bfp_stab        [BF]          int8     stability class
   bfp_hopf        [BF]          float32  Hopf proximity ratio
-  bfp_zeroeig     [BF]          float32  |det(J)|
+  bfp_zeroeig     [BF]          float32  min|lambda| / spectral radius of J (0 = saddle-node)
   bfp_resid       [BF]          float32  ODE residual at FP
 
 Patches / design notes
