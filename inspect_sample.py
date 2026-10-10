@@ -119,7 +119,7 @@ def main():
                 })
             branches.append({
                 "branch_idx": bi,
-                "branch_key": int(branch_key[bi]),
+                "branch_key": format(int(branch_key[bi]), '016x'),  # hex string — exact, no float64 precision loss
                 "fps": fps,
             })
 

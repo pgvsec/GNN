@@ -314,6 +314,28 @@ function renderStats(data){
         div.insertAdjacentHTML('beforeend',`<div style="flex:1;background:var(--surface-2);border-radius:4px;padding:10px;"><div style="font-size:11px;color:var(--ink-muted)">${item.lbl}</div><div style="font-size:22px;font-weight:700;color:${item.col}">${pct(item.p)}</div></div>`);});
       c.appendChild(div);}),
   ]);
+  // ── Schema v2 structure stats (optional — present when analyze_corpus_c ran on v2 shards) ──
+  const ss=data.structure_stats;
+  if(ss&&Object.keys(ss).length>0){
+    sec('DAG shape & depth (v2)');
+    const strTiles=document.createElement('div');strTiles.id='tiles';
+    const strItems=[
+      ss.frac_reconvergent!=null&&{lbl:'Reconvergent',val:pct(ss.frac_reconvergent),sub:'have ≥1 reconv. path'},
+      ss.frac_depth_ge_6!=null&&{lbl:'Depth ≥6',val:pct(ss.frac_depth_ge_6),sub:'long causal chain'},
+      ss.frac_fanin_ge_3!=null&&{lbl:'Fan-in ≥3',val:pct(ss.frac_fanin_ge_3),sub:'high-convergence node'},
+      ss.frac_multi_root!=null&&{lbl:'Multi-root',val:pct(ss.frac_multi_root),sub:'independent root SCCs'},
+      ss.frac_branch_cons!=null&&{lbl:'Brouwer-certified',val:pct(ss.frac_branch_cons),sub:'index sum = 1'},
+      ss.frac_scc_truncated!=null&&{lbl:'SCC truncated',val:pct(ss.frac_scc_truncated),sub:'portrait cut short'},
+      ss.frac_all_solved!=null&&{lbl:'All-solved DAGs',val:pct(ss.frac_all_solved),sub:'every SCC solved'},
+    ].filter(Boolean);
+    strItems.forEach(t=>{strTiles.insertAdjacentHTML('beforeend',`<div class="tile"><div class="lbl">${t.lbl}</div><div class="val">${t.val}</div><div class="sub">${t.sub}</div></div>`);});
+    root.appendChild(strTiles);
+    grid([
+      ss.shape_dist?.length&&card('DAG shape family','',c=>histogram(c,ss.shape_dist,{color:CAT,horizontal:true,height:Math.max(120,ss.shape_dist.length*26+40)})),
+      ss.depth_dist?.length&&card('DAG depth','0=single SCC',c=>histogram(c,{bins:ss.depth_dist.map(d=>d.value),counts:ss.depth_dist.map(d=>d.count)},{color:'var(--c7)',tickFmt:d=>'d='+d})),
+    ].filter(Boolean));
+  }
+
   sec('Per-shard breakdown');
   grid([card('Shard counts','',c=>shardTable(c,shard_rows),true)]);
 }
@@ -364,8 +386,10 @@ function renderInspector(sample){
     // branches / FPs
     let brHTML='';
     scc.branches.forEach((br,bi)=>{
-      const key='0x'+br.branch_key.toString(16).padStart(16,'0');
-      brHTML+=`<details style="margin-top:6px;"><summary>Branch ${bi} <span style="color:var(--ink-muted);font-size:11px">${key.slice(0,14)}…</span> — ${br.fps.length} FPs</summary>
+      // branch_key is written as a hex string by inspect_sample.py (exact, no uint64 precision loss)
+      const keyHex=typeof br.branch_key==='string'?br.branch_key:Number(br.branch_key).toString(16).padStart(16,'0');
+      const keyDisp='0x'+keyHex;
+      brHTML+=`<details style="margin-top:6px;"><summary>Branch ${bi} <span style="color:var(--ink-muted);font-size:11px">${keyDisp.slice(0,14)}…</span> — ${br.fps.length} FPs</summary>
         <table style="margin-top:4px;">
           <thead><tr><th>#</th><th>Stability</th><th>Residual</th><th>Hopf</th><th>x (truncated)</th></tr></thead>
           <tbody>${br.fps.map((fp,fi)=>`
