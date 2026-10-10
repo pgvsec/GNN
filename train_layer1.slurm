@@ -24,7 +24,7 @@
 # ---------------------------------------------------------------------------
 
 # -- Edit these two paths --
-CACHE_DIR="$HOME/corpusA/cache"
+CACHE_DIR="/home/gupt1042/python/corpusA/cache"
 OUT_DIR="$HOME/runs/layer1"
 
 mkdir -p "$OUT_DIR"
