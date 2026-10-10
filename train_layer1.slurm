@@ -9,6 +9,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --time=24:00:00
 #SBATCH --partition=a100-40gb
+#SBATCH --account=ayg
 
 # ---------------------------------------------------------------------------
 # Usage:
