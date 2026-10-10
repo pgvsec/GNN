@@ -828,9 +828,10 @@ class CorpusCShardBuilder:
             sign_pad[:n_j, :n_j] = sign
 
             # Edge params: par["T"], par["nh"], par["F"] are [1, N, N] dense [C6]
-            ep_T  = np.zeros((N_MAX, N_MAX), dtype=np.float32)
-            ep_NH = np.zeros((N_MAX, N_MAX), dtype=np.float32)
-            ep_F  = np.zeros((N_MAX, N_MAX), dtype=np.float32)
+            # Pad with neutral values (1.0) so absent-edge entries are never degenerate.
+            ep_T  = np.ones((N_MAX, N_MAX), dtype=np.float32)
+            ep_NH = np.ones((N_MAX, N_MAX), dtype=np.float32)
+            ep_F  = np.ones((N_MAX, N_MAX), dtype=np.float32)
             ep_T[:n_j, :n_j]  = par["T"][0, :n_j, :n_j].astype(np.float32)
             ep_NH[:n_j, :n_j] = par["nh"][0, :n_j, :n_j].astype(np.float32)
             ep_F[:n_j, :n_j]  = par["F"][0, :n_j, :n_j].astype(np.float32)
@@ -926,6 +927,14 @@ class CorpusCShardBuilder:
         np.savez_compressed(
             path,
             schema_version = np.array(SCHEMA_VERSION, dtype=np.int32),
+            _sizes = np.array([
+                self._n_dags,
+                self._n_sccs,
+                self._n_iedges,
+                self._n_branches,
+                len(self.link_pb),
+                self._n_bfps,
+            ], dtype=np.int64),
             # DAG
             dag_n_sccs    = _a(self.dag_n_sccs,   np.int32),
             dag_n_edges   = _a(self.dag_n_edges,  np.int32),
