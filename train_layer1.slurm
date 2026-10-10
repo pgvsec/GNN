@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=grn_layer1
-#SBATCH --output=runs/layer1/slurm_%j.out
-#SBATCH --error=runs/layer1/slurm_%j.err
+#SBATCH --output=/scratch/gilbreth/gupt1042/runs/layer1/slurm_%j.out
+#SBATCH --error=/scratch/gilbreth/gupt1042/runs/layer1/slurm_%j.err
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
@@ -24,8 +24,8 @@
 # ---------------------------------------------------------------------------
 
 # -- Edit these two paths --
-CACHE_DIR="/home/gupt1042/python/corpusA/cache"
-OUT_DIR="$HOME/runs/layer1"
+CACHE_DIR="/scratch/gilbreth/gupt1042/corpusA/cache"
+OUT_DIR="/scratch/gilbreth/gupt1042/runs/layer1"
 
 mkdir -p "$OUT_DIR"
 
@@ -34,11 +34,8 @@ cd "$SLURM_SUBMIT_DIR"
 # Load modules — adjust to what's available on your allocation:
 #   module avail 2>&1 | grep -i torch
 #   module avail 2>&1 | grep -i conda
-module load anaconda/2024.02-py311 2>/dev/null || true
-module load cuda/12.1             2>/dev/null || true
-
-# If you use a conda environment with PyTorch:
-# conda activate my_torch_env
+module load anaconda/2025.06-py313
+source activate gnn
 
 python train.py \
     --mode train \
