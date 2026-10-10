@@ -33,6 +33,11 @@ STAB_NAMES = {
     5: "non-hyperbolic",
 }
 STAB_STABLE = {0, 1}   # classes counted as "stable attractor"
+# Keep in sync with corpus_c_generator.FAMILIES / SHAPE_NAMES (not imported: this script
+# deliberately needs only numpy).
+FAMILY_NAMES = {0: "chain", 1: "tree", 2: "reconvergent", 3: "fanin", 4: "multiroot", 5: "random"}
+SHAPE_NAMES = {0: "chain", 1: "tree", 2: "merge", 3: "reconvergent"}
+ZEROEIG_NEAR_SN = 1e-3   # min|lambda|/rho below this counts as near a saddle-node
 
 
 def load_shards(corpus_dir: Path) -> dict:
@@ -48,11 +53,22 @@ def load_shards(corpus_dir: Path) -> dict:
         # per-DAG
         "dag_n_sccs":    [],
         "dag_n_edges":   [],
+        # per-DAG structure labels (schema v2; absent in v1 shards)
+        "dag_family":    [],
+        "dag_shape":     [],
+        "dag_depth":     [],
+        "dag_max_fanin": [],
+        "dag_n_reconv":  [],
+        "dag_n_roots":   [],
+        "dag_all_solved": [],
         # per-SCC
         "scc_n":         [],
         "scc_tc":        [],
         "scc_topo_rank": [],
         "scc_dag_id":    [],   # local dag id – used for cross-joins only
+        "scc_depth":     [],
+        "scc_n_parents": [],
+        "scc_truncated": [],
         # inter-SCC edges
         "iedge_src_scc": [],
         "iedge_tgt_scc": [],
@@ -61,6 +77,8 @@ def load_shards(corpus_dir: Path) -> dict:
         "iedge_F":       [],
         # branches
         "branch_scc":    [],
+        "branch_cons":   [],
+        "branch_bsum":   [],
         # fixed points
         "bfp_stab":      [],
         "bfp_hopf":      [],
@@ -179,7 +197,10 @@ def compute_stats(cats: dict, shard_rows: list[dict]) -> dict:
         "tc_dist": value_counts(scc_tc, TC_NAMES),
         "topo_rank_hist": histogram(scc_topo, 0, int(scc_topo.max()) + 1, 15)
             if n_sccs > 0 else None,
-        "frac_root_sccs": float(np.mean(scc_topo == 0)) if n_sccs > 0 else None,
+        # roots are SCCs without a parent; topo rank 0 is only one of them in multi-root DAGs
+        "frac_root_sccs": (float(np.mean(cats["scc_n_parents"] == 0))
+                           if len(cats["scc_n_parents"]) == n_sccs and n_sccs > 0
+                           else (float(np.mean(scc_topo == 0)) if n_sccs > 0 else None)),
     }
 
     # SCC size × Thomas class cross-tab
@@ -234,7 +255,9 @@ def compute_stats(cats: dict, shard_rows: list[dict]) -> dict:
 
     # Hopf / zero-eigenvalue flags
     frac_hopf = float(np.mean(bfp_hopf > 0)) if n_bfp > 0 else None
-    frac_zeig = float(np.mean(bfp_zeroeig > 0)) if n_bfp > 0 else None
+    # zeroeig = min|lambda| / spectral radius (solver.py), so "> 0" is always true. Report the
+    # fraction close to a saddle-node (zero eigenvalue) instead, plus the distribution.
+    frac_zeig = float(np.mean(bfp_zeroeig < ZEROEIG_NEAR_SN)) if n_bfp > 0 else None
 
     fp_stats = {
         "stab_dist":         stab_dist,
@@ -244,11 +267,33 @@ def compute_stats(cats: dict, shard_rows: list[dict]) -> dict:
         "resid_pct":         percentiles(bfp_resid) if n_bfp > 0 else {},
         "frac_hopf":         frac_hopf,
         "frac_zero_eig":     frac_zeig,
+        "zero_eig_pct":      percentiles(bfp_zeroeig) if n_bfp > 0 else {},
         "branches_per_scc_hist": br_per_scc_hist,
     }
 
     # ── Per-shard summary (for the shard health panel) ────────────────────────
     shards_sorted = sorted(shard_rows, key=lambda r: r["file"])
+
+    # ── Schema v2: DAG shape / depth strata, completeness, truncation ────────
+    structure_stats = {}
+    if n_dags > 0 and len(cats["dag_shape"]) == n_dags:
+        depth = cats["dag_depth"]
+        structure_stats.update({
+            "shape_dist":       value_counts(cats["dag_shape"], SHAPE_NAMES),
+            "family_dist":      value_counts(cats["dag_family"], FAMILY_NAMES),
+            "depth_dist":       value_counts(depth),
+            "max_fanin_dist":   value_counts(cats["dag_max_fanin"]),
+            "frac_reconvergent": float(np.mean(cats["dag_n_reconv"] > 0)),
+            "frac_depth_ge_6":  float(np.mean(depth >= 6)),
+            "frac_fanin_ge_3":  float(np.mean(cats["dag_max_fanin"] >= 3)),
+            "frac_multi_root":  float(np.mean(cats["dag_n_roots"] > 1)),
+            "frac_all_solved":  float(np.mean(cats["dag_all_solved"])),
+        })
+    if n_br > 0 and len(cats["branch_cons"]) == n_br:
+        structure_stats["frac_branch_cons"] = float(np.mean(cats["branch_cons"]))
+        structure_stats["bsum_dist"] = value_counts(cats["branch_bsum"])
+    if n_sccs > 0 and len(cats["scc_truncated"]) == n_sccs:
+        structure_stats["frac_scc_truncated"] = float(np.mean(cats["scc_truncated"]))
 
     return {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -257,6 +302,7 @@ def compute_stats(cats: dict, shard_rows: list[dict]) -> dict:
         "scc_stats":    scc_stats,
         "iedge_stats":  iedge_stats,
         "fp_stats":     fp_stats,
+        "structure_stats": structure_stats,
         "shard_rows":   shards_sorted,
     }
 
@@ -294,6 +340,18 @@ def main():
     print(f"  Inter-edges:    {ov['n_inter_edges']:,}")
     print(f"  Branches:       {ov['n_branches']:,}")
     print(f"  Fixed points:   {ov['n_fixed_points']:,}")
+    st = stats["structure_stats"]
+    if st:
+        pct = lambda d: "  ".join(f"{r['label']} {100 * r['count'] / max(ov['n_dags'], 1):.1f}%" for r in d)
+        print(f"  Shapes:         {pct(st['shape_dist'])}")
+        print(f"  Depth:          {pct(st['depth_dist'])}")
+        print(f"  Depth >= 6:     {st['frac_depth_ge_6']*100:.1f}%   fan-in >= 3: {st['frac_fanin_ge_3']*100:.1f}%"
+              f"   multi-root: {st['frac_multi_root']*100:.1f}%")
+        print(f"  Unsolved DAGs:  {(1 - st['frac_all_solved'])*100:.1f}% (some SCC has no branch)")
+        if "frac_branch_cons" in st:
+            print(f"  Branches with complete FP set (Brouwer): {st['frac_branch_cons']*100:.1f}%")
+        if "frac_scc_truncated" in st:
+            print(f"  SCCs with subsampled branches: {st['frac_scc_truncated']*100:.2f}%")
     fp = stats["fp_stats"]
     if fp["frac_stable"] is not None:
         print(f"  Stable FPs:     {fp['n_stable']:,} ({fp['frac_stable']*100:.1f}%)")
