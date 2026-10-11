@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-10-11  
 **GitHub repo:** `pgvsec/GNN`  
-**Active dev branch:** `claude/eloquent-cerf-l0zqbo` (HEAD `61d3899`)  
+**Active dev branch:** `claude/eloquent-cerf-l0zqbo` (HEAD `b0b8d1e`)  
 **Stable branch:** `main` (HEAD `3c500f8`) — Layer I + Layer II/III infrastructure  
 **Cluster A (GPU training):** Purdue Gilbreth (`gilbreth.rcac.purdue.edu`)  
 **Cluster B (CPU corpus work):** Purdue Negishi (`negishi.rcac.purdue.edu`)  
@@ -318,6 +318,8 @@ if [ ! -f "$SRC/meta.json" ] && [ ! -f "$SRC/meta_b.json" ]; then
 ## 7. Git History (branch `claude/eloquent-cerf-l0zqbo`)
 
 ```
+b0b8d1e  docs: update session context with Layer II completion, LFS setup, and collaborator instructions
+b9f7f1f  artifacts: add Layer II checkpoints and training log (epoch 35 best, score 1.6794)
 61d3899  chore: add .gitattributes for Git LFS tracking (*.pt, *.npy, *.npz, *.csv)
 5a3d05c  fix: clamp port_gene sentinel -1 before GPU index in FiLMInjection
 c68e73d  Fix collate_b: add port_mask to batch
