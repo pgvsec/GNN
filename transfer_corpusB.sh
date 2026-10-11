@@ -22,8 +22,8 @@ DST_PATH="/scratch/gilbreth/gupt1042/corpusB_new/cache"
 DST="${DST_HOST}:${DST_PATH}"
 
 # Sanity-check that the cache looks complete before transferring.
-if [ ! -f "$SRC/meta_b.json" ]; then
-    echo "ERROR: $SRC/meta_b.json not found — cache may not have built yet."
+if [ ! -f "$SRC/meta.json" ] && [ ! -f "$SRC/meta_b.json" ]; then
+    echo "ERROR: No meta.json found in $SRC — cache may not have built yet."
     echo "Run: python -c \"from data_b import build_cache_b; build_cache_b('$HOME/python/corpusB_new', '$HOME/python/corpusB_new/cache')\""
     exit 1
 fi
