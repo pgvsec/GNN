@@ -377,6 +377,10 @@ class SccFixedPointNet(nn.Module):
                 "charpoly": self.charpoly_head(torch.cat([s, gs], dim=-1)),
                 "count_logit": self.count_head(g),
                 "stable_count_logit": self.stable_count_head(g),
+                # Intermediate embeddings exposed for Layer II / III
+                "slot_emb": s,    # branch tokens q^(r)  [B, K, d]
+                "graph_emb": g,   # z_j^0               [B, d]
+                "node_emb": h,    # h_jv^0              [B, N, d]
             }
 
 
