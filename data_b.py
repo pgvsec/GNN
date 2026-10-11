@@ -35,6 +35,7 @@ from data import (EPS_BOX, N_MAX, NUM_STABILITY,
 # 1. Constants
 # ---------------------------------------------------------------------------
 MAX_PORTS = 3
+SHARD_GLOB_B = "shard_b_[0-9][0-9][0-9][0-9].npz"
 
 GROUP_ORDER_B = ("g", "e", "s", "ep", "fp", "cb")
 
@@ -71,7 +72,7 @@ def _group_of(key):
 # ---------------------------------------------------------------------------
 def build_cache_b(corpus_dir, cache_dir):
     """Merge Corpus B shard .npz files into flat memory-mapped numpy arrays."""
-    shards = sorted(glob.glob(os.path.join(corpus_dir, "shards", SHARD_GLOB)))
+    shards = sorted(glob.glob(os.path.join(corpus_dir, "shards", SHARD_GLOB_B)))
     if not shards:
         raise FileNotFoundError(f"No shards under {corpus_dir}/shards")
     os.makedirs(cache_dir, exist_ok=True)
