@@ -290,6 +290,7 @@ def collate_b(batch):
         "port_F":    stack("port_F").contiguous(),
         "port_T":    stack("port_T").contiguous(),
         "port_nh":   stack("port_nh").contiguous(),
+        "port_mask": (torch.arange(MAX_PORTS).unsqueeze(0) < np_.unsqueeze(1)),  # [B, MAX_PORTS]
         "has_pos_fb": torch.tensor([b["has_pos_fb"] for b in batch], dtype=torch.bool),
         "consistent": torch.tensor([b["consistent"] for b in batch], dtype=torch.bool),
     }
