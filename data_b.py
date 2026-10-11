@@ -122,14 +122,15 @@ def build_cache_b(corpus_dir, cache_dir):
     with open(os.path.join(cache_dir, "meta.json"), "w") as fh:
         json.dump({"n_shards": len(shards), **totals}, fh)
     _report_cache_b({k: np.load(os.path.join(cache_dir, k + ".npy"), mmap_mode="r")
-                     for k in ["g_n", "s_graph", "s_n_fp", "s_cons", "cb_stratum"]})
+                     for k in ["g_n", "s_graph", "s_n_fp", "s_cons", "s_cb_ptr", "cb_stratum"]})
 
 
 def _report_cache_b(a):
     n_fp    = np.asarray(a["s_n_fp"])
     g_n     = np.asarray(a["g_n"])[np.asarray(a["s_graph"])]
     cons    = np.asarray(a["s_cons"])
-    stratum = np.asarray(a["cb_stratum"])
+    # cb_stratum is per-port; pick the first port of each sample via s_cb_ptr
+    stratum = np.asarray(a["cb_stratum"])[np.asarray(a["s_cb_ptr"])]
     print(f"graphs  : {a['g_n'].shape[0]}")
     print(f"samples : {n_fp.shape[0]}")
     print(f"Brouwer-certified: {100.0 * cons.mean():.1f}%")
