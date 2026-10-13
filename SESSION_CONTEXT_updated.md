@@ -1,8 +1,8 @@
 # GNN Project — Session Context for Handoff
 
-**Last updated:** 2026-10-11  
+**Last updated:** 2026-10-12  
 **GitHub repo:** `pgvsec/GNN`  
-**Active dev branch:** `claude/eloquent-cerf-l0zqbo` (HEAD `b0b8d1e`)  
+**Active dev branch:** `claude/eloquent-cerf-l0zqbo` (HEAD `509657f`)  
 **Stable branch:** `main` (HEAD `3c500f8`) — Layer I + Layer II/III infrastructure  
 **Cluster A (GPU training):** Purdue Gilbreth (`gilbreth.rcac.purdue.edu`)  
 **Cluster B (CPU corpus work):** Purdue Negishi (`negishi.rcac.purdue.edu`)  
@@ -127,7 +127,7 @@ idx = gene_k_safe.view(B, 1, 1).expand(B, 1, d)
 - `CorpusBDataset`, `collate_b`, `make_loader_b(cfg, split, train)`, `describe_dataset_b`
 - Val metrics: `batch["stratum"] → batch["phase"]` alias for `MetricAccumulator` group keys
 
-### Corpus C (`data_c.py`) — Layer III training data (multi-SCC networks)
+### Corpus C (`data_c.py`, `model_c.py`) — Layer III training data (multi-SCC networks)
 
 **NEW FILE** written on branch `claude/eloquent-cerf-l0zqbo`. Key design:
 
@@ -164,7 +164,7 @@ idx = gene_k_safe.view(B, 1, 1).expand(B, 1, d)
 - Corpus A: `/scratch/gilbreth/gupt1042/corpusA/cache`
 - Corpus B shards: `~/python/corpusB_new/` on Negishi ✅ regenerated (609 shards)
 - Corpus B cache: `/scratch/gilbreth/gupt1042/corpusB_new/cache` ✅ built and transferred (43 .npy files, 825,733 samples)
-- Corpus C shards: not yet generated
+- Corpus C shards: `~/python/corpusC/` on Negishi ✅ generated (need cache build + transfer)
 
 ---
 
@@ -318,6 +318,8 @@ if [ ! -f "$SRC/meta.json" ] && [ ! -f "$SRC/meta_b.json" ]; then
 ## 7. Git History (branch `claude/eloquent-cerf-l0zqbo`)
 
 ```
+509657f  feat: add Layer III model, training script, slurm job, and corpus transfer script
+db1b21a  docs: fix HEAD ref and add final two commits to git history
 b0b8d1e  docs: update session context with Layer II completion, LFS setup, and collaborator instructions
 b9f7f1f  artifacts: add Layer II checkpoints and training log (epoch 35 best, score 1.6794)
 61d3899  chore: add .gitattributes for Git LFS tracking (*.pt, *.npy, *.npz, *.csv)
@@ -374,23 +376,25 @@ git fetch origin && git reset --hard origin/claude/eloquent-cerf-l0zqbo
 sbatch train_layer2.slurm
 ```
 
-### Layer III workflow (TODO)
+### Layer III workflow
 
 ```bash
-# 1. On Negishi: generate Corpus C (needs ep neutral padding fix — already in generator)
-python corpus_c_generator.py \
-    --corpus_a_dir ~/python/corpusA \
-    --out_dir ~/python/corpusC \
-    --workers 8
+# 1. On Negishi: Corpus C shards already generated ✅
+#    If needed to regenerate:
+#    python corpus_c_generator.py \
+#        --out_dir ~/python/corpusC \
+#        --n_shards 64 --dags_per_shard 500 \
+#        --n_workers 32 --k_min 2 --k_max 8 --seed 42
 
-# 2. Build Corpus C cache
+# 2. On Negishi: build Corpus C cache
 python -c "from data_c import build_cache_c; build_cache_c('$HOME/python/corpusC', '$HOME/python/corpusC/cache')"
 
-# 3. Transfer to Gilbreth (write transfer_corpusC.sh analogous to transfer_corpusB.sh)
+# 3. On Negishi: transfer to Gilbreth (validates .npy count before finishing)
+bash transfer_corpusC.sh
 
-# 4. Write model_c.py, train_layer3.py, train_layer3.slurm
-
-# 5. Submit on Gilbreth
+# 4. On Gilbreth: pull latest code and submit
+cd /scratch/gilbreth/gupt1042/GNN
+git fetch origin && git reset --hard origin/claude/eloquent-cerf-l0zqbo
 sbatch train_layer3.slurm
 ```
 
@@ -490,6 +494,11 @@ When merging `claude/eloquent-cerf-l0zqbo` → `main`, resolve these discrepanci
 | Corpus C CSR sentinel ptrs [n+1] | Standard CSR format; `branch_fp_ptr[b+1]-branch_fp_ptr[b]` = num FPs in branch b |
 | Neutral padding (ep T/NH/F = 1) | Avoids log(0) in encoder for absent-edge positions; H(x; F=1, T=1, n=1) = 0.5 (neutral) |
 | clamp port_gene to ≥0 before GPU ops | GPU scatter/gather kernels reject negative indices even when active=0 |
+| CorpusCNet subclasses CorpusBNet (Option B) | Port tensors synthesized from branch_u inside forward(); data layer stays clean |
+| xmax = P/K at forward time in CorpusCNet | Corpus C does not store xmax; P/K is the first-order steady-state approximation used by node_enc |
+| has_pos_fb defaults False in CorpusCNet | Thomas loop topology not tracked in Corpus C; w_thomas=0 in train_layer3.py |
+| Layer III warm-starts from Layer II best.pt | All parameter names identical between CorpusBNet and CorpusCNet |
+| port_T/nh/F = 1.0/2.0/2.0 (neutral defaults) | iedge Hill params not pre-collated per branch; Φ_ψ still distinguishes via u magnitude |
 
 ---
 
@@ -516,10 +525,13 @@ SHARD_GLOB_B  = "shard_b_[0-9][0-9][0-9][0-9].npz"
 # from data_c.py
 GROUP_ORDER_C = ("dag", "scc", "iedge", "branch", "link", "bfp")
 
-# from model_b.py  
+# from model_b.py
 DEFAULT_M_DIM = 128
 
-# Network defaults (train_layer2.slurm / Config)
+# from model_c.py
+MAX_PORTS_C = 8   # port slots synthesized from branch_u per Corpus C sample
+
+# Network defaults (train_layer2.slurm / train_layer3.slurm / Config)
 d_model    = 128
 max_fp     = 16          # K slots
 m_dim      = 128
@@ -546,4 +558,4 @@ n_u_layers = 2
    - `model_b.py` (Layer II/III modules)
    - `train_layer2.py` (Layer II training loop)
    - `losses.py` (criterion and metrics)
-4. **Current status:** Layer I ✅ done. Layer II ✅ done (best.pt epoch 35, score 1.6794). Layer III ⏳ not started — Corpus C shards not yet generated.
+4. **Current status:** Layer I ✅ done. Layer II ✅ done (best.pt epoch 35, score 1.6794). Layer III ⏳ Corpus C shards generated on Negishi; need cache build + transfer + `sbatch train_layer3.slurm`.
