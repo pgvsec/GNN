@@ -32,15 +32,14 @@ export NUMEXPR_NUM_THREADS=1
 # Pin hash seed for reproducibility across spawned workers
 export PYTHONHASHSEED=0
 
-# cd to the repo directory containing corpus_c_generator.py.
-# BASH_SOURCE[0] resolves to the slurm spool copy, so we use a hardcoded path.
-REPO_DIR="/home/${USER}/python/GNN"
-if [ ! -f "${REPO_DIR}/corpus_c_generator.py" ]; then
-    echo "ERROR: corpus_c_generator.py not found at ${REPO_DIR}" >&2
-    echo "       Clone the repo: git clone https://github.com/pgvsec/GNN.git ${REPO_DIR}" >&2
+# cd to the directory sbatch was submitted from — this must be the repo directory
+# containing corpus_c_generator.py (i.e. run: cd /path/to/GNN && sbatch run_corpus_c.slurm).
+cd "$SLURM_SUBMIT_DIR"
+if [ ! -f "corpus_c_generator.py" ]; then
+    echo "ERROR: corpus_c_generator.py not found in $SLURM_SUBMIT_DIR" >&2
+    echo "       Submit from the repo root: cd /path/to/GNN && sbatch run_corpus_c.slurm" >&2
     exit 1
 fi
-cd "${REPO_DIR}"
 
 # ----------------- Preflight Checks ------------------
 
