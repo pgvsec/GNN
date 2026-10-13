@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-10-12  
 **GitHub repo:** `pgvsec/GNN`  
-**Active dev branch:** `claude/eloquent-cerf-l0zqbo` (HEAD `509657f`)  
+**Active dev branch:** `claude/eloquent-cerf-l0zqbo` (HEAD `9fdc88a`)  
 **Stable branch:** `main` (HEAD `3c500f8`) — Layer I + Layer II/III infrastructure  
 **Cluster A (GPU training):** Purdue Gilbreth (`gilbreth.rcac.purdue.edu`)  
 **Cluster B (CPU corpus work):** Purdue Negishi (`negishi.rcac.purdue.edu`)  
@@ -318,6 +318,8 @@ if [ ! -f "$SRC/meta.json" ] && [ ! -f "$SRC/meta_b.json" ]; then
 ## 7. Git History (branch `claude/eloquent-cerf-l0zqbo`)
 
 ```
+9fdc88a  chore: add .gitignore (Python, cache dirs, slurm logs, OS/IDE artifacts)
+f32dbb0  docs: update session context for Layer III (model_c, train_layer3, workflow)
 509657f  feat: add Layer III model, training script, slurm job, and corpus transfer script
 db1b21a  docs: fix HEAD ref and add final two commits to git history
 b0b8d1e  docs: update session context with Layer II completion, LFS setup, and collaborator instructions
