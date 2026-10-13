@@ -317,7 +317,7 @@ class MetricAccumulator:
     2 sweep-guided), "consistent" (Brouwer sum equal to 1) and "has_pos_fb" (graph has a
     positive feedback loop). Overall values are ratios of totals, not means of batch means."""
 
-    GROUP_SIZES = {"n": N_MAX + 1, "phase": 3, "consistent": 2, "has_pos_fb": 2}
+    GROUP_SIZES = {"n": N_MAX + 1, "phase": 4, "consistent": 2, "has_pos_fb": 2}
 
     def __init__(self):
         self.num = {}
