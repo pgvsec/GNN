@@ -16,11 +16,9 @@
 #   sbatch train_layer3.slurm
 #
 # Prerequisites (run before submitting):
-#   1. Generate Corpus C on Negishi:
-#        python corpus_c_generator.py \
-#            --out_dir ~/python/corpusC \
-#            --n_shards 64 --dags_per_shard 500 \
-#            --n_workers 32 --k_min 2 --k_max 8 --seed 42
+#   1. Generate Corpus C on Negishi (v2 schema required):
+#        sbatch run_corpus_c.slurm
+#        (256 shards × 500 DAGs × 64 workers → ~500-640K branches, ~6-8 min)
 #
 #   2. Build the Corpus C cache on Negishi:
 #        python -c "from data_c import build_cache_c; \

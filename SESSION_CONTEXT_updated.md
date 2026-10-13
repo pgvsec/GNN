@@ -381,12 +381,14 @@ sbatch train_layer2.slurm
 ### Layer III workflow
 
 ```bash
-# 1. On Negishi: Corpus C shards already generated ✅
-#    If needed to regenerate:
+# 1. On Negishi: Regenerate Corpus C with v2 schema (old v1 shards are incompatible)
+#    sbatch run_corpus_c.slurm
+#    (or manually):
 #    python corpus_c_generator.py \
 #        --out_dir ~/python/corpusC \
-#        --n_shards 64 --dags_per_shard 500 \
-#        --n_workers 32 --k_min 2 --k_max 8 --seed 42
+#        --n_shards 256 --dags_per_shard 500 \
+#        --n_workers 64 --k_min 2 --k_max 8 --seed 42
+#    Expected: 128K DAGs → ~500-640K branches (~6-8 min on 64-core Negishi node)
 
 # 2. On Negishi: build Corpus C cache
 python -c "from data_c import build_cache_c; build_cache_c('$HOME/python/corpusC', '$HOME/python/corpusC/cache')"

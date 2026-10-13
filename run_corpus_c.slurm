@@ -65,13 +65,14 @@ echo "Start time    : $(date)"
 
 # Generate Corpus C
 #
-#   --n_shards 64         : 64 shards × 500 DAGs/shard = 32 000 DAG samples total.
-#                           Each shard is a self-contained .npz written atomically;
+#   --n_shards 256        : 256 shards × 500 DAGs/shard = 128 000 DAG samples total.
+#                           V2 schema yields ~4-5 branches/DAG (multi-stable enumeration,
+#                           deeper DAGs) → estimated ~500-640K training branches, matching
+#                           Corpus B's 825K scale. Each shard is self-contained .npz;
 #                           failed shards can be re-run individually with --shard_start.
 #   --dags_per_shard 500  : balanced against shard I/O overhead vs. shard file count.
-#   --n_workers 32        : 32 parallel shard processes.
-#                           Each worker runs one shard serially (no inner parallelism),
-#                           so 32 workers × 2 natural threads ≈ 64 cores used.
+#   --n_workers 64        : 64 parallel shard processes, one per allocated CPU.
+#                           Each worker runs one shard serially (no inner parallelism).
 #   --k_min 2             : minimum SCCs per DAG (chain of 2).
 #   --k_max 8             : maximum SCCs per DAG (matches MAX_DAG_SCCS in generator).
 #   --edge_prob 0.35      : per-candidate-edge draw probability for DAG topology
@@ -82,9 +83,9 @@ echo "Start time    : $(date)"
 #
 python corpus_c_generator.py \
     --out_dir        "${CORPUS_C_DIR}" \
-    --n_shards       64               \
+    --n_shards       256              \
     --dags_per_shard 500              \
-    --n_workers      32               \
+    --n_workers      64               \
     --k_min          2                \
     --k_max          8                \
     --edge_prob      0.35             \
