@@ -32,27 +32,32 @@ export NUMEXPR_NUM_THREADS=1
 # Pin hash seed for reproducibility across spawned workers
 export PYTHONHASHSEED=0
 
-cd "$SLURM_SUBMIT_DIR"
+# cd to the repo directory containing corpus_c_generator.py regardless of where
+# sbatch was invoked from.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
 # ----------------- Preflight Checks ------------------
 
-CORPUS_A_DIR="corpusA"
-CORPUS_B_DIR="corpusB"
-CORPUS_C_DIR="corpusC"
+# Absolute paths — safe to submit from any directory.
+PYTHON_DIR="/home/${USER}/python"
+CORPUS_A_DIR="${PYTHON_DIR}/corpusA"
+CORPUS_B_DIR="${PYTHON_DIR}/corpusB"
+CORPUS_C_DIR="${PYTHON_DIR}/corpusC"
 
-# Corpus C needs Corpus A topologies (topology.py reads N_MIN, N_MAX, etc.)
+# Corpus C calls topology.sample_cell and generate.sample_params directly —
+# it does NOT read Corpus A at runtime.  We keep this check only as a sign
+# that the Corpus A job ran cleanly on this machine.
 if [ ! -f "${CORPUS_A_DIR}/topologies.npz" ]; then
     echo "ERROR: ${CORPUS_A_DIR}/topologies.npz not found." >&2
     echo "       Run the Corpus A job first and verify it completed." >&2
     exit 1
 fi
 
-# Corpus C does NOT require the Corpus A cache or Corpus B outputs —
-# it calls topology.sample_graphs and generate.sample_params directly.
-# We do a quick sanity check that Corpus B exists (implies A ran cleanly).
+# Soft warning only — Corpus C is independent of Corpus B at runtime.
 if [ ! -d "${CORPUS_B_DIR}" ]; then
     echo "WARNING: ${CORPUS_B_DIR}/ not found — are you sure Corpus B has run?" >&2
-    echo "         Continuing anyway; Corpus C is independent of Corpus B at runtime." >&2
+    echo "         Continuing anyway." >&2
 fi
 
 echo "Preflight OK — proceeding with Corpus C generation."
@@ -82,7 +87,7 @@ echo "Start time    : $(date)"
 #   --seed 42             : base RNG seed; shard i uses seed + i * 100_003.
 #
 python corpus_c_generator.py \
-    --out_dir        "${CORPUS_C_DIR}" \
+    --out_dir        "${CORPUS_C_DIR}"  \
     --n_shards       256              \
     --dags_per_shard 500              \
     --n_workers      64               \
