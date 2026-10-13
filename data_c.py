@@ -29,7 +29,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 
-from data import (N_MAX, NUM_STABILITY, SHARD_GLOB,
+from data import (EPS_BOX, N_MAX, NUM_STABILITY, SHARD_GLOB,
                   UNKNOWN_STABILITY_CLASS, UNKNOWN_STABILITY_CODE)
 
 # ---------------------------------------------------------------------------
@@ -338,6 +338,16 @@ def collate_c(batch):
     }
     out["node_mask"] = torch.arange(nb).unsqueeze(0) < n.unsqueeze(1)
     out["fp_mask"]   = torch.arange(kt).unsqueeze(0) < k.unsqueeze(1)
+
+    # xmax: invariant-box bound (1 + EPS_BOX) * P/K * prod_j max(1, F[j,i])
+    # F[:, :nb, :nb] has fold-change for each edge (1.0 for absent edges).
+    # Product over incoming edges (dim=1) of max(1, F) gives the bound factor.
+    F_full = stack("F")[:, :nb, :nb].float()          # [B, nb, nb]
+    bound  = F_full.clamp_min(1.0).prod(dim=1)         # [B, nb]
+    P_full = out["P"].float()
+    K_full = out["K"].float()
+    out["xmax"] = ((1.0 + EPS_BOX) * P_full / K_full * bound).to(torch.float32)
+
     return out
 
 
