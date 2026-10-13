@@ -97,10 +97,11 @@ def build_cache_c(corpus_dir, cache_dir):
     arrays (SENTINEL_PTRS_C).  Sentinel arrays are merged by appending each
     shard's interior elements (arr[1:]) with the running group offset, so the
     merged array always has shape (total_group_size + 1,)."""
-    shards = sorted(glob.glob(os.path.join(corpus_dir, "shards", SHARD_GLOB)))
+    SHARD_GLOB_C = "corpus_c_shard_[0-9][0-9][0-9][0-9].npz"
+    shards = sorted(glob.glob(os.path.join(corpus_dir, "shards", SHARD_GLOB_C)))
     if not shards:
         # Fall back to corpus_dir itself (generator writes directly there).
-        shards = sorted(glob.glob(os.path.join(corpus_dir, SHARD_GLOB)))
+        shards = sorted(glob.glob(os.path.join(corpus_dir, SHARD_GLOB_C)))
     if not shards:
         raise FileNotFoundError(
             f"No shards found in {corpus_dir}/shards or {corpus_dir}")
