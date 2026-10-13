@@ -339,6 +339,10 @@ def collate_c(batch):
     out["node_mask"] = torch.arange(nb).unsqueeze(0) < n.unsqueeze(1)
     out["fp_mask"]   = torch.arange(kt).unsqueeze(0) < k.unsqueeze(1)
 
+    # has_pos_fb: True if SCC has a positive feedback loop (TC_POS=2 or TC_BOTH=3).
+    # TC_NEG=1 means no positive feedback => at most one stable FP (Thomas criterion).
+    out["has_pos_fb"] = out["tc"] != 1
+
     # xmax: invariant-box bound (1 + EPS_BOX) * P/K * prod_j max(1, F[j,i])
     # F[:, :nb, :nb] has fold-change for each edge (1.0 for absent edges).
     # Product over incoming edges (dim=1) of max(1, F) gives the bound factor.
