@@ -99,7 +99,11 @@ def build_cache_c(corpus_dir, cache_dir):
     merged array always has shape (total_group_size + 1,)."""
     shards = sorted(glob.glob(os.path.join(corpus_dir, "shards", SHARD_GLOB)))
     if not shards:
-        raise FileNotFoundError(f"No shards under {corpus_dir}/shards")
+        # Fall back to corpus_dir itself (generator writes directly there).
+        shards = sorted(glob.glob(os.path.join(corpus_dir, SHARD_GLOB)))
+    if not shards:
+        raise FileNotFoundError(
+            f"No shards found in {corpus_dir}/shards or {corpus_dir}")
     os.makedirs(cache_dir, exist_ok=True)
 
     sizes = []
