@@ -302,7 +302,7 @@ def evaluate_loader_c(model, criterion, loader, device, cfg):
     loss_sum, n_batches = {}, 0
     for batch in loader:
         batch = to_device(batch, device)
-        with autocast_ctx(cfg, device):
+        with torch.no_grad(), autocast_ctx(cfg, device):
             out_cond, _out0 = model(batch, freeze_backbone=cfg.freeze_backbone)
         _, logs, aux = criterion(out_cond, batch)
         for k, v in logs.items():
