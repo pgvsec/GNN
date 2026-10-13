@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data / cache (large files live on cluster scratch or in LFS)
+# Note: *.npy, *.npz, *.pt, *.csv are tracked via Git LFS (.gitattributes),
+# so they are NOT globally ignored — LFS handles them when staged.
+cache/
+runs/
+tmp_*/
+
+# Logs and outputs (except those explicitly LFS-tracked)
+*.log
+slurm_*.out
+slurm_*.err
+corpus_c_*.out
+corpus_c_*.err
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
