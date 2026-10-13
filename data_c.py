@@ -37,9 +37,19 @@ from data import (N_MAX, NUM_STABILITY, SHARD_GLOB,
 # ---------------------------------------------------------------------------
 GROUP_ORDER_C = ("dag", "scc", "iedge", "branch", "link", "bfp")
 
-# CSR sentinel pointer arrays: shape is (target_group_size + 1,).
-# First element is always 0; last element equals total items in target group.
+# CSR sentinel pointer arrays: shape is (source_group_size + 1,).
+# ptr[i]..ptr[i+1] are the target-group entries for source row i.
+# Last element equals total items in target group.
+# SENTINEL_PTRS_C maps ptr_name -> SOURCE group (determines array length).
+# SENTINEL_TGTS_C maps ptr_name -> TARGET group (determines pointer offset).
 SENTINEL_PTRS_C = {
+    "dag_scc_ptr":     "dag",
+    "dag_edge_ptr":    "dag",
+    "scc_branch_ptr":  "scc",
+    "branch_fp_ptr":   "branch",
+    "branch_link_ptr": "branch",
+}
+SENTINEL_TGTS_C = {
     "dag_scc_ptr":     "scc",
     "dag_edge_ptr":    "iedge",
     "scc_branch_ptr":  "branch",
@@ -128,8 +138,8 @@ def build_cache_c(corpus_dir, cache_dir):
                 continue
             arr = first[k]
             if k in SENTINEL_PTRS_C:
-                tgt = SENTINEL_PTRS_C[k]
-                shape = (totals[tgt] + 1,) + arr.shape[1:]
+                src = SENTINEL_PTRS_C[k]
+                shape = (totals[src] + 1,) + arr.shape[1:]
             else:
                 g = _group_of_c(k)
                 shape = (totals[g],) + arr.shape[1:]
@@ -148,7 +158,7 @@ def build_cache_c(corpus_dir, cache_dir):
         with np.load(path) as z:
             for k in out:
                 if k in SENTINEL_PTRS_C:
-                    tgt = SENTINEL_PTRS_C[k]
+                    tgt = SENTINEL_TGTS_C[k]
                     v = z[k][1:] + pos[tgt]   # drop shard's leading 0, add running offset
                     n_write = v.shape[0]
                     out[k][ptr_pos[k]:ptr_pos[k] + n_write] = v
