@@ -1,6 +1,6 @@
 # GNN Project — Session Context for Handoff
 
-**Last updated:** 2026-10-12  
+**Last updated:** 2026-10-13  
 **GitHub repo:** `pgvsec/GNN`  
 **Active dev branch:** `claude/eloquent-cerf-l0zqbo` (HEAD `9fdc88a`)  
 **Stable branch:** `main` (HEAD `3c500f8`) — Layer I + Layer II/III infrastructure  
@@ -164,7 +164,9 @@ idx = gene_k_safe.view(B, 1, 1).expand(B, 1, d)
 - Corpus A: `/scratch/gilbreth/gupt1042/corpusA/cache`
 - Corpus B shards: `~/python/corpusB_new/` on Negishi ✅ regenerated (609 shards)
 - Corpus B cache: `/scratch/gilbreth/gupt1042/corpusB_new/cache` ✅ built and transferred (43 .npy files, 825,733 samples)
-- Corpus C shards: `~/python/corpusC/` on Negishi ✅ generated (need cache build + transfer)
+- Corpus C shards: `~/python/corpusC/` on Negishi ✅ 256 shards generated
+- Corpus C cache: `/scratch/gilbreth/gupt1042/corpusC/cache` on Gilbreth ✅ built and transferred
+- Layer III training: ✅ COMPLETE (60 epochs, `best.pt` saved)
 
 ---
 
@@ -305,7 +307,81 @@ idx  = gene_k_safe.view(B, 1, 1).expand(B, 1, d)
 delta.scatter_add_(1, idx, inc.unsqueeze(1))
 ```
 
-### Fix 9 — transfer_corpusB.sh: Wrong meta file check (commit `3183b13`)
+### Fix 9 — data_c.py: Wrong shard glob + hardcoded `shards/` subdir (commits `07cd9c3`, `36ade8e`)
+**File:** `data_c.py`, `build_cache_c`  
+**Problem 1:** `build_cache_c` looked for shards under `corpus_dir/shards/` but generator writes directly to `corpus_dir`. Added fallback.  
+**Problem 2:** Used Corpus A glob `"shard_[0-9][0-9][0-9][0-9].npz"` (imported from `data.py`), but Corpus C shards are named `corpus_c_shard_0000.npz`.  
+```python
+SHARD_GLOB_C = "corpus_c_shard_[0-9][0-9][0-9][0-9].npz"
+shards = sorted(glob.glob(os.path.join(corpus_dir, "shards", SHARD_GLOB_C)))
+if not shards:
+    shards = sorted(glob.glob(os.path.join(corpus_dir, SHARD_GLOB_C)))
+if not shards:
+    raise FileNotFoundError(f"No shards found in {corpus_dir}/shards or {corpus_dir}")
+```
+
+### Fix 10 — data_c.py: Wrong sentinel pointer allocation (commit `2b5f8ee`)
+**File:** `data_c.py`, `build_cache_c`  
+**Problem:** `SENTINEL_PTRS_C` was a single dict mapping ptr_name → target group (what the pointer *points into*). But pointer arrays are sized by their *source* group (e.g., `branch_fp_ptr` has shape `n_branch+1`, not `n_bfp+1`). Used target size for allocation → shape mismatch crash.  
+**Fix:** Split into two dicts — source group (for allocation) and target group (for running offset during merge):
+```python
+# SENTINEL_PTRS_C: ptr_name → SOURCE group (determines array length n_source+1)
+SENTINEL_PTRS_C = {
+    "dag_scc_ptr":     "dag",
+    "dag_edge_ptr":    "dag",
+    "scc_branch_ptr":  "scc",
+    "branch_fp_ptr":   "branch",
+    "branch_link_ptr": "branch",
+}
+# SENTINEL_TGTS_C: ptr_name → TARGET group (running offset during merge)
+SENTINEL_TGTS_C = {
+    "dag_scc_ptr":     "scc",
+    "dag_edge_ptr":    "iedge",
+    "scc_branch_ptr":  "branch",
+    "branch_fp_ptr":   "bfp",
+    "branch_link_ptr": "link",
+}
+```
+
+### Fix 11 — data_c.py: Missing `xmax` in `collate_c` (commit `11182df`)
+**File:** `data_c.py`, `collate_c`  
+**Problem:** `losses.py SetCriterion._compute()` requires `xmax` (invariant-box bound); Corpus B loads it from shard data; Corpus C must compute it at collation time.  
+**Fix:** Compute from P, K, F using the invariant-box formula:
+```python
+# xmax[b,i] = (1 + EPS_BOX) * P[b,i] / K[b,i] * prod_j max(1, F[b,j,i])
+F_full = stack("F")[:, :nb, :nb].float()       # [B, nb, nb]
+bound  = F_full.clamp_min(1.0).prod(dim=1)      # [B, nb]
+out["xmax"] = ((1.0 + EPS_BOX) * out["P"].float() / out["K"].float() * bound).to(torch.float32)
+```
+
+### Fix 12 — data_c.py: Missing `has_pos_fb` in `collate_c` (commit `754f7a6`)
+**File:** `data_c.py`, `collate_c`  
+**Problem:** `losses.py` line 175 uses `has_pos_fb` for Thomas criterion weighting; not in Corpus C batch.  
+**Fix:** Derive from `tc` (Thomas class): TC_NEG=1 has no positive feedback loop; TC_POS=2 and TC_BOTH=3 do.
+```python
+out["has_pos_fb"] = out["tc"] != 1   # True for TC_POS and TC_BOTH
+```
+
+### Fix 13 — train_layer3.py: Missing `torch.no_grad()` in val loop (commit `714d7ac`)
+**File:** `train_layer3.py`, `evaluate_loader_c`  
+**Problem:** Val pass built full autograd compute graphs for all 20K samples → memory pressure → training hung silently after epoch 1 val pass completed.  
+**Fix:**
+```python
+with torch.no_grad(), autocast_ctx(cfg, device):
+    out_cond, _out0 = model(batch, freeze_backbone=cfg.freeze_backbone)
+```
+
+### Fix 14 — losses.py: Wrong phase group size for Corpus C (commit `cf4c907`)
+**File:** `losses.py`, `MetricAccumulator.GROUP_SIZES`  
+**Problem:** `GROUP_SIZES["phase"] = 3` was hardcoded for Corpus B (phase values 0, 1, 2 → `minlength=3`). Corpus C uses `tc` as phase (values 1, 2, 3 → need `minlength=4`).  
+```python
+# BEFORE:
+GROUP_SIZES = {"n": N_MAX + 1, "phase": 3, "consistent": 2, "has_pos_fb": 2}
+# AFTER:
+GROUP_SIZES = {"n": N_MAX + 1, "phase": 4, "consistent": 2, "has_pos_fb": 2}
+```
+
+### Fix 15 — transfer_corpusB.sh: Wrong meta file check (commit `3183b13`)
 **File:** `transfer_corpusB.sh`  
 **Problem:** Script checked for `meta_b.json` only, but `build_cache_b` writes `meta.json`.  
 ```bash
@@ -318,6 +394,13 @@ if [ ! -f "$SRC/meta.json" ] && [ ! -f "$SRC/meta_b.json" ]; then
 ## 7. Git History (branch `claude/eloquent-cerf-l0zqbo`)
 
 ```
+cf4c907  fix: GROUP_SIZES["phase"]=4 for Corpus C (tc values 1/2/3 need minlength=4)
+714d7ac  fix: add torch.no_grad() to evaluate_loader_c (val hang after epoch 1)
+754f7a6  fix: add has_pos_fb to collate_c output (tc != 1)
+11182df  fix: compute xmax in collate_c from P/K/F invariant-box formula
+2b5f8ee  fix: split SENTINEL_PTRS_C into source/target dicts (shape mismatch)
+36ade8e  fix: correct SHARD_GLOB_C to corpus_c_shard_NNNN.npz naming
+07cd9c3  fix: fallback glob for shards/ subdir in build_cache_c
 9fdc88a  chore: add .gitignore (Python, cache dirs, slurm logs, OS/IDE artifacts)
 f32dbb0  docs: update session context for Layer III (model_c, train_layer3, workflow)
 509657f  feat: add Layer III model, training script, slurm job, and corpus transfer script
@@ -378,22 +461,60 @@ git fetch origin && git reset --hard origin/claude/eloquent-cerf-l0zqbo
 sbatch train_layer2.slurm
 ```
 
-### Layer III workflow
+### Layer III (`train_layer3.py`, `train_layer3.slurm`) ✅ COMPLETE
 
 ```bash
-# 1. On Negishi: Regenerate Corpus C with v2 schema (old v1 shards are incompatible)
-#    sbatch run_corpus_c.slurm
-#    (or manually):
-#    python corpus_c_generator.py \
-#        --out_dir ~/python/corpusC \
-#        --n_shards 256 --dags_per_shard 500 \
-#        --n_workers 64 --k_min 2 --k_max 8 --seed 42
-#    Expected: 128K DAGs → ~500-640K branches (~6-8 min on 64-core Negishi node)
+sbatch train_layer3.slurm
+```
+- Loads Layer II EMA weights from `best.pt` (epoch 35), freezes backbone
+- Trains only Φ_ψ + A_η + U_ω (~0.67M params out of 2.89M total) — same modules as Layer II
+- Config: 60 epochs, batch_size=128, d_model=128, m_dim=128, n_u_layers=2, lr=5e-5, AMP=true, freeze_backbone=true
+- Corpus C cache: `/scratch/gilbreth/gupt1042/corpusC/cache` (892,773 train + 20,000 val branches)
+- Output dir: `/scratch/gilbreth/gupt1042/runs/layer3/`
+
+**Training completed — 60 epochs on Gilbreth (partition a10)**
+
+**Final results (best.pt ≈ epoch 59, val loss 0.3554):**
+
+| Metric | Epoch 1 | Epoch 22 | Epoch 60 | Notes |
+|--------|---------|----------|----------|-------|
+| val loss | 0.5525 | 0.3779 | **0.3555** | Steady improvement |
+| count_exact | 89.9% | 93.7% | **94.5%** | Correct FP count |
+| regime_acc | 88.6% | 93.0% | **93.7%** | Mono vs multi classification |
+| fp_recall | 78.0% | 81.2% | **82.1%** | Individual FP recall |
+| pos_decades | 0.191 | 0.147 | **0.144** | Plateau after ~ep 20 |
+| stab_acc | 99.85% | 99.85% | **99.86%** | Excellent (frozen) |
+| thomas_violation | 0.000 | 0.000 | **0.000** | TC_NEG perfectly respected |
+| brouwer_idx_acc | 99.40% | 99.46% | **99.46%** | |
+| brouwer_consistent | 99.31% | 99.55% | **99.48%** | |
+| refined_converged | 61.5% | 55.3% | **54.9%** | Newton convergence from pred position |
+| ece | 0.034 | 0.027 | **0.026** | Well-calibrated |
+
+**Key observations:**
+- `thomas_violation = 0.000` throughout all 60 epochs — model perfectly respects TC_NEG constraints
+- `pos_decades` plateaued around epoch 18-20 (0.147) and barely moved to 0.144 by epoch 60. Architectural ceiling: position head is bottlenecked by frozen backbone representations not trained for localization
+- `refined_converged` drifted slightly downward (0.615 → 0.549) — mild late-training position drift; not alarming
+- LR cosine-annealed from 5e-5 → ~1e-6 by epoch 60; epochs 59 and 60 nearly identical, confirming full convergence
+- Main weakness: `fp_recall` 82.1% — 18% of true FPs unfound, primarily in TC_POS networks (79% certified vs 90% for TC_BOTH)
+
+**Dataset breakdown (Corpus C, val set, 20K branches):**
+- TC_NEG: 2,973 branches | certified 100.0% | mean 1.00 FP (no positive feedback → unique FP)
+- TC_POS: 5,125 branches | certified 79.0% | mean 1.90 FP
+- TC_BOTH: 11,902 branches | certified 90.2% | mean 1.40 FP
+
+### Layer III workflow reference (already done)
+
+```bash
+# 1. On Negishi: generate Corpus C shards (256 shards × 500 DAGs)
+python corpus_c_generator.py \
+    --out_dir ~/python/corpusC \
+    --n_shards 256 --dags_per_shard 500 \
+    --n_workers 64 --k_min 2 --k_max 8 --seed 42
 
 # 2. On Negishi: build Corpus C cache
 python -c "from data_c import build_cache_c; build_cache_c('$HOME/python/corpusC', '$HOME/python/corpusC/cache')"
 
-# 3. On Negishi: transfer to Gilbreth (validates .npy count before finishing)
+# 3. Transfer to Gilbreth
 bash transfer_corpusC.sh
 
 # 4. On Gilbreth: pull latest code and submit
@@ -562,4 +683,4 @@ n_u_layers = 2
    - `model_b.py` (Layer II/III modules)
    - `train_layer2.py` (Layer II training loop)
    - `losses.py` (criterion and metrics)
-4. **Current status:** Layer I ✅ done. Layer II ✅ done (best.pt epoch 35, score 1.6794). Layer III ⏳ Corpus C shards generated on Negishi; need cache build + transfer + `sbatch train_layer3.slurm`.
+4. **Current status:** Layer I ✅ done. Layer II ✅ done (best.pt epoch 35, score 1.6794). Layer III ✅ done (best.pt ~epoch 59, val loss 0.3554, count_exact 94.5%, fp_recall 82.1%).
