@@ -330,6 +330,7 @@ class Branch:
     fps:              List[FPRecord]
     stable_fps:       List[FPRecord]
     u_per_gene:       Dict[int, float]
+    parent_branches:  List[Any] = field(default_factory=list)  # parent Branch objects
     lhash:            int = field(init=False)
 
     def __post_init__(self):
@@ -498,6 +499,7 @@ def solve_dag(
                 fps              = fps,
                 stable_fps       = stable,
                 u_per_gene       = u_per_gene,
+                parent_branches  = list(combo),
             ))
 
     return scc_branches
@@ -540,6 +542,10 @@ class CorpusCShardBuilder:
     br_scc:  List[int] = field(default_factory=list)
     br_key:  List[int] = field(default_factory=list)
 
+    # Link records (parent-branch references per branch)
+    lk_parent_branch: List[int] = field(default_factory=list)
+    lk_parent_fp:     List[int] = field(default_factory=list)
+
     # Branch-FP records
     bfp_x:       List[np.ndarray] = field(default_factory=list)
     bfp_cp:      List[np.ndarray] = field(default_factory=list)
@@ -553,6 +559,7 @@ class CorpusCShardBuilder:
     _n_sccs:     int = 0
     _n_iedges:   int = 0
     _n_branches: int = 0
+    _n_links:    int = 0
     _n_bfps:     int = 0
 
     # Pointer arrays (start with 0)
@@ -560,6 +567,7 @@ class CorpusCShardBuilder:
     _dag_edge_ptr:   List[int] = field(default_factory=lambda: [0])
     _scc_branch_ptr: List[int] = field(default_factory=lambda: [0])
     _branch_fp_ptr:  List[int] = field(default_factory=lambda: [0])
+    _branch_link_ptr: List[int] = field(default_factory=lambda: [0])
 
     def add_dag(
         self,
@@ -574,6 +582,8 @@ class CorpusCShardBuilder:
         self._n_dags += 1
         self.dag_n_sccs.append(dag.k)
         self.dag_n_edges.append(len(dag.inter_edges))
+        # Map Branch object id → global branch index (populated as we go)
+        branch_global_idx: Dict[int, int] = {}
 
         for j in range(dag.k):
             g   = scc_graphs[j]
@@ -614,6 +624,8 @@ class CorpusCShardBuilder:
 
             # Record branches and their FPs
             for branch in scc_branches[j]:
+                global_br_idx = self._n_branches
+                branch_global_idx[id(branch)] = global_br_idx
                 self.br_scc.append(scc_base + j)
                 self.br_key.append(branch.lhash)
                 for fp in branch.fps:
@@ -629,6 +641,13 @@ class CorpusCShardBuilder:
                     self.bfp_resid.append(fp.resid)
                     self._n_bfps += 1
                 self._branch_fp_ptr.append(self._n_bfps)
+                # Links: record parent branch references
+                for par_branch in branch.parent_branches:
+                    par_idx = branch_global_idx.get(id(par_branch), -1)
+                    self.lk_parent_branch.append(par_idx)
+                    self.lk_parent_fp.append(0)  # always use first stable FP
+                    self._n_links += 1
+                self._branch_link_ptr.append(self._n_links)
                 self._n_branches += 1
             self._scc_branch_ptr.append(self._n_branches)
             self._n_sccs += 1
@@ -695,9 +714,13 @@ class CorpusCShardBuilder:
             iedge_nh      = _a(self.ie_nh, np.float32),
             iedge_F       = _a(self.ie_F,  np.float32),
             # Branch table
-            branch_scc    = _a(self.br_scc, np.int32),
-            branch_key    = _a(self.br_key, np.uint64),
-            branch_fp_ptr = _a(self._branch_fp_ptr, np.int32),
+            branch_scc       = _a(self.br_scc, np.int32),
+            branch_key       = _a(self.br_key, np.uint64),
+            branch_fp_ptr    = _a(self._branch_fp_ptr, np.int32),
+            branch_link_ptr  = _a(self._branch_link_ptr, np.int32),
+            # Link table
+            link_parent_branch = _a(self.lk_parent_branch, np.int32),
+            link_parent_fp     = _a(self.lk_parent_fp, np.int32),
             # Branch FP records
             bfp_x         = _s1(self.bfp_x,    np.float32),
             bfp_charpoly  = _s1(self.bfp_cp,   np.float32),
@@ -707,12 +730,12 @@ class CorpusCShardBuilder:
             bfp_resid     = _a(self.bfp_resid,   np.float32),
             _sizes        = np.array([
                 self._n_dags, self._n_sccs, self._n_iedges,
-                self._n_branches, self._n_bfps,
+                self._n_branches, self._n_links, self._n_bfps,
             ], dtype=np.int64),
         )
         logger.info(
-            "Saved %s | %d DAGs  %d SCCs  %d inter-edges  %d branches  %d FP records",
-            path, self._n_dags, self._n_sccs, self._n_iedges, self._n_branches, self._n_bfps,
+            "Saved %s | %d DAGs  %d SCCs  %d inter-edges  %d branches  %d links  %d FP records",
+            path, self._n_dags, self._n_sccs, self._n_iedges, self._n_branches, self._n_links, self._n_bfps,
         )
 
 
