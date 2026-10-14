@@ -139,6 +139,167 @@ def make_synthetic_grn(
 
 
 # ---------------------------------------------------------------------------
+# 1b. Multistable GRN generator (hard test cases)
+# ---------------------------------------------------------------------------
+
+def _toggle_switch(adj, T, nh, F, P, K, g0, g1, *,
+                   fold_rep=0.02, thresh=1.5, hill=4.0,
+                   prod=2.0, deg=1.0):
+    """Wire a mutual-repression toggle switch between genes g0 and g1.
+
+    Two stable FPs: (g0 high, g1 low) and (g0 low, g1 high).
+    Requires fold_rep << 1 (strong repression) and hill >= 4.
+    """
+    adj[g0, g1] = -1.0;  adj[g1, g0] = -1.0
+    for src, tgt in ((g0, g1), (g1, g0)):
+        T[src, tgt]  = thresh
+        nh[src, tgt] = hill
+        F[src, tgt]  = fold_rep
+    P[g0] = P[g1] = prod
+    K[g0] = K[g1] = deg
+
+
+def _self_activator(adj, T, nh, F, P, K, g, *,
+                    fold_act=8.0, thresh_frac=0.3, hill=4.0,
+                    prod=1.0, deg=1.0):
+    """Wire a strong self-activating loop on gene g.
+
+    High fold-change + cooperative Hill → bistable (off vs on).
+    thresh_frac is the threshold as a fraction of x* = fold_act*prod/deg.
+    """
+    xstar = fold_act * prod / deg
+    adj[g, g]  = 1.0
+    T[g, g]    = thresh_frac * xstar
+    nh[g, g]   = hill
+    F[g, g]    = fold_act
+    P[g]       = prod
+    K[g]       = deg
+
+
+def make_multistable_grn(
+    n_bistable_sccs: int = 3,
+    extra_scc_size: int = 4,
+    seed: int = 0,
+) -> dict:
+    """Build a GRN guaranteed to have multiple fixed points.
+
+    Architecture
+    ------------
+    - SCC 0 (root): a single monostable activating SCC of size ``extra_scc_size``.
+      It drives all downstream SCCs.
+    - SCCs 1..n_bistable_sccs: each contains a mutual-repression toggle switch
+      (genes g0, g1) plus ``extra_scc_size`` follower genes activated by g0 or g1.
+      Each bistable SCC has exactly 2 stable FPs.
+
+    Expected global FP count
+    ------------------------
+    1 (root) × 2^n_bistable_sccs = 2^n_bistable_sccs
+
+    With n_bistable_sccs=3 → 8 global FPs.
+    With n_bistable_sccs=4 → 16 global FPs.
+
+    All SCC sizes ≤ 10 (= N_MAX), so both L1 and L3 models can handle them.
+    """
+    rng = np.random.default_rng(seed)
+
+    scc_size = 2 + extra_scc_size          # toggle pair + followers
+    n_sccs   = 1 + n_bistable_sccs
+    root_size = extra_scc_size             # root SCC (monostable)
+    N = root_size + n_bistable_sccs * scc_size
+
+    adj = np.zeros((N, N), dtype=np.float32)
+    T   = np.ones( (N, N), dtype=np.float32)
+    nh  = np.ones( (N, N), dtype=np.float32)
+    F   = np.ones( (N, N), dtype=np.float32)
+    P   = np.ones(N, dtype=np.float32)
+    K   = np.ones(N, dtype=np.float32)
+
+    # --- Root SCC: simple mutual activation (monostable) ---
+    rg = list(range(root_size))
+    for i in rg:
+        for j in rg:
+            if i != j and rng.random() < 0.5:
+                adj[i, j] = 1.0
+                T[i, j]   = 0.6
+                nh[i, j]  = 2.0
+                F[i, j]   = 3.0
+        P[i] = float(rng.uniform(1.0, 3.0))
+        K[i] = float(rng.uniform(0.5, 1.5))
+
+    # --- Bistable SCCs ---
+    scc_gene_ranges = [list(range(0, root_size))]   # SCC 0 = root
+    offset = root_size
+    for s in range(n_bistable_sccs):
+        g0 = offset
+        g1 = offset + 1
+        followers = list(range(offset + 2, offset + scc_size))
+        scc_genes  = [g0, g1] + followers
+        scc_gene_ranges.append(scc_genes)
+
+        # Core toggle switch
+        _toggle_switch(adj, T, nh, F, P, K, g0, g1,
+                       fold_rep = 0.02,
+                       thresh   = 1.5 + rng.uniform(-0.2, 0.2),
+                       hill     = 4.0 + rng.uniform(0.0, 1.0),
+                       prod     = float(rng.uniform(1.5, 3.0)),
+                       deg      = 1.0)
+
+        # Follower genes: each activated by either g0 or g1
+        for k, fk in enumerate(followers):
+            driver = g0 if k % 2 == 0 else g1
+            adj[driver, fk] = 1.0
+            T[driver, fk]   = float(rng.uniform(0.3, 0.8))
+            nh[driver, fk]  = float(rng.uniform(2.0, 3.0))
+            F[driver, fk]   = float(rng.uniform(3.0, 6.0))
+            P[fk]           = float(rng.uniform(0.5, 2.0))
+            K[fk]           = float(rng.uniform(0.5, 1.5))
+
+        # Small random intra-SCC edges among followers (no additional feedback loops)
+        for i in followers:
+            for j in followers:
+                if i != j and rng.random() < 0.2:
+                    adj[i, j] = 1.0
+                    T[i, j]   = float(rng.uniform(0.3, 1.0))
+                    nh[i, j]  = float(rng.uniform(1.5, 3.0))
+                    F[i, j]   = float(rng.uniform(1.5, 4.0))
+
+        # Inter-SCC: root → each bistable SCC (activating, symmetric on g0 and g1)
+        # Equal activation on both toggle genes so the bistability is preserved
+        for rg_gene in rg:
+            for tgt in (g0, g1):
+                if rng.random() < 0.5:
+                    adj[rg_gene, tgt] = 1.0
+                    T[rg_gene, tgt]   = float(rng.uniform(0.3, 0.8))
+                    nh[rg_gene, tgt]  = 2.0
+                    F[rg_gene, tgt]   = float(rng.uniform(1.5, 3.0))
+
+        offset += scc_size
+
+    gene_scc_map = np.zeros(N, dtype=int)
+    for scc_id, genes in enumerate(scc_gene_ranges):
+        for g in genes:
+            gene_scc_map[g] = scc_id
+
+    n_edges = int((adj != 0).sum())
+    print(f"  [multistable] {N} genes, {n_sccs} SCCs, {n_edges} edges")
+    print(f"  Root SCC: {root_size} genes (monostable)")
+    print(f"  Bistable SCCs: {n_bistable_sccs} × {scc_size} genes (toggle switches)")
+    print(f"  Expected global FPs: 2^{n_bistable_sccs} = {2**n_bistable_sccs}")
+
+    return {
+        "adj": adj,
+        "P":   P,
+        "K":   K,
+        "T":   T,
+        "nh":  nh,
+        "F":   F,
+        "gene_scc_map": gene_scc_map,
+        "n_sccs": n_sccs,
+        "N": N,
+    }
+
+
+# ---------------------------------------------------------------------------
 # 2. Model loading helpers
 # ---------------------------------------------------------------------------
 
@@ -348,15 +509,24 @@ def run_demo(args):
     print(f"Device: {device}")
 
     # --- 1. Generate synthetic GRN ---
-    print(f"\n[Step 1] Generating {args.n_sccs}-SCC × {args.scc_size}-gene GRN "
-          f"({args.n_sccs * args.scc_size} genes total)")
-    grn = make_synthetic_grn(
-        n_sccs=args.n_sccs,
-        scc_size=args.scc_size,
-        seed=args.seed,
-        intra_density=args.intra_density,
-        inter_density=args.inter_density,
-    )
+    if getattr(args, "multistable", False):
+        print(f"\n[Step 1] Generating MULTISTABLE GRN "
+              f"({args.n_bistable_sccs} bistable SCCs)")
+        grn = make_multistable_grn(
+            n_bistable_sccs=args.n_bistable_sccs,
+            extra_scc_size=args.extra_scc_size,
+            seed=args.seed,
+        )
+    else:
+        print(f"\n[Step 1] Generating {args.n_sccs}-SCC × {args.scc_size}-gene GRN "
+              f"({args.n_sccs * args.scc_size} genes total)")
+        grn = make_synthetic_grn(
+            n_sccs=args.n_sccs,
+            scc_size=args.scc_size,
+            seed=args.seed,
+            intra_density=args.intra_density,
+            inter_density=args.inter_density,
+        )
     N = grn["N"]
     n_edges = int((grn["adj"] != 0).sum())
     print(f"  Genes: {N}, Edges: {n_edges}")
@@ -460,6 +630,13 @@ def main():
     parser.add_argument("--tol", type=float, default=1e-6,
                         help="Newton convergence tolerance")
     parser.add_argument("--cpu", action="store_true", help="Force CPU")
+    # Multistable mode
+    parser.add_argument("--multistable", action="store_true",
+                        help="Use designed multistable GRN instead of random GRN")
+    parser.add_argument("--n-bistable-sccs", type=int, default=3,
+                        help="Number of bistable toggle-switch SCCs (default: 3 → 8 global FPs)")
+    parser.add_argument("--extra-scc-size", type=int, default=4,
+                        help="Follower genes per bistable SCC beyond the 2-gene toggle (default: 4)")
     args = parser.parse_args()
 
     run_demo(args)
