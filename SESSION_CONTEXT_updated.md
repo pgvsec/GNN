@@ -544,6 +544,148 @@ n_u_layers = 2
 
 ---
 
+## 15. End-to-End Inference Pipeline — Current Status (2026-10-13)
+
+### What the pipeline does
+
+`demo_assemble.py` + `assemble.py` implement a complete inference pipeline:
+
+1. **Decompose** the N-gene GRN via Tarjan SCC (→ condensation DAG)
+2. **Infer** per-SCC fixed points: Layer I (root SCCs) or Layer III (forced SCCs)
+3. **Assemble** global FPs as Cartesian product of per-SCC branch FPs
+4. **Refine** with Newton on the full N-dimensional ODE system
+5. **Compare** against a ground-truth Newton solver (`solve_draws`)
+
+### What WORKS ✅
+
+- **Monostable 50-gene GRN**: Recall=1.000, Precision=1.000, F1=1.000. The 50-gene random GRN (one global FP) is found correctly. Newton converges to res≈2e-7.
+- **`demo_assemble.py`** supports both `--monostable` (default) and `--multistable` modes, with `--verbose-scc` diagnostics and `--ground-truth` comparison.
+- **Ground-truth comparison**: parsing of `solve_draws` return dict is correct (`result["counts"]`, `result["state"]`, `result["stab"]`).
+- **Layer I + Layer III models** load correctly from `.pt` checkpoints.
+- **Full pipeline timing**: ~0.7s end-to-end on GPU for a 22-28 gene GRN.
+
+### What DOESN'T WORK ❌ — Problem List
+
+---
+
+#### PROBLEM 1 (CRITICAL — Newton fallback not on HPC yet)
+
+**Symptom:** On HPC, commit `d7698c0` (Newton fallback for degenerate GNN output) has NOT been pulled. The `--verbose-scc` output confirms the HPC still runs the version without the fallback (all SCCs show `exist_prob[:4]=['0.500', ...]` but no "→ Newton fallback" message).
+
+**Root cause:** The Newton fallback was committed locally as `d7698c0` but the last HPC `git pull` only fetched up to `f87263a` (verbose-scc diagnostics). The fallback code in `assemble.py` (`_model_is_degenerate`, `_solver_fallback_scc`) is not executing on the cluster.
+
+**Fix required:** On HPC, run:
+```bash
+cd /scratch/gilbreth/gupt1042/GNN
+git pull
+```
+Then re-run the multistable demo to confirm "→ Newton fallback" messages appear.
+
+**Files changed in d7698c0:** `assemble.py` (added `_model_is_degenerate()`, `_solver_fallback_scc()`, fallback call inside `_infer_scc`, `_infer_scc._verbose = ...` in `GRNPredictor.predict`).
+
+---
+
+#### PROBLEM 2 (CRITICAL — GNN outputs degenerate logits on multistable SCCs)
+
+**Symptom:** Every SCC in the multistable GRN produces `exist_prob[:4]=['0.500', '0.500', '0.500', '0.500']` — i.e., `sigmoid(0)=0.5` for ALL logits. This is the model's "no-opinion" default output when inputs are far outside its training distribution.
+
+**Root cause:** The GRN SCCs in the multistable test have n=1 and n=2 with toggle-switch parameter distributions (mutual repression, F≈0.02, high Hill coefficient n=4). The GNN was trained on Corpus A which has different parameter distributions. The model never learned these parameter regimes.
+
+**Impact:** `count_logit` peak at k=1 for every SCC → pipeline predicts exactly 1 global FP regardless of the true bistability.
+
+**Workaround (committed as d7698c0, NOT YET ON HPC):** Detect degenerate output (`_model_is_degenerate`: all `|exist_logit| < 0.05`) and fall back to exact Newton SCC solver (`_solver_fallback_scc`). This bypasses the GNN for these SCCs.
+
+**Proper fix (requires retraining):** Include n=1 and n=2 SCCs with toggle-switch parameter distributions in Corpus A, and retrain Layer I. This would let the GNN actually learn these bistable patterns rather than falling back to Newton.
+
+---
+
+#### PROBLEM 3 (MODERATE — multistable GRN SCC decomposition is fragmented)
+
+**Symptom:** `make_multistable_grn(n_bistable_sccs=3)` reports "4 SCCs, 37 edges" but after Tarjan decomposition, `assemble.py` reports **18 SCCs** (sizes: `[1, 1, 2, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1]`).
+
+**Root cause:** The current `make_multistable_grn()` design creates each "bistable SCC" as a 2-gene toggle switch (the actual SCC) plus `extra_scc_size=4` "follower genes" that receive activating edges from the toggle genes but have NO back-edges. Without back-edges, follower genes cannot be part of the SCC — Tarjan correctly places them in their own singleton SCCs. So instead of 4 SCCs (1 root + 3 bistable), we get 1 root + 3 toggle pairs (n=2 each) + 4×3 singleton followers = 4 + 12 + ... = 18 SCCs total.
+
+**Impact:** All 18 SCCs have n=1 or n=2, almost none are in the GNN's reliable training distribution, so all get degenerate logits. Also the intended "tough multistable" structure is not being tested.
+
+**Fix:** Redesign the bistable SCCs so that ALL genes in each SCC form a directed cycle (every gene has both in-edges and out-edges within the SCC). For example, a ring of 6 genes with alternating activation/repression, ensuring Tarjan keeps them together as one n=6 SCC. This would give truly large SCCs that are within the GNN's N_MAX=10 limit.
+
+Example bistable SCC design:
+```
+genes [g0, g1, g2, g3, g4, g5] form a ring:
+  g0 --(represses)--> g1 --> g2 --> g3 --(represses)--> g4 --> g5 --> g0
+  This creates bistability via double-negative-feedback, all 6 in one SCC.
+```
+
+---
+
+#### PROBLEM 4 (MODERATE — ground truth finds fewer FPs than expected)
+
+**Symptom:** 3-bistable GRN expects 2^3=8 FPs but ground truth finds only **3 FPs** (2 stable + 1 unstable). 4-bistable GRN expects 2^4=16 FPs but ground truth finds only **9 FPs** (4 stable + 5 unstable).
+
+**Root cause (likely):** The toggle switches in the current design are being forced by the monostable root SCC through inter-SCC activating edges. The specific forcing value from the root SCC may push one or more toggle switches into a monostable (instead of bistable) regime, collapsing 2 FPs into 1. This is mathematically expected — a bistable toggle's stability depends on its forcing input: too strong a forcing input can eliminate the saddle and one of the stable nodes.
+
+**Impact:** Ground-truth FP count is lower than expected, making it harder to evaluate the pipeline's recall.
+
+**Fix options:**
+1. Design the root SCC so its equilibrium value provides "weak" forcing on the bistable SCCs (near the bifurcation boundary, not past it).
+2. Alternatively, make the bistable SCCs self-contained (no forcing from the root, only one-directional sensing) so the toggle operates at its autonomous bistable parameters.
+3. Check numerically: compute the effective `u_k = x_root_gene / T_edge` at the root SCC's equilibrium and verify it keeps each toggle in the bistable regime.
+
+---
+
+#### PROBLEM 5 (MINOR — confidence=0.000 on multistable GRN)
+
+**Symptom:** Pipeline reports `confidence=0.000` for the predicted FP on the multistable GRN.
+
+**Root cause:** Confidence is computed as the product of per-SCC `exist_prob` values. With 18 SCCs each outputting `exist_prob=0.500`, the product is `0.5^18 ≈ 3.8e-6 ≈ 0.000`.
+
+**Impact:** Cosmetic/metric only — the confidence number is meaningless when the GNN outputs are degenerate. After the Newton fallback is active, this should improve significantly.
+
+**Fix:** Either (a) let Newton fallback set `exist_prob=1.0` for its results (exact solutions), or (b) don't include degenerate SCCs in the confidence product.
+
+---
+
+#### PROBLEM 6 (MINOR — git remote URL redirect causes stop-hook false positives)
+
+**Symptom:** After each push, the stop-hook reports "N unpushed commit(s)" even though the push succeeded.
+
+**Root cause:** The GitHub repo canonical name is `pgvsec/GNN` (uppercase) but the local remote URL may use lowercase `pgvsec/gnn`. GitHub redirects the push request to the canonical URL, so the push succeeds, but the redirect means git doesn't update the local `refs/remotes/origin/...` tracking ref. The stop-hook then compares the local HEAD against the stale tracking ref and reports false positives.
+
+**Workaround:** After each push, run:
+```bash
+git fetch origin refs/heads/claude/eloquent-cerf-l0zqbo:refs/remotes/origin/claude/eloquent-cerf-l0zqbo
+```
+
+**Proper fix:** Set the remote URL to the canonical name:
+```bash
+git remote set-url origin https://github.com/pgvsec/GNN.git
+```
+
+---
+
+### Summary table
+
+| # | Problem | Severity | Status | Fix |
+|---|---------|----------|--------|-----|
+| 1 | Newton fallback not on HPC (d7698c0 not pulled) | 🔴 Critical | Pending `git pull` on HPC | `git pull` on HPC |
+| 2 | GNN degenerate logits for toggle-switch SCCs | 🔴 Critical | Workaround committed | Retrain w/ small bistable SCCs in Corpus A |
+| 3 | Multistable GRN fragments into 18 singleton SCCs | 🟠 Moderate | Design flaw in `make_multistable_grn` | Redesign bistable units as ring SCCs n=6 |
+| 4 | GT finds fewer FPs than expected (3/8, 9/16) | 🟠 Moderate | Unknown | Tune forcing to keep toggles bistable |
+| 5 | confidence=0.000 on multistable GRN | 🟡 Minor | Cosmetic | Fix after fallback active |
+| 6 | Git remote redirect causes stop-hook false positive | 🟡 Minor | Workaround known | `git remote set-url` to canonical name |
+
+---
+
+### Immediate next steps (in order)
+
+1. **`git pull` on HPC** → activates Newton fallback (fixes Problem 1)
+2. **Run multistable demo again** → verify "→ Newton fallback" messages appear, check if recall improves
+3. **Redesign `make_multistable_grn`** → use ring-of-6 bistable SCCs (fixes Problem 3)
+4. **Investigate toggle forcing** → ensure root SCC doesn't kill bistability (fixes Problem 4)
+5. **Set canonical git remote URL** → fix stop-hook noise (fixes Problem 6)
+
+---
+
 ## 14. How to Resume in a New Chat
 
 1. Clone/pull the repo:
