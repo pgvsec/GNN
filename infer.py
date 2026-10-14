@@ -107,7 +107,14 @@ def load_models(l1_path: str | None, l3_path: str | None, device: torch.device):
         ck = torch.load(l1_path, map_location=device, weights_only=False)
         cfg = SimpleNamespace(**ck["cfg"])
         l1 = SccFixedPointNet(cfg)
-        l1.load_state_dict(ck.get("ema", ck.get("model")))
+        raw_sd = ck.get("ema", ck.get("model"))
+        # Checkpoints saved from a wrapper model prefix SccFixedPointNet weights
+        # with "backbone." — strip that prefix to load the backbone alone.
+        if all(k.startswith("backbone.") for k in raw_sd if not k.startswith("phi_psi") and not k.startswith("a_eta") and not k.startswith("u_omega")):
+            backbone_sd = {k[len("backbone."):]: v for k, v in raw_sd.items() if k.startswith("backbone.")}
+        else:
+            backbone_sd = raw_sd
+        l1.load_state_dict(backbone_sd)
         print(f"Loaded Layer I  from: {l1_path}")
     else:
         l1 = SccFixedPointNet(_default_cfg())
