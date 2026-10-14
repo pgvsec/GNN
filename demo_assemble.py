@@ -229,24 +229,33 @@ def solve_ground_truth(grn: dict, device: torch.device, verbose: bool = True) ->
     try:
         result = solve_draws(par, cfg, N, rng, device)
         elapsed = time.time() - t0
-        fps = result[0]  # per-draw list of fixed points
 
-        # Collect FPs for the single draw
-        gt_fps = []
+        # solve_draws returns a flat dict:
+        #   counts [B]  — number of FPs per draw
+        #   state  [total_fps, N]  — all FP positions concatenated across draws
+        #   stab   [total_fps]     — stability class per FP
+        #   (plus bsum, cons, xmax, seed_ok, rounds_used)
+        counts = result["counts"]      # [B=1]
+        n_gt   = int(counts[0])
+
+        gt_fps   = []
         gt_stabs = []
-        if fps and len(fps) > 0:
-            draw = fps[0]  # single draw
-            if "state" in draw and draw["state"] is not None:
-                for k in range(draw["state"].shape[0]):
-                    gt_fps.append(draw["state"][k].cpu().numpy())
-                    gt_stabs.append(int(draw["stab"][k].item()) if "stab" in draw else -1)
+        # FPs for draw 0 are the first counts[0] rows of the flat arrays
+        if n_gt > 0:
+            states = result["state"][:n_gt]    # [n_gt, N] numpy
+            stabs  = result["stab"][:n_gt]     # [n_gt] numpy
+            for k in range(n_gt):
+                gt_fps.append(states[k])
+                gt_stabs.append(int(stabs[k]))
 
         if verbose:
-            print(f"  Solver found {len(gt_fps)} FP(s) in {elapsed:.1f}s")
+            print(f"  Solver found {n_gt} FP(s) in {elapsed:.1f}s")
         return {"fps": gt_fps, "stab": gt_stabs, "elapsed": elapsed}
     except Exception as e:
+        import traceback
         if verbose:
             print(f"  Solver failed: {e}")
+            traceback.print_exc()
         return {"fps": [], "stab": [], "elapsed": 0.0}
 
 
@@ -436,7 +445,7 @@ def main():
                         help="Newton steps in global refinement")
     parser.add_argument("--newton-restarts", type=int, default=2,
                         help="Random restarts per FP in global Newton")
-    parser.add_argument("--tol", type=float, default=1e-7,
+    parser.add_argument("--tol", type=float, default=1e-6,
                         help="Newton convergence tolerance")
     parser.add_argument("--cpu", action="store_true", help="Force CPU")
     args = parser.parse_args()
