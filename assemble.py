@@ -447,13 +447,24 @@ def _solver_fallback_scc(
 
 
 def _model_is_degenerate(out) -> bool:
-    """Return True if the model outputs near-uniform logits (maximum uncertainty).
+    """Return True if the predicted FP-set slots have near-zero existence confidence.
 
-    sigmoid(0) = 0.5 exactly; if all exist_logits are within 0.01 of 0, the model
-    is outputting its default/zero state and the output is not useful.
+    Checks the top-k exist_logits (the k slots decode_slots would return) rather
+    than the global max across all K slots.  The global max check fails when a
+    high-index slot that is never selected by decode_slots's count-then-rank
+    strategy happens to have |logit| >= the threshold due to random init or
+    structural bias, masking the fact that every *selected* slot is near 0.5.
     """
-    el = out["exist_logit"].float()
-    return bool(el.abs().max().item() < 0.05)
+    logits = out["count_logit"].float()[0]          # [max_fp+1]
+    el = out["exist_logit"].float()[0]               # [K_slots]
+    # Predicted count k (odd-only argmax, identical to decode_slots)
+    even = torch.arange(logits.shape[0], device=logits.device) % 2 == 0
+    k = int(logits.masked_fill(even, float("-inf")).argmax().item())
+    k = max(k, 1)
+    # The top-k most-positive exist_logits are the slots decode_slots returns.
+    # If even the most confident of those is near zero, the model has no signal.
+    topk_logits = el.topk(k).values   # [k] most positive
+    return bool(topk_logits.max().item() < 0.1)
 
 
 def _infer_scc(
