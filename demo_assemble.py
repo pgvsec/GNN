@@ -235,7 +235,8 @@ def solve_ground_truth(grn: dict, device: torch.device, verbose: bool = True) ->
         1472, 1504, 1536, 1568, 1600, 1632,             # n=45..50 (covers n=50 at index 48)
     )
     cfg = SolverConfig(seeds=seeds_extended, rounds=3)
-    rng = np.random.default_rng(0)
+    rng = torch.Generator(device=device)
+    rng.manual_seed(0)
 
     try:
         result = solve_draws(par, cfg, N, rng, device)
