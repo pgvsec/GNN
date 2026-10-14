@@ -548,6 +548,7 @@ def run_demo(args):
         newton_restarts=args.newton_restarts,
         tol=args.tol,
     )
+    predictor.verbose_scc = getattr(args, "verbose_scc", False)
 
     t0 = time.time()
     result = predictor.predict(
@@ -630,6 +631,8 @@ def main():
     parser.add_argument("--tol", type=float, default=1e-6,
                         help="Newton convergence tolerance")
     parser.add_argument("--cpu", action="store_true", help="Force CPU")
+    parser.add_argument("--verbose-scc", action="store_true",
+                        help="Print count_logit peak and exist_prob for each SCC")
     # Multistable mode
     parser.add_argument("--multistable", action="store_true",
                         help="Use designed multistable GRN instead of random GRN")

@@ -455,6 +455,16 @@ def _infer_scc(
     # Guard against NaN (can arise from very large logits or degenerate model outputs)
     exist_prob = torch.nan_to_num(exist_prob, nan=0.5, posinf=1.0, neginf=0.0)
 
+    # Diagnostic: print count_logit distribution for this SCC
+    if getattr(_infer_scc, "_verbose", False):
+        cl = out["count_logit"].float()[0]           # [max_fp+1]
+        even_mask = torch.arange(cl.shape[0]) % 2 == 0
+        cl_odd = cl.clone(); cl_odd[even_mask] = float("-inf")
+        k_pred = int(cl_odd.argmax().item())
+        ep_top4 = exist_prob[0, :4].tolist()
+        print(f"    [SCC {scc.scc_id} n={scc.n}] count_logit peak at k={k_pred}  "
+              f"exist_prob[:4]={[f'{p:.3f}' for p in ep_top4]}")
+
     results = []
     K_slots = exist.shape[1]
     for k in range(K_slots):
@@ -894,6 +904,7 @@ class GRNPredictor:
         # Step 2: run inference
         if verbose:
             print(f"[GRNPredictor] Running inference on each SCC...")
+        _infer_scc._verbose = getattr(self, "verbose_scc", False)
         all_branches = run_inference(
             dag, adj, T, nh, F,
             self.l1_model, self.l3_model,
