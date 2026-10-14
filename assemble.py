@@ -450,7 +450,10 @@ def _infer_scc(
     x_ref = newton_refine(x_pred, P, Kd, xmax, adj, T_t, nh_t, F_t, node_mask, refine_steps)
 
     stab = out["stab_logit"].float().argmax(-1)            # [1, K]
-    exist_prob = torch.sigmoid(out["exist_logit"].float()) # [1, K]
+    exist_logit = out["exist_logit"].float()
+    exist_prob = torch.sigmoid(exist_logit)                # [1, K]
+    # Guard against NaN (can arise from very large logits or degenerate model outputs)
+    exist_prob = torch.nan_to_num(exist_prob, nan=0.5, posinf=1.0, neginf=0.0)
 
     results = []
     K_slots = exist.shape[1]
@@ -458,6 +461,8 @@ def _infer_scc(
         if not exist[0, k].item():
             continue
         x_k = x_ref[0, k, :n].cpu().numpy()  # trim to actual SCC size
+        # Guard against NaN in predicted position (fall back to xmax midpoint)
+        x_k = np.where(np.isfinite(x_k), x_k, xmax.squeeze(0)[:n].cpu().numpy() * 0.5)
         s_k = int(stab[0, k].item())
         ep_k = float(exist_prob[0, k].item())
         results.append((x_k, s_k, ep_k))
@@ -635,7 +640,8 @@ def assemble_global_fps(
                     g_list = scc_genes[node.scc_id]
                     x_global[g_list] = node.x_local[:len(g_list)]
                     stabs.append(node.stab)
-                    prob *= node.exist_prob
+                    ep = node.exist_prob if np.isfinite(node.exist_prob) else 0.5
+                    prob *= ep
                 fps_list.append(x_global)
                 stab_list.append(_global_stab(stabs))
                 scc_stab_list.append(np.array(stabs, dtype=np.int32))
@@ -769,11 +775,13 @@ def refine_fps(
     nh_t  = torch.as_tensor(nh.astype(np.float32), device=device).unsqueeze(0)
     F_t   = torch.as_tensor(F.astype(np.float32), device=device).unsqueeze(0)
 
-    # Invariant box
-    gain = np.where(adj != 0, np.maximum(F, 1.0), 1.0).prod(axis=0)
-    xmax_np = 1.05 * P / np.maximum(K, 1e-6) * gain
-    xmax_np = np.maximum(xmax_np, 1e-6)
-    xmax_t = torch.as_tensor(xmax_np.astype(np.float32), device=device).unsqueeze(0)
+    # Invariant box — compute in float64 to avoid overflow on dense graphs,
+    # then clamp to float32 range before converting.
+    # gain[j] = prod_{i: adj[i,j]!=0} max(F[i,j], 1)  (product over incoming sources)
+    gain = np.where(adj != 0, np.maximum(F.astype(np.float64), 1.0), 1.0).prod(axis=0)
+    xmax_np = 1.05 * P.astype(np.float64) / np.maximum(K.astype(np.float64), 1e-6) * gain
+    xmax_np = np.clip(xmax_np, 1e-6, 3.4e38).astype(np.float32)  # clamp to float32 max
+    xmax_t = torch.as_tensor(xmax_np, device=device).unsqueeze(0)
 
     node_mask = torch.ones(1, N_dim, dtype=torch.bool, device=device)
 
