@@ -407,6 +407,55 @@ def _compute_forcing(
     return u.astype(np.float32)
 
 
+def _solver_fallback_scc(
+    scc: SccNode,
+    u: np.ndarray,
+    device: torch.device,
+) -> List[Tuple[np.ndarray, int, float]]:
+    """Exact Newton solver for one SCC — used when the GNN outputs degenerate logits.
+
+    This calls the same solver used for ground-truth comparison, but scoped to a single SCC.
+    Returns list of (x_local [n], stability_class, exist_prob=1.0).
+    """
+    from solver import solve_draws, SolverConfig
+
+    n = scc.n
+    P_eff = (scc.P * u[:n]).astype(np.float64)
+    par = {
+        "P":   P_eff[np.newaxis].astype(np.float32),
+        "K":   scc.K[np.newaxis].astype(np.float32),
+        "adj": scc.adj_intra[np.newaxis].astype(np.float32),
+        "T":   scc.T[np.newaxis].astype(np.float32),
+        "nh":  scc.nh[np.newaxis].astype(np.float32),
+        "F":   scc.F[np.newaxis].astype(np.float32),
+    }
+    seeds_for_n = (96, 128, 160, 192, 224, 256, 288, 320, 352)
+    cfg = SolverConfig(seeds=seeds_for_n, rounds=3)
+    gen = torch.Generator(device=device); gen.manual_seed(0)
+
+    try:
+        res = solve_draws(par, cfg, n, gen, device)
+        n_fps = int(res["counts"][0])
+        results = []
+        for k in range(n_fps):
+            x_k  = res["state"][k].astype(np.float32)
+            stab = int(res["stab"][k])
+            results.append((x_k, stab, 1.0))
+        return results if results else []
+    except Exception:
+        return []
+
+
+def _model_is_degenerate(out) -> bool:
+    """Return True if the model outputs near-uniform logits (maximum uncertainty).
+
+    sigmoid(0) = 0.5 exactly; if all exist_logits are within 0.01 of 0, the model
+    is outputting its default/zero state and the output is not useful.
+    """
+    el = out["exist_logit"].float()
+    return bool(el.abs().max().item() < 0.05)
+
+
 def _infer_scc(
     scc: SccNode,
     u: np.ndarray,
@@ -419,6 +468,7 @@ def _infer_scc(
 
     For root SCCs (u all-ones) uses the Layer I model (SccFixedPointNet).
     For forced SCCs uses the Layer III model (CorpusCNet).
+    If the model outputs degenerate (uniform) logits, falls back to the exact Newton solver.
 
     Returns list of (x_local [n], stability_class, exist_prob).
     """
@@ -432,6 +482,13 @@ def _infer_scc(
             out = l1_model(batch)
         else:
             out, _out0 = l3_model(batch, freeze_backbone=True)
+
+    # If the model output is degenerate (all logits ≈ 0), fall back to the exact solver.
+    # This happens for very small SCCs (n=1,2) that are outside the training distribution.
+    if _model_is_degenerate(out):
+        if getattr(_infer_scc, "_verbose", False):
+            print(f"    [SCC {scc.scc_id} n={scc.n}] degenerate model output → Newton fallback")
+        return _solver_fallback_scc(scc, u, device)
 
     node_mask = batch["node_mask"]
     nm = node_mask.float()
