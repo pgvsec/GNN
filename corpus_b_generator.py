@@ -625,7 +625,7 @@ class CorpusBShardBuilder:
             cat["s_graph"].shape[0],
             out["ep_T"].shape[0] if "ep_T" in out else 0,
             out["fp_state"].shape[0],
-            out["cb_port_gene"].shape[0],   # group "cb": total port entries
+            out["cb_port_gene"].shape[0],   # cb group total
         ], dtype=np.int64)
         return out
 
