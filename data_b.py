@@ -34,13 +34,13 @@ import torch
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 
 from data import (N_MAX, NUM_STABILITY, UNKNOWN_STABILITY_CLASS,
-                  UNKNOWN_STABILITY_CODE, SPLIT_TRAIN, SPLIT_VAL, SPLIT_TEST,
-                  SHARD_GLOB)
+                  UNKNOWN_STABILITY_CODE, SPLIT_TRAIN, SPLIT_VAL, SPLIT_TEST)
 
 # ---------------------------------------------------------------------------
 # 1. Constants
 # ---------------------------------------------------------------------------
 MAX_PORTS = 8          # cap on the number of simultaneous forced genes per sample
+SHARD_GLOB_B = "shard_b_[0-9][0-9][0-9][0-9].npz"   # Corpus B shard naming convention
 
 # All keys that appear in every Corpus B shard's finalize() output
 # (minus the _sizes sentinel and the pointer arrays, which are derived here)
@@ -73,7 +73,7 @@ _POINTER_KEYS = {
 # ---------------------------------------------------------------------------
 def build_cache_b(corpus_b_dir, cache_dir):
     """Merge Corpus B shards into flat memory-mapped arrays."""
-    shards = sorted(glob.glob(os.path.join(corpus_b_dir, "shards", SHARD_GLOB)))
+    shards = sorted(glob.glob(os.path.join(corpus_b_dir, "shards", SHARD_GLOB_B)))
     if not shards:
         raise FileNotFoundError(f"no shards under {corpus_b_dir}/shards")
     os.makedirs(cache_dir, exist_ok=True)

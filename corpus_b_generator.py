@@ -477,7 +477,7 @@ def sample_u_vals(ports, port_transitions, n_draws, auto_nfp, rng):
             ]).reshape(n2, n_ports)
             for i in range(n2):
                 u_list.append(u_fill[i:i+1])
-                strata.append(1); bif_types.append(BIF_NONE); bif_us.append(np.nan)
+                strata.append(2); bif_types.append(BIF_NONE); bif_us.append(np.nan)
 
     if not u_list:
         # Absolute fallback: n_draws broad draws (should never happen in practice)
@@ -625,6 +625,7 @@ class CorpusBShardBuilder:
             cat["s_graph"].shape[0],
             out["ep_T"].shape[0] if "ep_T" in out else 0,
             out["fp_state"].shape[0],
+            out["cb_port_gene"].shape[0],   # cb group total
         ], dtype=np.int64)
         return out
 

@@ -145,11 +145,12 @@ class FiLMInjection(nn.Module):
         for k_idx in range(port_gene.shape[1]):
             gene_k = port_gene[:, k_idx]    # [B]
             active = msk[:, k_idx]          # [B]
+            gene_k_safe = gene_k.clamp(min=0)
             # Per-gene modulation increment: (gamma - 1) * h[gene_k] + beta
-            h_k = h[torch.arange(B, device=h.device), gene_k]   # [B, d]
+            h_k = h[torch.arange(B, device=h.device), gene_k_safe]   # [B, d]
             inc = ((gamma - 1.0) * h_k + beta) * active.unsqueeze(-1)
             # Scatter-add
-            idx = gene_k.view(B, 1, 1).expand(B, 1, d)
+            idx = gene_k_safe.view(B, 1, 1).expand(B, 1, d)
             delta.scatter_add_(1, idx, inc.unsqueeze(1))
         return h + delta
 

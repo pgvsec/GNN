@@ -586,9 +586,9 @@ class CorpusCShardBuilder:
             sign_pad[:n_j, :n_j] = sign
 
             # Edge params: par["T"], par["nh"], par["F"] are [1, N, N] dense [C6]
-            ep_T  = np.zeros((N_MAX, N_MAX), dtype=np.float32)
-            ep_NH = np.zeros((N_MAX, N_MAX), dtype=np.float32)
-            ep_F  = np.zeros((N_MAX, N_MAX), dtype=np.float32)
+            ep_T  = np.ones((N_MAX, N_MAX), dtype=np.float32)
+            ep_NH = np.ones((N_MAX, N_MAX), dtype=np.float32)
+            ep_F  = np.ones((N_MAX, N_MAX), dtype=np.float32)
             ep_T[:n_j, :n_j]  = par["T"][0, :n_j, :n_j].astype(np.float32)
             ep_NH[:n_j, :n_j] = par["nh"][0, :n_j, :n_j].astype(np.float32)
             ep_F[:n_j, :n_j]  = par["F"][0, :n_j, :n_j].astype(np.float32)
@@ -705,6 +705,10 @@ class CorpusCShardBuilder:
             bfp_hopf      = _a(self.bfp_hopf,    np.float32),
             bfp_zeroeig   = _a(self.bfp_zeroeig, np.float32),
             bfp_resid     = _a(self.bfp_resid,   np.float32),
+            _sizes        = np.array([
+                self._n_dags, self._n_sccs, self._n_iedges,
+                self._n_branches, self._n_bfps,
+            ], dtype=np.int64),
         )
         logger.info(
             "Saved %s | %d DAGs  %d SCCs  %d inter-edges  %d branches  %d FP records",

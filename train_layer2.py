@@ -390,7 +390,7 @@ def run_train(cfg):
         print(f"resumed at epoch {start_epoch}", flush=True)
 
     log_path = os.path.join(cfg.out_dir, "log.csv")
-    scaler   = torch.cuda.amp.GradScaler(enabled=cfg.amp and device.type == "cuda")
+    scaler   = torch.amp.GradScaler("cuda", enabled=cfg.amp and device.type == "cuda")
 
     for epoch in range(start_epoch, cfg.epochs):
         if cfg.freeze_backbone:
