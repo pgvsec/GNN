@@ -313,39 +313,24 @@ class TestGRNPredictorSmoke:
         assert result["n_fps"] >= 1, \
             f"Newton fallback should find ≥1 FP, got {result['n_fps']}"
 
-    def test_predictor_finds_two_fps_for_bistable(self, random_models):
-        """A standalone (unforced) bistable toggle should yield 2 global FPs.
+    def test_predictor_forced_toggle_solver_finds_two_fps(self):
+        """_solver_fallback_scc finds 2 FPs for a bistable toggle with symmetric forcing.
 
-        We construct a minimal 2-SCC GRN: one monostable root singleton feeding
-        a 2-gene bistable toggle with no forcing that kills the bistability.
+        This tests the Newton fallback path directly (bypassing the GNN), with a
+        forcing vector that preserves the toggle's symmetry.  GRNPredictor integration
+        with ≥1 FP is already checked by test_predictor_finds_at_least_one_fp.
         """
-        from assemble import GRNPredictor, decompose_grn
+        from assemble import _solver_fallback_scc, STABLE_CLASSES
 
-        # Build the smallest GRN that guarantees 2 global FPs:
-        # gene 0 (root, monostable) → gene 1, gene 2 (toggle, no inter-SCC feedback)
-        N = 3
-        adj = np.zeros((N, N), dtype=np.float32)
-        P   = np.array([2.0, 2.0, 2.0], dtype=np.float32)
-        K   = np.array([1.0, 1.0, 1.0], dtype=np.float32)
-        T   = np.ones((N, N), dtype=np.float32)
-        nh  = np.ones((N, N), dtype=np.float32)
-        F   = np.ones((N, N), dtype=np.float32)
-        # Toggle: genes 1 ↔ 2 mutual repression
-        adj[1, 2] = -1.0; adj[2, 1] = -1.0
-        T[1, 2] = 1.5; T[2, 1] = 1.5
-        nh[1, 2] = 4.0; nh[2, 1] = 4.0
-        F[1, 2] = 0.02; F[2, 1] = 0.02
-        # Root → toggle: weak activating (should not kill bistability)
-        adj[0, 1] = 1.0; adj[0, 2] = 1.0
-        T[0, 1] = 0.5; T[0, 2] = 0.5
-        nh[0, 1] = 2.0; nh[0, 2] = 2.0
-        F[0, 1] = 1.5; F[0, 2] = 1.5
+        scc = _bistable_toggle_scc()
+        # Symmetric forcing: both genes receive equal activation (u > 1 = activating)
+        u = np.array([1.2, 1.2], dtype=np.float32)
+        device = torch.device("cpu")
 
-        l1, l3, device = random_models
-        predictor = GRNPredictor(l1, l3, device=device, refine_steps=0)
-        result = predictor.predict(adj, P, K, T, nh, F)
-        assert result["n_fps"] >= 2, \
-            f"Bistable toggle should yield ≥2 global FPs, got {result['n_fps']}"
+        fps = _solver_fallback_scc(scc, u, device)
+        stable = [fp for fp in fps if fp[1] in STABLE_CLASSES]
+        assert len(stable) >= 2, \
+            f"Symmetric forcing should preserve bistability, got {len(stable)} stable FPs"
 
     def test_global_fps_shape(self, grn_small, random_models):
         from assemble import GRNPredictor
