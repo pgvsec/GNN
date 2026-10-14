@@ -223,7 +223,18 @@ def solve_ground_truth(grn: dict, device: torch.device, verbose: bool = True) ->
         print(f"\n[Ground truth] Solving {N}-gene GRN with Newton solver...")
     t0 = time.time()
 
-    cfg = SolverConfig(seeds=(64, 96, 128), rounds=3)
+    # seeds[n-2] = number of random starts for a system of size n.
+    # Default SolverConfig only covers n=2..10 (9 entries).
+    # Extend to n=2..50 (49 entries) with increasing budgets for larger systems.
+    seeds_extended = (
+        96, 128, 160, 192, 224, 256, 288, 320, 352,   # n=2..10  (original)
+        384, 416, 448, 480, 512, 544, 576, 608, 640,   # n=11..19
+        672, 704, 736, 768, 800, 832, 864, 896, 928,   # n=20..28
+        960, 992, 1024, 1056, 1088, 1120, 1152, 1184,  # n=29..36
+        1216, 1248, 1280, 1312, 1344, 1376, 1408, 1440,# n=37..44
+        1472, 1504, 1536, 1568, 1600, 1632,             # n=45..50 (covers n=50 at index 48)
+    )
+    cfg = SolverConfig(seeds=seeds_extended, rounds=3)
     rng = np.random.default_rng(0)
 
     try:
