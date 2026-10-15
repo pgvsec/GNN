@@ -144,7 +144,7 @@ DAG_EDGE_PROB        = 0.35    # per-candidate-edge probability (for bonus edges
 # Exhaustive SCC topology coverage: for n <= EXHAUST_SCC_N we pre-enumerate all
 # non-isomorphic strongly connected signed digraphs and sample uniformly from the
 # resulting pool, giving the model equal exposure to every topology at small sizes.
-EXHAUST_SCC_N = 4
+EXHAUST_SCC_N = 3
 
 # Solver settings for Corpus C (lightweight; same order as corpus_b probe_config)
 PROBE_SEEDS   = 48    # seeds per draw; must find FPs without Brouwer certification
