@@ -124,7 +124,7 @@ def build_cache_b(corpus_b_dir, cache_dir):
     for i, path in enumerate(shards):
         with np.load(path, allow_pickle=False) as z:
             s = sizes[i]
-            n_g, n_e, n_s, n_ep, n_fp = s
+            n_g, n_e, n_s, n_ep, n_fp = s[:5]
             n_cb_shard = int(z["cb_n_ports"].sum()) if "cb_n_ports" in z.files else 0
             for k in out:
                 if k not in z.files:
