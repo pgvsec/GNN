@@ -23,9 +23,10 @@ OUT_DIR="/scratch/gilbreth/gupt1042/runs/exhaust_layer2"
 # Build Corpus B cache if not present (run once, ~5 min CPU)
 if [ ! -d "${CACHE_B_DIR}" ]; then
     echo "Cache not found — building Corpus B cache..."
-    python "${REPO_ROOT}/train_layer2.py" --mode cache \
-        --corpus_dir_b /scratch/gilbreth/gupt1042/corpus_exhaust_B \
-        --cache_dir_b  "${CACHE_B_DIR}"
+    python -c "
+from data_b import build_cache_b
+build_cache_b('/scratch/gilbreth/gupt1042/corpus_exhaust_B', '${CACHE_B_DIR}')
+"
     echo "Cache built."
 fi
 
