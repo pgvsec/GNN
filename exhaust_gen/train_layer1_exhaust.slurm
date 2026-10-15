@@ -28,8 +28,15 @@ fi
 mkdir -p "$OUT_DIR"
 cd "$(dirname "$0")/.."
 
+module --force purge
+module load external
 module load anaconda/2025.06-py313
-source activate gnn
+module load cuda
+
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate /home/gupt1042/.conda/envs/2025.06-py313/gnn
+
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 python train.py \
     --mode      train          \
