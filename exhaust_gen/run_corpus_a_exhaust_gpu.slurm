@@ -33,12 +33,17 @@ export OPENBLAS_NUM_THREADS=1
 export NUMEXPR_NUM_THREADS=1
 export PYTHONHASHSEED=0
 
-cd "$SLURM_SUBMIT_DIR"
+# REPO_ROOT is the GNN checkout; this script lives in exhaust_gen/ inside it
+REPO_ROOT="$(cd "$SLURM_SUBMIT_DIR/.." && pwd)"
+EXHAUST_DIR="${REPO_ROOT}/exhaust_gen"
+
+cd "${REPO_ROOT}"
 
 echo "SLURM_JOB_ID  : ${SLURM_JOB_ID}"
 echo "Node          : $(hostname)"
 echo "GPUs          : ${CUDA_VISIBLE_DEVICES}"
 echo "CPUs          : ${SLURM_CPUS_PER_TASK}"
+echo "REPO_ROOT     : ${REPO_ROOT}"
 echo "Start time    : $(date)"
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 
@@ -46,8 +51,8 @@ nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 
 OUT_DIR="/scratch/gilbreth/${USER}/corpus_exhaust_A"
 
-PYTHONPATH="$(dirname "$0"):$(dirname "$0")/.." \
-python "$(dirname "$0")/generate.py" \
+PYTHONPATH="${EXHAUST_DIR}:${REPO_ROOT}" \
+python "${EXHAUST_DIR}/generate.py" \
     --preset          exhaust  \
     --out_dir         "${OUT_DIR}" \
     --device          cuda     \
