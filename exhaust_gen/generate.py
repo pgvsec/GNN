@@ -65,14 +65,15 @@ PRESETS = {
     "full": dict(topos=[6000, 10000, 7000, 5000, 4000, 3000, 2400],
                  draws=[120, 100, 80, 30, 25, 20, 16, 12, 10],
                  seeds=[96, 128, 160, 192, 224, 320, 448, 512, 576]),
-    # exhaust: same topology breadth as "full" (n=2,3 exhaustive; n=4-10 sampled),
-    #          but 2x the parameter draws per topology (~40 for large n) to improve
-    #          dynamical coverage — the 4-5 dynamical regimes each topology admits
-    #          are captured by parameter breadth, not structural enumeration.
+    # exhaust: n=2..6 only — quota for n=7-10 redirected into n=4-6 (~2x "full"),
+    #          draws doubled from "full" for dynamical breadth.
+    #          draws/seeds still have 9 entries for n=2..10 but n=7-10 are never
+    #          accessed because build_graphs stops at n_max=6.
     "exhaust": dict(
-        topos=[6000, 10000, 7000, 5000, 4000, 3000, 2400],
-        draws=[240, 200, 160, 60, 50, 40, 32, 24, 20],
-        seeds=[96, 128, 160, 192, 224, 320, 448, 512, 576],
+        topos=[10000, 15000, 12000, 0, 0, 0, 0],  # n=4,5,6 boosted; n=7-10 unused
+        draws=[240, 200, 160, 60, 50, 0, 0, 0, 0],
+        seeds=[96, 128, 160, 192, 224, 224, 224, 224, 224],  # n=7-10 dummy, never used
+        n_max=6,
     ),
 }
 PHASE_FRACS = (0.30, 0.50, 0.20)
@@ -471,7 +472,8 @@ def generate(cfg):
     topo_path = os.path.join(cfg.out_dir, "topologies.npz")
     if not os.path.exists(topo_path):
         exhaust_n = preset.get("exhaust_n", 3)
-        topology.build_and_save(preset["topos"], cfg.seed, topo_path, exhaust_n=exhaust_n)
+        n_max = preset.get("n_max", topology.N_MAX)
+        topology.build_and_save(preset["topos"], cfg.seed, topo_path, exhaust_n=exhaust_n, n_max=n_max)
     topo = topology.load_topologies(topo_path)
     n_graphs = int(topo["t_n"].shape[0])
     order = np.random.default_rng(cfg.seed).permutation(n_graphs)

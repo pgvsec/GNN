@@ -316,17 +316,17 @@ def assign_splits(graphs, rng):
             graphs[i]["split"] = 1 if j < n_tr else (2 if j < n_tr + n_va else 3)
 
 
-def build_graphs(topos_per_n, seed, exhaust_n=4):
-    """topos_per_n holds the quota for n = 4 .. 10; n = 2..exhaust_n are enumerated exhaustively.
+def build_graphs(topos_per_n, seed, exhaust_n=3, n_max=N_MAX):
+    """topos_per_n holds the quota for n = 4 .. n_max; n = 2..exhaust_n are enumerated exhaustively.
 
-    exhaust_n=4 (default) extends exhaustive coverage from the original n<=3 to n<=4.
-    For n=4 (3^16=43M candidates) this uses enumerate_exhaustive_chunked; it is slow
-    (~10-30 min) but produces the complete non-isomorphic set. n=5+ must use sampling.
-    Set exhaust_n=3 to reproduce the original behavior exactly.
+    n_max (default N_MAX=10) caps which gene counts are generated. Set n_max=6 to skip
+    n=7-10 entirely and redirect that computation time to smaller gene counts.
+    exhaust_n=3 reproduces the original behavior; exhaust_n=4 adds chunked enumeration
+    for n=4 (~10-30 min, produces the full non-isomorphic set).
     """
     rng = np.random.default_rng(seed)
     graphs = []
-    for n in range(N_MIN, N_MAX + 1):
+    for n in range(N_MIN, min(n_max, N_MAX) + 1):
         seen = set()
         if n <= exhaust_n:
             found = enumerate_exhaustive_chunked(n, seen)
@@ -469,9 +469,9 @@ def describe_saved(path):
               f"{int((sp == 3).sum()):4d} | {n_e.mean():.2f}")
 
 
-def build_and_save(topos_per_n, seed, path, exhaust_n=4):
+def build_and_save(topos_per_n, seed, path, exhaust_n=3, n_max=N_MAX):
     print("building topologies", flush=True)
-    graphs = build_graphs(topos_per_n, seed, exhaust_n=exhaust_n)
+    graphs = build_graphs(topos_per_n, seed, exhaust_n=exhaust_n, n_max=n_max)
     validate_graphs(graphs)
     report_graphs(graphs)
     save_topologies(graphs, path)
