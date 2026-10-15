@@ -23,7 +23,6 @@ OUT_DIR="/scratch/gilbreth/gupt1042/runs/exhaust_layer3"
 # Build Corpus C cache if not present (run once, ~5 min CPU)
 if [ ! -d "${CACHE_C_DIR}" ]; then
     echo "Cache not found — building Corpus C cache..."
-    REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
     python -c "
 from data_c import build_cache_c
 build_cache_c('/scratch/gilbreth/gupt1042/corpus_exhaust_C',
@@ -32,8 +31,10 @@ build_cache_c('/scratch/gilbreth/gupt1042/corpus_exhaust_C',
     echo "Cache built."
 fi
 
+REPO_ROOT="$(cd "$SLURM_SUBMIT_DIR/.." && pwd)"
+
 mkdir -p "$OUT_DIR"
-cd "$(dirname "$0")/.."
+cd "$REPO_ROOT"
 
 module --force purge
 module load external
