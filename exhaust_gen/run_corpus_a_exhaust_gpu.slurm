@@ -16,6 +16,7 @@ set -e
 
 # ----------------- Environment Setup -----------------
 module --force purge
+module load external
 module load anaconda/2025.06-py313
 module load cuda
 
