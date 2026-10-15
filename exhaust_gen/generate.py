@@ -65,15 +65,14 @@ PRESETS = {
     "full": dict(topos=[6000, 10000, 7000, 5000, 4000, 3000, 2400],
                  draws=[120, 100, 80, 30, 25, 20, 16, 12, 10],
                  seeds=[96, 128, 160, 192, 224, 320, 448, 512, 576]),
-    # exhaust: n=2..4 enumerated exhaustively (all non-isomorphic SC signed digraphs);
-    #          n=5 and n=6 use high-quota random sampling with WL-hash deduplication so
-    #          near-complete coverage is approached; n=7..10 use full-preset quotas.
-    #          topos[0] (n=4) is ignored — exhaustive enumeration replaces the quota.
+    # exhaust: same topology breadth as "full" (n=2,3 exhaustive; n=4-10 sampled),
+    #          but 2x the parameter draws per topology (~40 for large n) to improve
+    #          dynamical coverage — the 4-5 dynamical regimes each topology admits
+    #          are captured by parameter breadth, not structural enumeration.
     "exhaust": dict(
-        topos=[0, 1_000_000, 500_000, 200_000, 100_000, 60_000, 40_000],
-        draws=[120, 100, 80, 30, 25, 20, 16, 12, 10],
+        topos=[6000, 10000, 7000, 5000, 4000, 3000, 2400],
+        draws=[240, 200, 160, 60, 50, 40, 32, 24, 20],
         seeds=[96, 128, 160, 192, 224, 320, 448, 512, 576],
-        exhaust_n=4,
     ),
 }
 PHASE_FRACS = (0.30, 0.50, 0.20)
