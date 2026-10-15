@@ -16,13 +16,13 @@ set -e
 
 # ----------------- Environment Setup -----------------
 module --force purge
-module load anaconda
+module load anaconda/2025.06-py313
 module load cuda
 
 source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate grn_env
+conda activate /home/gupt1042/.conda/envs/2025.06-py313/gnn
 
-export TMPDIR="/scratch/gilbreth/${USER}/tmp_${SLURM_JOB_ID}"
+export TMPDIR="/scratch/gilbreth/$(whoami)/tmp_${SLURM_JOB_ID}"
 mkdir -p "${TMPDIR}"
 
 # Prevent BLAS thread conflicts across workers
