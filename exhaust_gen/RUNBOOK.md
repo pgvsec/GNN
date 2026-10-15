@@ -101,6 +101,74 @@ Output: `/scratch/gilbreth/$USER/corpus_exhaust_B/`
 
 ---
 
+---
+
+## 6. Build Corpus C cache (CPU, run once on Gilbreth)
+
+```bash
+cd /scratch/gilbreth/$USER/GNN_temp
+python -c "
+from data_c import build_cache_c
+build_cache_c('/scratch/gilbreth/$USER/corpus_exhaust_C',
+              '/scratch/gilbreth/$USER/corpus_exhaust_C/cache')
+"
+```
+
+---
+
+## 7. Train Layer I (GPU, ~6-8 hrs)
+
+```bash
+cd /scratch/gilbreth/$USER/GNN_temp/exhaust_gen
+sbatch train_layer1_exhaust.slurm
+```
+
+The script auto-builds the Corpus A cache if missing.  Output in:
+`/scratch/gilbreth/$USER/runs/exhaust_layer1/`
+
+Monitor:
+```bash
+tail -f /scratch/gilbreth/$USER/runs/exhaust_layer1/slurm_<JOBID>.out
+```
+
+---
+
+## 8. Build Corpus B cache (CPU, run once on Gilbreth)
+
+After Corpus B finishes (step 5):
+
+```bash
+cd /scratch/gilbreth/$USER/GNN_temp
+python train_layer2.py --mode cache \
+    --corpus_dir_b /scratch/gilbreth/$USER/corpus_exhaust_B \
+    --cache_dir_b  /scratch/gilbreth/$USER/corpus_exhaust_B/cache
+```
+
+---
+
+## 9. Train Layer II (GPU, ~8-10 hrs) — run after Layer I finishes
+
+```bash
+cd /scratch/gilbreth/$USER/GNN_temp/exhaust_gen
+sbatch train_layer2_exhaust.slurm
+```
+
+Output: `/scratch/gilbreth/$USER/runs/exhaust_layer2/best.pt`
+
+---
+
+## 10. Train Layer III (GPU, ~8-10 hrs) — run after Layer II finishes
+
+```bash
+cd /scratch/gilbreth/$USER/GNN_temp/exhaust_gen
+sbatch train_layer3_exhaust.slurm
+```
+
+The script auto-builds the Corpus C cache if missing.  Output:
+`/scratch/gilbreth/$USER/runs/exhaust_layer3/best.pt`
+
+---
+
 ## Notes
 
 - All three sbatch scripts use `-p gpu`, 1 GPU, 16 workers, `--device cuda`.
