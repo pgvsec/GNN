@@ -51,14 +51,19 @@ nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 
 OUT_DIR="/scratch/gilbreth/${USER}/corpus_exhaust_A"
 
+# 22 GB GPU / ~1.2 GB per worker = 16 workers safely fit.
+# elements_per_batch caps the [B,K,N,N] tensor size per solve to avoid OOM spikes.
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
 PYTHONPATH="${EXHAUST_DIR}:${REPO_ROOT}" \
 python "${EXHAUST_DIR}/generate.py" \
-    --preset          exhaust  \
-    --out_dir         "${OUT_DIR}" \
-    --device          cuda     \
-    --workers         32       \
-    --graphs_per_shard 128     \
-    --seed            0
+    --preset             exhaust  \
+    --out_dir            "${OUT_DIR}" \
+    --device             cuda     \
+    --workers            16       \
+    --elements_per_batch 6000000  \
+    --graphs_per_shard   128      \
+    --seed               0
 
 # ----------------- Cleanup ---------------------------
 rm -rf "${TMPDIR}"
