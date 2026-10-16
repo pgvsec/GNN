@@ -254,7 +254,8 @@ def main():
             continue
         if args.split is not None and int(C["g_split"][gi]) != args.split:
             continue
-        ep0, ep1 = int(C["g_edge_ptr"][gi]), int(C["g_edge_ptr"][gi + 1])
+        ep0 = int(C["g_edge_ptr"][gi])
+        ep1 = int(C["g_edge_ptr"][gi + 1]) if gi + 1 < C["n_g"] else C["n_e"]
         e_src = C["e_src"][ep0:ep1]
         e_tgt = C["e_tgt"][ep0:ep1]
         e_sgn = C["e_sgn"][ep0:ep1]
@@ -286,7 +287,8 @@ def main():
     errors = 0
 
     for gi in qualifying:
-        ep0, ep1 = int(C["g_edge_ptr"][gi]), int(C["g_edge_ptr"][gi + 1])
+        ep0 = int(C["g_edge_ptr"][gi])
+        ep1 = int(C["g_edge_ptr"][gi + 1]) if gi + 1 < C["n_g"] else C["n_e"]
         e_src = C["e_src"][ep0:ep1]
         e_tgt = C["e_tgt"][ep0:ep1]
         e_sgn = C["e_sgn"][ep0:ep1]
@@ -295,14 +297,15 @@ def main():
         samples = graph_to_samples[gi][:args.max_samples]
         for si in samples:
             n_fp_gt = int(C["s_n_fp"][si])
-            fp0, fp1 = int(C["s_fp_ptr"][si]), int(C["s_fp_ptr"][si + 1])
+            fp0 = int(C["s_fp_ptr"][si])
+            fp1 = int(C["s_fp_ptr"][si + 1]) if si + 1 < C["n_s"] else C["n_fp"]
             gt_fps  = C["fp_state"][fp0:fp1, :target_n].copy()
             gt_stab = C["fp_stab"][fp0:fp1].copy()
 
             P_raw = C["s_P"][si]
             K_raw = C["s_K"][si]
-            # edge-parameter ptr for this sample
-            ep_s0, ep_s1 = int(C["s_ep_ptr"][si]), int(C["s_ep_ptr"][si + 1])
+            ep_s0 = int(C["s_ep_ptr"][si])
+            ep_s1 = int(C["s_ep_ptr"][si + 1]) if si + 1 < C["n_s"] else C["n_ep"]
             ep_T  = C["ep_T"][ep_s0:ep_s1]
             ep_nh = C["ep_nh"][ep_s0:ep_s1]
             ep_F  = C["ep_F"][ep_s0:ep_s1]
