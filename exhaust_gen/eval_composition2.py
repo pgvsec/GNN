@@ -72,6 +72,8 @@ def main():
     ap.add_argument("--l3_ckpt",  required=True)
     ap.add_argument("--eval_dir", required=True)
     ap.add_argument("--out_csv",  default="eval_composition2.csv")
+    ap.add_argument("--max_cases",    type=int, default=None)
+    ap.add_argument("--thorough_seeds", type=int, default=128)
     ap.add_argument("--no_cuda",  action="store_true")
     args = ap.parse_args()
 
@@ -84,7 +86,7 @@ def main():
 
     from assemble import GRNPredictor
     predictor = GRNPredictor(l1_model, l3_model, device=device, refine_steps=5,
-                             thorough_seeds=128, thorough_rounds=6)
+                             thorough_seeds=args.thorough_seeds, thorough_rounds=6)
 
     d = Path(args.eval_dir)
     adj_all   = np.load(d / "adj.npy")       # [N, 6, 6]
@@ -99,6 +101,8 @@ def main():
     fp_stab   = np.load(d / "fp_stab.npy")   # [total]
 
     N_cases = len(adj_all)
+    if args.max_cases is not None:
+        N_cases = min(N_cases, args.max_cases)
     n_total_fp = len(fp_state)
     print(f"Eval set: {N_cases} cases, {n_total_fp} total GT FPs")
 
