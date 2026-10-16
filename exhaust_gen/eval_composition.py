@@ -132,49 +132,51 @@ def stable_binary_acc(pred_stab, gt_stab):
 # ---------------------------------------------------------------------------
 
 def load_corpus_a_cache(cache_dir):
+    import json
     cache_dir = Path(cache_dir)
-    meta = np.load(cache_dir / "meta.npz")
-    sizes = {k: int(meta[k]) for k in meta.files}
+    with open(cache_dir / "meta.json") as f:
+        sizes = json.load(f)
+    sizes = {k: int(v) for k, v in sizes.items()}
 
     def mm(name, dtype, shape):
-        p = cache_dir / f"{name}.bin"
-        return np.memmap(p, dtype=dtype, mode="r", shape=shape)
-
-    n_g  = sizes["n_g"]
-    n_e  = sizes["n_e"]
-    n_s  = sizes["n_s"]
-    n_ep = sizes["n_ep"]
-    n_fp = sizes["n_fp"]
+        p = cache_dir / f"{name}.npy"
+        return np.load(p, mmap_mode="r")
 
     # graph-level
-    g_n        = mm("g_n",        np.int32,   (n_g,))
-    g_n_edges  = mm("g_n_edges",  np.uint8,   (n_g,))
-    g_edge_ptr = mm("g_edge_ptr", np.int64,   (n_g + 1,))
-    g_split    = mm("g_split",    np.uint8,   (n_g,))
+    g_n        = mm("g_n")
+    g_n_edges  = mm("g_n_edges")
+    g_edge_ptr = mm("g_edge_ptr")
+    g_split    = mm("g_split")
 
     # edge-level
-    e_src = mm("e_src", np.int64,   (n_e,))
-    e_tgt = mm("e_tgt", np.int64,   (n_e,))
-    e_sgn = mm("e_sgn", np.float32, (n_e,))
+    e_src = mm("e_src")
+    e_tgt = mm("e_tgt")
+    e_sgn = mm("e_sgn")
 
-    # sample-level — determine N_MAX from s_P shape
-    N_MAX = sizes.get("N_MAX", 10)
-    s_graph  = mm("s_graph",  np.int64,   (n_s,))
-    s_P      = mm("s_P",      np.float32, (n_s, N_MAX))
-    s_K      = mm("s_K",      np.float32, (n_s, N_MAX))
-    s_n_fp   = mm("s_n_fp",   np.int32,   (n_s,))
-    s_ep_ptr = mm("s_ep_ptr", np.int64,   (n_s + 1,))
-    s_fp_ptr = mm("s_fp_ptr", np.int64,   (n_s + 1,))
-    s_phase  = mm("s_phase",  np.uint8,   (n_s,))
+    # sample-level
+    s_graph  = mm("s_graph")
+    s_P      = mm("s_P")
+    s_K      = mm("s_K")
+    s_n_fp   = mm("s_n_fp")
+    s_ep_ptr = mm("s_ep_ptr")
+    s_fp_ptr = mm("s_fp_ptr")
+    s_phase  = mm("s_phase")
 
     # edge-parameter-level
-    ep_T  = mm("ep_T",  np.float32, (n_ep,))
-    ep_nh = mm("ep_nh", np.uint8,   (n_ep,))
-    ep_F  = mm("ep_F",  np.float32, (n_ep,))
+    ep_T  = mm("ep_T")
+    ep_nh = mm("ep_nh")
+    ep_F  = mm("ep_F")
 
     # fixed-point-level
-    fp_state = mm("fp_state", np.float32, (n_fp, N_MAX))
-    fp_stab  = mm("fp_stab",  np.uint8,   (n_fp,))
+    fp_state = mm("fp_state")
+    fp_stab  = mm("fp_stab")
+
+    N_MAX = s_P.shape[1] if s_P.ndim > 1 else sizes.get("N_MAX", 10)
+    n_g  = len(g_n)
+    n_e  = len(e_src)
+    n_s  = len(s_graph)
+    n_ep = len(ep_T)
+    n_fp = len(fp_stab)
 
     return dict(
         n_g=n_g, n_e=n_e, n_s=n_s, n_ep=n_ep, n_fp=n_fp, N_MAX=N_MAX,
