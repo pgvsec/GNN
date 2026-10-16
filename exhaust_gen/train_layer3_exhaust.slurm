@@ -31,7 +31,7 @@ build_cache_c('/scratch/gilbreth/gupt1042/corpus_exhaust_C',
     echo "Cache built."
 fi
 
-REPO_ROOT="$(cd "$SLURM_SUBMIT_DIR/.." && pwd)"
+REPO_ROOT="/scratch/gilbreth/gupt1042/GNN_temp"
 
 mkdir -p "$OUT_DIR"
 cd "$REPO_ROOT"
