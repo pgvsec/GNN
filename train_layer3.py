@@ -309,7 +309,7 @@ def evaluate_loader_c(model, criterion, loader, device, cfg):
             loss_sum[k] = loss_sum.get(k, 0.0) + float(v)
         # Corpus C: use "tc" as phase grouping key (Thomas class)
         if "phase" not in batch:
-            batch["phase"] = batch["tc"]
+            batch["phase"] = torch.zeros(batch["tc"].shape[0], dtype=torch.long, device=batch["tc"].device)
         acc.update(batch_metrics(out_cond, batch, aux, cfg.refine_steps), batch)
         calib.update(out_cond, aux, batch)
         n_batches += 1
@@ -414,7 +414,7 @@ def run_train(cfg):
         for it, batch in enumerate(train_loader):
             batch = to_device(batch, device)
             if "phase" not in batch:
-                batch["phase"] = batch["tc"]
+                batch["phase"] = torch.zeros(batch["tc"].shape[0], dtype=torch.long, device=batch["tc"].device)
 
             with autocast_ctx(cfg, device):
                 out_cond, _out0 = model(batch, freeze_backbone=cfg.freeze_backbone)
