@@ -138,7 +138,7 @@ def load_corpus_a_cache(cache_dir):
         sizes = json.load(f)
     sizes = {k: int(v) for k, v in sizes.items()}
 
-    def mm(name, dtype, shape):
+    def mm(name):
         p = cache_dir / f"{name}.npy"
         return np.load(p, mmap_mode="r")
 
