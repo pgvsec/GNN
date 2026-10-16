@@ -1,4 +1,4 @@
-"""Evaluate GRNPredictor on the composition eval dataset produced by
+"""Evaluate GRNPredictor (ML only) on the composition eval dataset produced by
 gen_composition_eval.py.
 
 Usage (from REPO_ROOT):
@@ -72,8 +72,7 @@ def main():
     ap.add_argument("--l3_ckpt",  required=True)
     ap.add_argument("--eval_dir", required=True)
     ap.add_argument("--out_csv",  default="eval_composition2.csv")
-    ap.add_argument("--max_cases",    type=int, default=None)
-    ap.add_argument("--thorough_seeds", type=int, default=128)
+    ap.add_argument("--max_cases", type=int, default=None)
     ap.add_argument("--no_cuda",  action="store_true")
     args = ap.parse_args()
 
@@ -85,8 +84,7 @@ def main():
     l3_model, _ = load_l3(args.l3_ckpt, l1_model, device)
 
     from assemble import GRNPredictor
-    predictor = GRNPredictor(l1_model, l3_model, device=device, refine_steps=5,
-                             thorough_seeds=args.thorough_seeds, thorough_rounds=6)
+    predictor = GRNPredictor(l1_model, l3_model, device=device, refine_steps=5)
 
     d = Path(args.eval_dir)
     adj_all   = np.load(d / "adj.npy")       # [N, 6, 6]
@@ -126,51 +124,40 @@ def main():
 
         try:
             with torch.no_grad():
-                result = predictor.predict(adj, P, K, T, nh, F, verbose=False,
-                                           thorough=True)
+                result = predictor.predict(adj, P, K, T, nh, F, verbose=False)
         except Exception as exc:
             errors += 1
             if errors <= 5:
                 print(f"  case {i}: {exc}")
             continue
 
-        # ML-only predictions
         pred_fps  = result.get("fps_refined", result["global_fps"])
         pred_stab = result["global_stab"]
-        n_pred_ml = result["n_fps"]
+        n_pred    = result["n_fps"]
 
-        # Thorough solver predictions
-        th_fps   = result.get("thorough_fps",  pred_fps)
-        th_stab  = result.get("thorough_stab", pred_stab)
-        n_pred_th = result.get("n_fps_thorough", n_pred_ml)
-
-        ce_ml = int(n_pred_ml == n_fp_gt)
-        hd_ml = fp_within_half_decade(pred_fps, gt_fps)
-        sa_ml = stable_binary_acc(pred_stab, gt_stab)
-
-        ce_th = int(n_pred_th == n_fp_gt)
-        hd_th = fp_within_half_decade(th_fps, gt_fps)
-        sa_th = stable_binary_acc(th_stab, gt_stab)
+        ce = int(n_pred == n_fp_gt)
+        hd = fp_within_half_decade(pred_fps, gt_fps)
+        sa = stable_binary_acc(pred_stab, gt_stab)
 
         rows.append({"case": i, "n_fp_gt": n_fp_gt,
-                     "n_fp_pred_ml": n_pred_ml, "n_fp_pred_thorough": n_pred_th,
-                     "count_exact_ml": ce_ml, "count_exact_thorough": ce_th,
-                     "fp_hd_ml": hd_ml, "fp_hd_thorough": hd_th,
-                     "stable_acc_ml": sa_ml, "stable_acc_thorough": sa_th,
+                     "n_fp_pred": n_pred,
+                     "count_exact": ce,
+                     "fp_hd": hd,
+                     "stable_acc": sa,
                      "n_converged": result.get("n_converged", -1)})
 
         n_total += 1
-        n_count_exact += ce_th   # report thorough as primary
-        if not np.isnan(hd_th):
-            n_fp_hit      += hd_th * n_fp_gt
-            n_fp_total_w  += n_fp_gt
+        n_count_exact += ce
+        if not np.isnan(hd):
+            n_fp_hit     += hd * n_fp_gt
+            n_fp_total_w += n_fp_gt
 
     print(f"\n{'='*60}")
     print(f"Evaluated {n_total} cases ({errors} errors)")
     if n_total > 0:
-        print(f"count_exact (thorough): {n_count_exact/n_total:.4f}  ({n_count_exact}/{n_total})")
+        print(f"count_exact: {n_count_exact/n_total:.4f}  ({n_count_exact}/{n_total})")
     if n_fp_total_w > 0:
-        print(f"fp_hd (thorough)      : {n_fp_hit/n_fp_total_w:.4f}")
+        print(f"fp_hd      : {n_fp_hit/n_fp_total_w:.4f}")
     print(f"{'='*60}")
 
     out = Path(args.out_csv)
