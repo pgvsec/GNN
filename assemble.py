@@ -907,6 +907,65 @@ def refine_fps(
 # 5. GRNPredictor — convenience end-to-end wrapper
 # ---------------------------------------------------------------------------
 
+def thorough_solve(
+    adj: np.ndarray,   # [N, N]
+    P: np.ndarray,     # [N]
+    K: np.ndarray,     # [N]
+    T: np.ndarray,     # [N, N]
+    nh: np.ndarray,    # [N, N]
+    F: np.ndarray,     # [N, N]
+    device: torch.device,
+    warm: Optional[np.ndarray] = None,  # [n_warm, N] known seeds (ML predictions)
+    n_random_seeds: int = 128,
+    rounds: int = 6,
+    tol: float = 1e-10,
+    accept_tol: float = 1e-6,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Find all fixed points of a single GRN draw using exhaustive Newton search.
+
+    Uses the same solver as Corpus A generation: corner seeds + random seeds +
+    optional warm starts (e.g. ML predictions), then clusters converged points.
+
+    Returns (fp_state [M, N], fp_stab [M]) where stab encodes stability class.
+    """
+    from types import SimpleNamespace
+    from solver import solve_draws, cluster_roots, root_properties
+
+    N = len(P)
+    par = {
+        "P":   P.astype(np.float64)[None],    # [1, N]
+        "K":   K.astype(np.float64)[None],
+        "adj": adj.astype(np.float32)[None],   # [1, N, N]
+        "T":   T.astype(np.float64)[None],
+        "nh":  nh.astype(np.float64)[None],
+        "F":   F.astype(np.float64)[None],
+    }
+    scfg = SimpleNamespace(
+        eps_box=0.05,
+        newton_steps=200,
+        tol=tol,
+        accept_tol=accept_tol,
+        seeds=[0, n_random_seeds, n_random_seeds, n_random_seeds,
+               n_random_seeds, n_random_seeds],   # indexed by n-2
+        max_corners=256,
+        rounds=rounds,
+        confirm=False,
+    )
+    warm_t = warm.astype(np.float32) if warm is not None and len(warm) > 0 else None
+    gen = torch.Generator(device=device)
+    gen.manual_seed(0)
+    res = solve_draws(par, scfg, n=N, gen=gen, device=device,
+                      warm=warm_t)
+
+    counts = res["counts"]   # [1]
+    if counts[0] == 0:
+        return np.zeros((0, N), dtype=np.float32), np.zeros(0, dtype=np.uint8)
+
+    fp_state = res["state"].astype(np.float32)   # [M, N_MAX] padded
+    fp_stab  = res["stab"].astype(np.uint8)       # [M]
+    return fp_state[:, :N], fp_stab
+
+
 class GRNPredictor:
     """End-to-end fixed-point predictor for arbitrary large GRNs.
 
@@ -917,11 +976,17 @@ class GRNPredictor:
     >>> result["global_fps"]        # [n_fps, N] ndarray
     >>> result["global_stab"]       # [n_fps] stability classes
     >>> result["converged"]         # [n_fps] bool (Newton convergence)
+
+    Pass thorough=True to pred.predict() to also run an exhaustive Newton
+    search on the full system (same solver as corpus generation). This finds
+    emergent FPs that arise from cross-SCC coupling and cannot be predicted
+    from per-SCC inference alone.
     """
 
     def __init__(self, l1_model, l3_model, device: Optional[torch.device] = None,
                  refine_steps: int = 5, newton_steps: int = NEWTON_STEPS,
-                 newton_restarts: int = 3, tol: float = 1e-8):
+                 newton_restarts: int = 3, tol: float = 1e-8,
+                 thorough_seeds: int = 128, thorough_rounds: int = 6):
         self.l1_model = l1_model
         self.l3_model = l3_model
         self.device = device or torch.device("cpu")
@@ -929,6 +994,8 @@ class GRNPredictor:
         self.newton_steps = newton_steps
         self.newton_restarts = newton_restarts
         self.tol = tol
+        self.thorough_seeds = thorough_seeds
+        self.thorough_rounds = thorough_rounds
 
         self.l1_model.eval()
         self.l3_model.eval()
@@ -942,6 +1009,7 @@ class GRNPredictor:
         nh: np.ndarray,     # [N, N]
         F: np.ndarray,      # [N, N]
         verbose: bool = True,
+        thorough: bool = False,
     ) -> Dict[str, Any]:
         """Predict global fixed points of a GRN.
 
@@ -1009,7 +1077,7 @@ class GRNPredictor:
                 "n_converged": 0,
             }
 
-        return {
+        base = {
             "dag":              dag,
             "all_branches":     all_branches,
             "global_fps":       assembly["fps"],
@@ -1020,6 +1088,32 @@ class GRNPredictor:
             "n_fps":            assembly["n_fps"],
             **refinement,
         }
+
+        if not thorough:
+            return base
+
+        # Thorough mode: run exhaustive Newton search on the full system,
+        # seeded by ML predictions + random draws from the invariant box.
+        # This finds emergent FPs that arise from cross-SCC coupling.
+        if verbose:
+            print(f"[GRNPredictor] Running thorough Newton search "
+                  f"({self.thorough_seeds} random seeds, {self.thorough_rounds} rounds)...")
+        warm_seeds = refinement["fps_refined"] if len(refinement["fps_refined"]) > 0 else None
+        th_fps, th_stab = thorough_solve(
+            adj, P, K, T, nh, F,
+            device=self.device,
+            warm=warm_seeds,
+            n_random_seeds=self.thorough_seeds,
+            rounds=self.thorough_rounds,
+            tol=self.tol,
+        )
+        if verbose:
+            print(f"  Thorough solver found {len(th_fps)} FP(s)")
+
+        base["thorough_fps"]  = th_fps
+        base["thorough_stab"] = th_stab
+        base["n_fps_thorough"] = len(th_fps)
+        return base
 
 
 # ---------------------------------------------------------------------------
