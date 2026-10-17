@@ -348,13 +348,13 @@ def _make_scc_batch(scc: SccNode, u: np.ndarray, device: torch.device) -> Dict[s
     adj_signed = scc.adj_intra.astype(np.float32)
 
     batch = {
-        "P":        t(pad1d(P_eff)),
-        "K":        t(pad1d(scc.K)),
-        "xmax":     t(pad1d(xmax_full, fill=1.0)),  # 1.0 matches training padding (data.py:230)
+        "P":        t(pad1d(P_eff, fill=1.0)),    # data.py:228 np.ones(N_MAX)
+        "K":        t(pad1d(scc.K, fill=1.0)),    # data.py:229 np.ones(N_MAX)
+        "xmax":     t(pad1d(xmax_full, fill=1.0)),  # data.py:230 np.ones(N_MAX)
         "adj":      t(pad2d(adj_signed)),
-        "T":        t(pad2d(scc.T, fill=1.0)),
-        "nh":       t(pad2d(scc.nh, fill=1.0)),
-        "F":        t(pad2d(F_full, fill=1.0)),
+        "T":        t(pad2d(scc.T, fill=1.0)),    # data.py:238 np.ones(N_MAX,N_MAX)
+        "nh":       t(pad2d(scc.nh, fill=1.0)),   # data.py:239 np.ones(N_MAX,N_MAX)
+        "F":        t(pad2d(F_full, fill=1.0)),   # data.py:240 np.ones(N_MAX,N_MAX)
         "node_mask": torch.zeros(1, N_MAX, dtype=torch.bool, device=device),
         "u":        t(pad1d(u[:n])),
         "n":        torch.tensor([n], dtype=torch.long, device=device),
