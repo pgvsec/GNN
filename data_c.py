@@ -374,6 +374,10 @@ def make_loader_c(cfg, train, only_solved=False, max_samples=None):
     if train:
         counts = np.bincount(ds.sample_n)
         w = counts[ds.sample_n].astype(np.float64) ** (-cfg.sampler_power)
+        kpower = getattr(cfg, "sampler_kpower", 0.0)
+        if kpower > 0.0:
+            # additionally upsample branches with more fixed points
+            w *= ds.sample_nfp.astype(np.float64) ** kpower
         sampler = WeightedRandomSampler(
             torch.from_numpy(w),
             num_samples=cfg.steps_per_epoch * cfg.batch_size,
