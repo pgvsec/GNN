@@ -1,5 +1,5 @@
-"""Diagnostic: trace NaN source in composition pipeline."""
-import argparse, sys
+"""Diagnostic: check count_logit distribution and model FP predictions post-fix."""
+import argparse
 from pathlib import Path
 from types import SimpleNamespace
 import numpy as np
@@ -23,18 +23,13 @@ ap = argparse.ArgumentParser()
 ap.add_argument("--l1_ckpt", required=True)
 ap.add_argument("--l3_ckpt", required=True)
 ap.add_argument("--eval_dir", required=True)
-ap.add_argument("--corpus_a_cache", default=None, help="Corpus A cache dir for sanity check")
+ap.add_argument("--corpus_a_cache", default=None)
+ap.add_argument("--n_cases", type=int, default=20)
 args = ap.parse_args()
 
 device = torch.device("cpu")
 l1 = load_l1(args.l1_ckpt, device)
 l3 = load_l3(args.l3_ckpt, l1, device)
-
-# --- print model parameter norms to verify loading ---
-p_norms = [p.norm().item() for p in l1.parameters()]
-print(f"L1 param norms (first 5): {p_norms[:5]}")
-p_norms3 = [p.norm().item() for p in l3.parameters()]
-print(f"L3 param norms (first 5): {p_norms3[:5]}")
 
 d = Path(args.eval_dir)
 adj_all  = np.load(d/"adj.npy")
@@ -45,29 +40,23 @@ nh_all   = np.load(d/"nh.npy")
 F_all    = np.load(d/"F.npy")
 n_fp_arr = np.load(d/"n_fp.npy")
 
-print(f"\neval_dir shapes: adj={adj_all.shape} P={P_all.shape} T={T_all.shape}")
-print(f"P range: [{P_all.min():.4f}, {P_all.max():.4f}]")
-print(f"K range: [{K_all.min():.4f}, {K_all.max():.4f}]")
-print(f"T range: [{T_all.min():.4f}, {T_all.max():.4f}]  (any zero? {(T_all==0).any()})")
-print(f"nh range: [{nh_all.min():.4f}, {nh_all.max():.4f}]")
-print(f"F range: [{F_all.min():.4f}, {F_all.max():.4f}]")
-print(f"adj nonzero values: {np.unique(adj_all[adj_all != 0])}")
-
 from assemble import decompose_grn, _make_scc_batch, _compute_forcing
-import itertools
+from model import decode_slots
 
-for i in range(3):
+for i in range(args.n_cases):
     adj = adj_all[i]; P = P_all[i].astype(np.float32)
     K   = K_all[i].astype(np.float32); T = T_all[i].astype(np.float32)
     nh  = nh_all[i].astype(np.float32); F = F_all[i].astype(np.float32)
+    n_fp_gt = int(n_fp_arr[i])
 
     dag = decompose_grn(adj, P, K, T, nh, F)
-    print(f"\n=== Case {i} | GT n_fp={int(n_fp_arr[i])} ===")
+    print(f"\n=== Case {i} | GT n_fp={n_fp_gt} ===")
 
     for scc in dag.sccs:
+        is_root = len(scc.parents) == 0
         u = np.ones(scc.n, dtype=np.float32)
-        if scc.parents:
-            # Use first parent FP = zero (placeholder) — just to check batch NaNs
+        # Use zero parent FP as placeholder for forced SCC
+        if not is_root:
             u_contrib = _compute_forcing(dag, scc.parents[0], scc.scc_id,
                                          np.zeros(dag.sccs[scc.parents[0]].n),
                                          adj, T, nh, F)
@@ -75,23 +64,54 @@ for i in range(3):
 
         batch = _make_scc_batch(scc, u, device)
 
-        print(f"  SCC {scc.scc_id} (n={scc.n}, parents={scc.parents})")
-        print(f"    u = {u.tolist()}")
-        for k, v in batch.items():
-            if torch.is_tensor(v):
-                has_nan = torch.isnan(v).any().item()
-                has_inf = torch.isinf(v).any().item()
-                print(f"    batch[{k}]: shape={list(v.shape)}  nan={has_nan}  inf={has_inf}  "
-                      f"range=[{v.min().item():.4f}, {v.max().item():.4f}]")
-
         with torch.no_grad():
-            is_root = len(scc.parents) == 0
             if is_root:
                 out = l1(batch)
+                model_name = "L1"
             else:
                 out, _ = l3(batch, freeze_backbone=True)
+                model_name = "L3"
 
-        for ok, ov in out.items():
-            if torch.is_tensor(ov):
-                has_nan = torch.isnan(ov).any().item()
-                print(f"    out[{ok}]: nan={has_nan}  range=[{ov.min().item():.4f}, {ov.max().item():.4f}]")
+        cl = out["count_logit"].float()[0]   # [max_fp+1]
+        el = out["exist_logit"].float()[0]   # [K_slots]
+        ep = torch.sigmoid(el)
+
+        # Find predicted k (odd indices only)
+        even_mask = (torch.arange(cl.shape[0]) % 2 == 0)
+        cl_odd = cl.clone(); cl_odd[even_mask] = float("-inf")
+        k_pred = int(cl_odd.argmax().item())
+
+        # Top-8 count logit values
+        cl_top = [(int(j), float(cl[j].item())) for j in range(min(10, cl.shape[0]))]
+        ep_top = [f"{float(ep[j].item()):.3f}" for j in range(min(8, ep.shape[0]))]
+
+        n_slots_true = int((ep > 0.5).sum().item())
+
+        print(f"  SCC {scc.scc_id} n={scc.n} {model_name} | "
+              f"k_pred={k_pred} | count_logit[0..9]={[f'{v:.2f}' for _,v in cl_top]} | "
+              f"exist_prob[:8]={ep_top} | slots>0.5: {n_slots_true}")
+
+# --- Sanity check: does L1 work on a hand-crafted 3-gene TC_BOTH case? ---
+print("\n\n=== L1 SANITY CHECK (3-gene bistable) ===")
+# Create a simple 3-gene toggle network that should have 3 FPs
+n = 3
+adj_s = np.array([[0, 1, -1], [-1, 0, 1], [1, -1, 0]], dtype=np.float32)
+P_s = np.array([5.0, 5.0, 5.0], dtype=np.float32)
+K_s = np.array([1.0, 1.0, 1.0], dtype=np.float32)
+T_s = np.ones((n, n), dtype=np.float32)
+nh_s = np.full((n, n), 2.0, dtype=np.float32)
+F_s = np.where(adj_s != 0, np.where(adj_s > 0, 5.0, 0.2), 1.0).astype(np.float32)
+
+from assemble import SccNode
+scc_s = SccNode(0, list(range(n)), n, adj_s, P_s, K_s, T_s, nh_s, F_s, [], [])
+u_s = np.ones(n, dtype=np.float32)
+batch_s = _make_scc_batch(scc_s, u_s, device)
+with torch.no_grad():
+    out_s = l1(batch_s)
+cl_s = out_s["count_logit"].float()[0]
+el_s = out_s["exist_logit"].float()[0]
+ep_s = torch.sigmoid(el_s)
+even_mask = (torch.arange(cl_s.shape[0]) % 2 == 0)
+cl_s_odd = cl_s.clone(); cl_s_odd[even_mask] = float("-inf")
+k_pred_s = int(cl_s_odd.argmax().item())
+print(f"  k_pred={k_pred_s} | count_logit[0..9]={[f'{cl_s[j].item():.2f}' for j in range(min(10, cl_s.shape[0]))]} | exist_prob[:4]={[f'{ep_s[j].item():.3f}' for j in range(4)]}")
