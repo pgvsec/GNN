@@ -31,6 +31,15 @@ device = torch.device("cpu")
 l1 = load_l1(args.l1_ckpt, device)
 l3 = load_l3(args.l3_ckpt, l1, device)
 
+# Check for NaN in model weights
+l1_nan = sum(p.isnan().sum().item() for p in l1.parameters())
+l3_nan = sum(p.isnan().sum().item() for p in l3.parameters())
+l1_norm = sum(p.norm().item() for p in l1.parameters())
+print(f"L1 weight NaN count: {l1_nan}, total norm: {l1_norm:.4f}")
+print(f"L3 weight NaN count: {l3_nan}")
+import inspect, assemble as _asm
+print(f"assemble.py path: {inspect.getfile(_asm)}")
+
 d = Path(args.eval_dir)
 adj_all  = np.load(d/"adj.npy")
 P_all    = np.load(d/"P.npy")
@@ -106,6 +115,9 @@ from assemble import SccNode
 scc_s = SccNode(0, list(range(n)), n, adj_s, P_s, K_s, T_s, nh_s, F_s, [], [])
 u_s = np.ones(n, dtype=np.float32)
 batch_s = _make_scc_batch(scc_s, u_s, device)
+print(f"  batch xmax (first 6): {batch_s['xmax'][0,:6].tolist()}")
+print(f"  batch P (first 6): {batch_s['P'][0,:6].tolist()}")
+print(f"  batch K (first 6): {batch_s['K'][0,:6].tolist()}")
 with torch.no_grad():
     out_s = l1(batch_s)
 cl_s = out_s["count_logit"].float()[0]
