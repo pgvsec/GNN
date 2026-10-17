@@ -116,7 +116,8 @@ class Config:
     w_pos:      float = 5.0
     w_cp:       float = 2.0
     w_stab:     float = 1.0
-    w_count:    float = 0.5
+    w_count:    float = 2.0
+    w_count_kscale: float = 1.0   # instance weight = k_true * kscale + 1; 0 = flat
     w_phys:     float = 1.0
     w_thomas:   float = 0.0    # disabled: Corpus C has no has_pos_fb
     eos_coef:   float = 0.3

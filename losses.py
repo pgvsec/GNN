@@ -167,7 +167,10 @@ class SetCriterion(nn.Module):
         stable_true = ((tgt_stab == 0) | (tgt_stab == 1)).sum(1).clamp(max=K)
         ce_k = Fnn.cross_entropy(out["count_logit"], k_true, reduction="none")
         ce_s = Fnn.cross_entropy(out["stable_count_logit"], stable_true, reduction="none")
-        l_count = ((ce_k + ce_s) * cons1).sum() / cons1.sum().clamp_min(1.0)
+        kscale = getattr(cfg, "w_count_kscale", 0.0)
+        k_wt = k_true.float() * kscale + 1.0  # 1.0 when kscale=0 (flat); k*s+1 otherwise
+        denom = (cons1 * k_wt).sum().clamp_min(1.0)
+        l_count = ((ce_k + ce_s) * cons1 * k_wt).sum() / denom
 
         # Thomas: no positive feedback loop => at most one stable fixed point
         p_stable = torch.softmax(stab_logit, dim=-1)[..., :2].sum(-1)
