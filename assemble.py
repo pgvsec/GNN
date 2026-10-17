@@ -350,7 +350,7 @@ def _make_scc_batch(scc: SccNode, u: np.ndarray, device: torch.device) -> Dict[s
     batch = {
         "P":        t(pad1d(P_eff)),
         "K":        t(pad1d(scc.K)),
-        "xmax":     t(pad1d(xmax_full)),
+        "xmax":     t(pad1d(xmax_full, fill=1.0)),  # 1.0 matches training padding (data.py:230)
         "adj":      t(pad2d(adj_signed)),
         "T":        t(pad2d(scc.T, fill=1.0)),
         "nh":       t(pad2d(scc.nh, fill=1.0)),
