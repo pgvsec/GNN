@@ -90,8 +90,8 @@ class Config:
     w_cp: float = 2.0
     w_stab: float = 1.0
     w_count: float = 2.0
-    w_count_kscale: float = 2.0   # instance weight = k_true * kscale + 1
-    sampler_kpower: float = 0.5   # upsample high-k branches; 0 = off
+    w_count_kscale: float = 0.0   # instance weight = k_true * kscale + 1; 0 = flat (physically honest)
+    sampler_kpower: float = 0.0   # upsample high-k branches; 0 = off
     w_phys: float = 1.0
     w_thomas: float = 0.5
     eos_coef: float = 0.3                # weight of no-object slots in the existence loss

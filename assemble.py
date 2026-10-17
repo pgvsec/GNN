@@ -514,7 +514,7 @@ def _infer_scc(
 
     exist = decode_slots(out)                              # [1, K] bool
     x_pred = decode_position(out["pos"].float(), xmax.unsqueeze(1))  # [1, K, N_MAX]
-    # Newton refinement
+    # Newton refinement on ALL slots (not just the ones decode_slots keeps)
     x_ref = newton_refine(x_pred, P, Kd, xmax, adj, T_t, nh_t, F_t, node_mask, refine_steps)
 
     stab = out["stab_logit"].float().argmax(-1)            # [1, K]
@@ -523,6 +523,18 @@ def _infer_scc(
     # Guard against NaN (can arise from very large logits or degenerate model outputs)
     exist_prob = torch.nan_to_num(exist_prob, nan=0.5, posinf=1.0, neginf=0.0)
 
+    # Residual-based slot rescue: any slot where Newton converged to a genuine
+    # fixed point of the ODE (residual < threshold) is physically real, even if
+    # the count head suppressed it.  This recovers missed FPs in multi-stable
+    # systems without biasing the count head toward over-prediction.
+    from model import hill_residual as _hill_res
+    res_all = _hill_res(x_ref, P, Kd, xmax, adj, T_t, nh_t, F_t)  # [1, K, N_MAX]
+    nm_res = node_mask.float().unsqueeze(1)
+    max_res = (res_all.abs() * nm_res).max(dim=-1).values  # [1, K]
+    _RESCUED_THRESH = 1e-3  # below this the slot is a genuine FP
+    rescued = (max_res[0] < _RESCUED_THRESH)                         # [K] bool
+    exist_final = exist[0] | rescued                                  # [K] bool
+
     # Diagnostic: print count_logit distribution for this SCC
     if getattr(_infer_scc, "_verbose", False):
         cl = out["count_logit"].float()[0]           # [max_fp+1]
@@ -530,17 +542,36 @@ def _infer_scc(
         cl_odd = cl.clone(); cl_odd[even_mask] = float("-inf")
         k_pred = int(cl_odd.argmax().item())
         ep_top4 = exist_prob[0, :4].tolist()
+        n_rescued = int((rescued & ~exist[0]).sum().item())
         print(f"    [SCC {scc.scc_id} n={scc.n}] count_logit peak at k={k_pred}  "
-              f"exist_prob[:4]={[f'{p:.3f}' for p in ep_top4]}")
+              f"exist_prob[:4]={[f'{p:.3f}' for p in ep_top4]}  rescued={n_rescued}")
+
+    # Deduplicate: keep slots whose Newton-refined position is not within dup_tol
+    # of an earlier kept slot (avoids reporting the same FP basin twice).
+    _DUP_TOL = 0.02  # relative position distance threshold
+    kept_indices = []
+    kept_positions = []
+    K_slots = exist_final.shape[0]
+    # Sort: model-selected slots first (by exist_logit rank), then rescued slots
+    slot_order = exist_logit[0].argsort(descending=True).tolist()
+    for k in slot_order:
+        if not exist_final[k].item():
+            continue
+        xk_n = x_ref[0, k, :n].cpu().numpy()
+        xmax_n = xmax.squeeze(0)[:n].cpu().numpy()
+        xk_n = np.where(np.isfinite(xk_n), xk_n, xmax_n * 0.5)
+        is_dup = False
+        for xj in kept_positions:
+            if np.max(np.abs(xk_n - xj) / (xmax_n + 1e-30)) < _DUP_TOL:
+                is_dup = True
+                break
+        if not is_dup:
+            kept_indices.append(k)
+            kept_positions.append(xk_n)
 
     results = []
-    K_slots = exist.shape[1]
-    for k in range(K_slots):
-        if not exist[0, k].item():
-            continue
-        x_k = x_ref[0, k, :n].cpu().numpy()  # trim to actual SCC size
-        # Guard against NaN in predicted position (fall back to xmax midpoint)
-        x_k = np.where(np.isfinite(x_k), x_k, xmax.squeeze(0)[:n].cpu().numpy() * 0.5)
+    for i, k in enumerate(kept_indices):
+        x_k = kept_positions[i]
         s_k = int(stab[0, k].item())
         ep_k = float(exist_prob[0, k].item())
         results.append((x_k, s_k, ep_k))
