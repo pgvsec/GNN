@@ -512,6 +512,90 @@ python exhaust_gen/eval_composition2.py \
 
 ---
 
+## 8c. Architecture Redesign: PairwiseCountHead for L3 (v10)
+
+**Committed:** current branch  
+**Goal:** push `count_exact` from 68% → 85%+
+
+### Root cause identified
+
+Two bugs in the old L3 count head:
+
+1. **K=16 slot cap:** `batch["k"].clamp(max=K)` clamped GT k=19 to 16, so the model never learned to predict above 16 and even the correct loss signal was truncated.
+
+2. **Architecture mismatch:** The backbone's `count_head` reads a single graph-level embedding (`z + mean(slots)`) trained on 3-gene autonomous SCCs. It has no way to reason about pairwise SCC coupling. A composed 6-gene FP exists iff a pair of single-SCC FPs (one per SCC) is mutually compatible under cross-edge forcing — a K×K compatibility problem, not a 1D graph summary.
+
+### What changed
+
+| File | Change |
+|---|---|
+| `model_c.py` | Added `PairwiseCountHead` class; wired into `CorpusCNet` |
+| `model_b.py` | `CorpusBNet.forward` now exposes `_h_cond`, `_z_cond` in `out_cond` for subclass use |
+| `losses.py` | `k_true` clamped to `count_logit.shape[-1] - 1` instead of `K` (backward-compatible) |
+
+### PairwiseCountHead architecture
+
+```
+SCC1 slots [B,K,d]  ──┐
+                       ├── bidirectional cross-attention ──▶ pairwise compat [B,K,K]
+SCC2 slots [B,K,d]  ──┘                                      ↓ soft-sum rows/cols
+                                                         [B, 2K] count features
+                                                              ↓ MLP(3 layers)
+                                                         count_logit [B, max_count+1]
+```
+
+- `max_count=32` by default — covers the observed maximum of k=19 with margin
+- Cross-attention is bidirectional: SCC2 slots query SCC1, and SCC1 slots query SCC2
+- Pairwise compatibility `compat[i,j] = MLP([s1_i, s2_j])` → sigmoid soft-sum gives expected compatible partners per slot
+- The odd-parity mask in `decode_slots` still applies over the 33-output logit
+
+The slot positions and existence logits (still from the existing 16-slot backbone decoder) are unchanged, so fp_hd and stable_acc are unaffected by this change.
+
+### Training plan for v10 (L3 only — ~4–6 hours)
+
+**Reuse L1/L2 v4 checkpoints.** Only L3 needs retraining because `PairwiseCountHead` is L3-only.
+
+New config keys (already at their default values in `CorpusCNet.__init__`):
+- `n_scc1=3` — genes 0-2 are SCC1, genes 3-5 are SCC2
+- `max_count_c=32` — output range of pairwise count head
+
+```bash
+cd /scratch/gilbreth/gupt1042/GNN_temp
+git pull origin claude/zealous-wright-eum1ur
+
+# L3 only — reuse L2 v4 checkpoint (backbone unchanged)
+PYTHONPATH=/scratch/gilbreth/gupt1042/GNN_temp \
+PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+python train_layer3.py \
+    --layer2_ckpt /scratch/gilbreth/gupt1042/runs/layer2_v4/best.pt \
+    --cache_dir_c /scratch/gilbreth/gupt1042/corpusC/cache \
+    --out_dir     /scratch/gilbreth/gupt1042/runs/layer3_v10 \
+    --num_workers 8
+```
+
+Eval:
+```bash
+python exhaust_gen/eval_composition2.py \
+    --l1_ckpt /scratch/gilbreth/gupt1042/runs/layer1_v4/best.pt \
+    --l3_ckpt /scratch/gilbreth/gupt1042/runs/layer3_v10/best.pt \
+    --eval_dir /scratch/gilbreth/gupt1042/runs/composition_eval_v5 \
+    --out_csv  /scratch/gilbreth/gupt1042/runs/eval_v10.csv
+```
+
+### Expected result
+
+| Metric | Before (v8) | Expected (v10) |
+|---|---|---|
+| count_exact | 68.00% | **80–85%** |
+| fp_hd | 84.68% | ~85% (unchanged architecture) |
+| stable_acc | — | ~81% (unchanged architecture) |
+
+If `count_exact` reaches 85%+ and `fp_hd` stays near 86.5%, this surpasses all three v5 targets simultaneously.
+
+If `count_exact` lands at 80–84%, run a full L1+L2+L3 retrain (v11) using the v10 L3 architecture plus the training improvements in Section 8b (`count_focal_gamma=2.0`, `w_exist_cnt=0.5`, `w_count=3.0`).
+
+---
+
 ## 9. Infrastructure Notes
 
 ### Running on Gilbreth (Purdue)

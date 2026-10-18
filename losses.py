@@ -163,7 +163,11 @@ class SetCriterion(nn.Module):
 
         # counts, trusted only where the Brouwer sum is 1
         cons1 = batch["consistent"].float()
-        k_true = batch["k"].clamp(max=K)
+        # Clamp to the count_logit output range (not to slot count K), so that
+        # models with an extended count head (e.g. PairwiseCountHead in L3) can
+        # supervise k values above K.  For L1/L2, count_logit has K+1 outputs so
+        # this equals the old behaviour.
+        k_true = batch["k"].clamp(max=out["count_logit"].shape[-1] - 1)
         stable_true = ((tgt_stab == 0) | (tgt_stab == 1)).sum(1).clamp(max=K)
         ce_k = Fnn.cross_entropy(out["count_logit"], k_true, reduction="none")
         ce_s = Fnn.cross_entropy(out["stable_count_logit"], stable_true, reduction="none")

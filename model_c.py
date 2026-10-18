@@ -38,12 +38,93 @@ import torch.nn as nn
 import torch.nn.functional as Fnn
 
 from data import N_MAX
-from model import SccFixedPointNet
+from model import SccFixedPointNet, MLP
 from model_b import CorpusBNet
 
 # Maximum number of port slots synthesized per sample.
 # Set ≥ typical max inter-SCC fan-in; 8 covers essentially all DAG shapes.
 MAX_PORTS_C = 8
+
+# Default maximum FP count the pairwise head can predict.  Set comfortably above
+# the observed maximum for 2×3-gene compositions (~19) so no GT sample is clamped.
+DEFAULT_MAX_COUNT_C = 32
+
+
+# ---------------------------------------------------------------------------
+# Pairwise count head
+# ---------------------------------------------------------------------------
+
+class PairwiseCountHead(nn.Module):
+    """Count head for composed 2-SCC systems via SCC1 × SCC2 slot compatibility.
+
+    Physical motivation: every fixed point of the composed (SCC1 ⊕ SCC2) system
+    lies near a *pair* (FP_i of SCC1, FP_j of SCC2) perturbed by the cross-edge
+    forcing.  We learn which pairs are mutually compatible and predict the count
+    by aggregating pairwise compatibility scores — directly implementing the
+    combinatorial structure of composition.
+
+    Unlike the backbone's count head (which reads a single graph embedding trained
+    on 3-gene autonomous SCCs), this head explicitly models the K×K coupling
+    between both SCCs' slot embeddings, and its output dimension covers k = 0 … max_count,
+    which can exceed the backbone slot count K.
+
+    Args:
+        d_model   : slot embedding dimension
+        K         : backbone slot count (slots per SCC pass)
+        max_count : maximum predicted FP count (output size = max_count + 1)
+        dropout   : dropout on cross-attention
+    """
+
+    def __init__(self, d_model: int, K: int, max_count: int = DEFAULT_MAX_COUNT_C,
+                 dropout: float = 0.0):
+        super().__init__()
+        self.K = K
+        self.max_count = max_count
+
+        # Bidirectional cross-attention between the two SCC slot sets.
+        # s2 slots attend to s1, and s1 slots attend to s2.
+        self.cross_12 = nn.MultiheadAttention(
+            d_model, num_heads=4, dropout=dropout, batch_first=True)
+        self.cross_21 = nn.MultiheadAttention(
+            d_model, num_heads=4, dropout=dropout, batch_first=True)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+
+        # Pairwise compatibility: score each (SCC1 slot, SCC2 slot) pair.
+        self.compat_mlp = MLP(2 * d_model, d_model, 1, n_layers=2, dropout=dropout)
+
+        # Count head: reads row-wise and column-wise soft-sum of compatibility.
+        # Input size = K (SCC1 perspective) + K (SCC2 perspective) = 2K.
+        self.count_head = MLP(2 * K, d_model, max_count + 1, n_layers=3, dropout=dropout)
+
+    def forward(self, s1: torch.Tensor, s2: torch.Tensor) -> torch.Tensor:
+        """
+        s1 : [B, K, d]  SCC1 slot embeddings (conditioned on cross-edge forcing)
+        s2 : [B, K, d]  SCC2 slot embeddings (conditioned on cross-edge forcing)
+        Returns count_logit : [B, max_count + 1]
+        """
+        B, K, d = s1.shape
+
+        # Cross-attention (residual + LN)
+        s2_ctx, _ = self.cross_12(s2, s1, s1)   # s2 queries s1
+        s2_ctx = self.norm1(s2 + s2_ctx)         # [B, K, d]
+
+        s1_ctx, _ = self.cross_21(s1, s2, s2)   # s1 queries s2
+        s1_ctx = self.norm2(s1 + s1_ctx)         # [B, K, d]
+
+        # Pairwise compatibility matrix  [B, K, K]
+        s1_exp = s1_ctx.unsqueeze(2).expand(B, K, K, d)   # [B, K, K, d]
+        s2_exp = s2_ctx.unsqueeze(1).expand(B, K, K, d)   # [B, K, K, d]
+        compat = self.compat_mlp(
+            torch.cat([s1_exp, s2_exp], dim=-1)            # [B, K, K, 2d]
+        ).squeeze(-1)                                       # [B, K, K]
+
+        # Soft-sum along each axis: expected compatible partners per slot
+        row_score = torch.sigmoid(compat).sum(dim=2)  # [B, K] — SCC1 perspective
+        col_score = torch.sigmoid(compat).sum(dim=1)  # [B, K] — SCC2 perspective
+        feat = torch.cat([row_score, col_score], dim=-1)   # [B, 2K]
+
+        return self.count_head(feat)   # [B, max_count + 1]
 
 
 # ---------------------------------------------------------------------------
@@ -153,6 +234,18 @@ class CorpusCNet(CorpusBNet):
         super().__init__(backbone, cfg)
         self.max_ports_c = getattr(cfg, "max_ports_c", MAX_PORTS_C)
 
+        # Pairwise count head for composed 2-SCC graphs.
+        # n_scc1 / n_scc2 name how many genes belong to each SCC (by construction
+        # genes 0..n_scc1-1 are SCC1 and the rest are SCC2).
+        self.n_scc1 = getattr(cfg, "n_scc1", 3)
+        max_count_c = getattr(cfg, "max_count_c", DEFAULT_MAX_COUNT_C)
+        self.pairwise_count_head = PairwiseCountHead(
+            d_model=cfg.d_model,
+            K=cfg.max_fp,
+            max_count=max_count_c,
+            dropout=cfg.dropout,
+        )
+
     def forward(self, batch, freeze_backbone=True):
         """
         batch : Corpus C batch dict from collate_c, plus node_mask.
@@ -185,4 +278,39 @@ class CorpusCNet(CorpusBNet):
         if "consistent" not in batch and "dag_all_solved" in batch:
             batch["consistent"] = batch["dag_all_solved"]
 
-        return super().forward(batch, freeze_backbone=freeze_backbone)
+        out_cond, out0 = super().forward(batch, freeze_backbone=freeze_backbone)
+
+        # ---------------------------------------------------------------
+        # Pairwise count head: replace the backbone count_logit with one
+        # that explicitly models SCC1 × SCC2 slot compatibility.
+        #
+        # We recover the conditioned node embeddings h_cond and graph
+        # embedding z_cond (stored under private keys by CorpusBNet.forward),
+        # split them into the two SCC halves, run the backbone SlotDecoder
+        # once per SCC, then feed both slot sets to PairwiseCountHead.
+        # ---------------------------------------------------------------
+        h_cond = out_cond.pop("_h_cond")   # [B, N, d]
+        z_cond = out_cond.pop("_z_cond")   # [B, d]
+
+        node_mask = batch["node_mask"]      # [B, N]
+        n1 = self.n_scc1                    # genes in SCC1 (default 3)
+
+        # Split conditioned embeddings: SCC1 = genes 0..n1-1, SCC2 = the rest.
+        h1 = h_cond[:, :n1, :]             # [B, n1, d]
+        h2 = h_cond[:, n1:, :]             # [B, N-n1, d]
+        nm1 = node_mask[:, :n1]            # [B, n1]
+        nm2 = node_mask[:, n1:]            # [B, N-n1]
+
+        # Graph-level summaries for each SCC half (masked mean of node embeddings).
+        nm1f = nm1.float().unsqueeze(-1)
+        nm2f = nm2.float().unsqueeze(-1)
+        z1 = (h1 * nm1f).sum(1) / nm1f.sum(1).clamp_min(1.0)   # [B, d]
+        z2 = (h2 * nm2f).sum(1) / nm2f.sum(1).clamp_min(1.0)   # [B, d]
+
+        # Decode K slots for each SCC half using the shared backbone decoder.
+        with torch.autocast(device_type=h_cond.device.type, enabled=False):
+            s1 = self.backbone.decoder(z1, h1, nm1).float()     # [B, K, d]
+            s2 = self.backbone.decoder(z2, h2, nm2).float()     # [B, K, d]
+            out_cond["count_logit"] = self.pairwise_count_head(s1, s2)
+
+        return out_cond, out0

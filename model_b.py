@@ -397,6 +397,9 @@ class CorpusBNet(nn.Module):
                 "slot_emb":  s_cond,
                 "graph_emb": z_cf,
                 "node_emb":  h_cond.float(),
+                # Exposed for subclasses (e.g. CorpusCNet pairwise head)
+                "_z_cond":   z_cf,
+                "_h_cond":   h_cond.float(),
             }
 
         return out_cond, out0
