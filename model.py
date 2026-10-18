@@ -346,7 +346,7 @@ class SccFixedPointNet(nn.Module):
         self.stab_head = MLP(d, d, NUM_STABILITY)
         self.pos_head = SlotNodeHead(d)
         self.charpoly_head = MLP(2 * d, d, N_MAX)
-        n_count_layers = getattr(cfg, "count_head_layers", 3)
+        n_count_layers = getattr(cfg, "count_head_layers", 2)
         self.count_head = MLP(d, d, cfg.max_fp + 1, n_layers=n_count_layers)
         self.stable_count_head = MLP(d, d, cfg.max_fp + 1, n_layers=n_count_layers)
 
