@@ -531,7 +531,7 @@ def _infer_scc(
     res_all = _hill_res(x_ref, P, Kd, xmax, adj, T_t, nh_t, F_t)  # [1, K, N_MAX]
     nm_res = node_mask.float().unsqueeze(1)
     max_res = (res_all.abs() * nm_res).max(dim=-1).values  # [1, K]
-    _RESCUED_THRESH = 1e-3  # below this the slot is a genuine FP
+    _RESCUED_THRESH = 1e-6  # below this the slot is a genuine FP (tight: requires full Newton convergence)
     rescued = (max_res[0] < _RESCUED_THRESH)                         # [K] bool
     exist_final = exist[0] | rescued                                  # [K] bool
 
@@ -951,7 +951,7 @@ class GRNPredictor:
     """
 
     def __init__(self, l1_model, l3_model, device: Optional[torch.device] = None,
-                 refine_steps: int = 5, newton_steps: int = NEWTON_STEPS,
+                 refine_steps: int = 20, newton_steps: int = NEWTON_STEPS,
                  newton_restarts: int = 3, tol: float = 1e-8):
         self.l1_model = l1_model
         self.l3_model = l3_model
