@@ -1,7 +1,7 @@
 # GNN Training History & Current Status
 
 **Last updated:** 2026-10-18  
-**Current best checkpoint:** `layer3_v4/best.pt` (eval_v7)  
+**Current best checkpoint:** `layer3_v4/best.pt` (eval_v7/v8)  
 **Best eval result:** v5 baseline — 75.00% count_exact, 86.50% fp_hd, 81.06% stable_acc
 
 ---
@@ -271,6 +271,37 @@ python exhaust_gen/eval_composition2.py \
 
 ---
 
+### Iteration 5 — v8: Inference-Only Fixes (No Retraining)
+
+**Checkpoints:** Same as v7 (`layer1_v4/best.pt`, `layer3_v4/best.pt`)  
+**Changes (committed `a7098f5`):**
+
+1. **`assemble.py` `_RESCUED_THRESH`: `1e-3 → 1e-6`** — Tighter Newton residual threshold for slot rescue. Genuine fixed points converge to residual ~1e-12 by step 15; spurious slots stay >> 1e-6 even after 20 Newton steps.
+
+2. **`assemble.py` `refine_steps`: `5 → 20`** — More Newton iterations give genuine and spurious slots time to separate. Previously spurious slots at step 5 had residuals near 1e-3 and were incorrectly rescued.
+
+**No model retraining — pure inference fix.**
+
+**Results (eval_v8.csv):**
+| count_exact | fp_hd | stable_acc |
+|---|---|---|
+| **68.00%** | 84.68% | — |
+
+**Direction breakdown:**
+
+| gt count | n_cases | exact | under | over |
+|---|---|---|---|---|
+| 1 | 225 | 89.9% | 0 | 28 |
+| 3 | 142 | 51.4% | 56 | 11 |
+| 5 | 98 | 32.7% | 33 | 0 |
+| 7+ | ~35 | 0-7% | all under | 0 |
+
+**Analysis:** The inference fix corrected the overcounting problem (43 over vs 117 under). The model now systematically undercounts for gt=3,5,7+ cases. This reveals the v7 model's count_head is conservatively biased toward k=1 predictions — it was trained with `w_count=2.0` and `eos_coef=0.3`, which did not strongly incentivize correct high-k predictions. The rescue mechanism previously masked this bias by adding extra slots post-decode.
+
+The undercounting failure mode is now exposed and requires a training fix.
+
+---
+
 ## 6. Summary Table
 
 | Eval | Checkpoint | Key Change | count_exact | fp_hd | stable_acc |
@@ -278,12 +309,29 @@ python exhaust_gen/eval_composition2.py \
 | v5 | layer1/3 (original) | Baseline (original Corpus A, count_head(g)) | **75.00%** | 86.50% | **81.06%** |
 | v6 | layer1_v3/layer3_v3 | Corpus A v2 (40% boundary) + slot-aug count head | 50.40% | **92.96%** | 74.94% |
 | v7 | layer1_v4/layer3_v4 | Corpus A v2 only (slot aug reverted) | 50.40% | 92.62% | 73.60% |
+| v8 | layer1_v4/layer3_v4 | Inference fix: rescue thresh 1e-3→1e-6, refine 5→20 | 68.00% | 84.68% | — |
 
-**Key finding:** Corpus A v2 consistently improves `fp_hd` by ~+6pp but drops `count_exact` by ~25pp. There is a tension between "find the right basin locations" and "know exactly how many basins exist".
+**Key finding:** Corpus A v2 consistently improves `fp_hd` by ~+6pp but drops `count_exact` by ~25pp. The v8 inference fix partially recovers count_exact (68%) without retraining. The remaining 7pp gap to v5 (75%) is attributed to count_head undercalibration for high-k cases, requiring retraining with stronger `w_count` and `eos_coef`.
 
 ---
 
-## 7. Root Cause Analysis: Overcounting
+## 7. Root Cause Analysis: Count Undercalibration (v8 state)
+
+After the v8 inference fix, the primary failure mode shifted from overcounting to **undercounting for high-k cases**. The root cause chain:
+
+1. **`exhaust_v2` 40% boundary-phase** → more multi-basin samples, but also dilutes Brouwer-consistent samples relative to the count loss denominator
+2. **`w_count=2.0`** too low → count loss signal dominated by existence loss; count_head learns conservative k=1 default
+3. **`eos_coef=0.3`** insufficient penalty on false positives → at training time, model is not forced to be selective; at inference (tight threshold), this manifests as underprediction
+
+**Fix (already committed to `train.py` in `a7098f5`):**
+- `w_count: 2.0 → 3.0` — 50% stronger count supervision
+- `eos_coef: 0.3 → 0.5` — stronger penalty on spurious slot activations
+
+These changes require a full L1 + L3 retrain (v9). L2 retraining is optional unless L3 is still insufficient after v9.
+
+---
+
+## 7b. Root Cause Analysis: Overcounting (v6/v7 historical)
 
 Inspection of eval_v6 and eval_v7 rows shows a clear pattern of **systematic overcounting**:
 
@@ -310,11 +358,61 @@ eos_coef: float = 0.1   # weight on EOS/empty-slot classification loss
 
 ---
 
-## 8. Open Hypotheses & Next Steps
+## 8. v9 Retraining Plan (Next Step)
 
-The following approaches have NOT yet been tried and are the natural next experiments:
+### Changes
+- `w_count=3.0` (train.py default already updated)
+- `eos_coef=0.5` (train.py default already updated)
+- Same Corpus A v2 (exhaust_v2 preset)
+- Same model architecture (no structural changes)
 
-### 8.1 Stronger Existence Penalty (High priority)
+### Commands
+
+```bash
+# Retrain L1 (v9)
+PYTHONPATH=/scratch/gilbreth/gupt1042/GNN_temp \
+PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+python train.py \
+    --cache_dir /scratch/gilbreth/gupt1042/corpus_exhaust_A_v2/cache \
+    --out_dir   /scratch/gilbreth/gupt1042/runs/layer1_v9 \
+    --num_workers 8
+
+# Retrain L3 with existing L2 checkpoint (L2 architecture unchanged)
+PYTHONPATH=/scratch/gilbreth/gupt1042/GNN_temp \
+PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+python train_layer3.py \
+    --layer2_ckpt /scratch/gilbreth/gupt1042/runs/layer2_v4/best.pt \
+    --cache_dir_c /scratch/gilbreth/gupt1042/corpusC/cache \
+    --out_dir     /scratch/gilbreth/gupt1042/runs/layer3_v9 \
+    --num_workers 8
+```
+
+> **Note on L2:** L2 (`CorpusBNet`) is a frozen-backbone wrapper — it shares weights with L1. A new L1 checkpoint has a different backbone, so strictly L2 should also be retrained with the new L1. However since L3 (`CorpusCNet`) loads from a L2 checkpoint, and L3 is the inference-time model, try the following sequence:
+> 1. Retrain L2 with new L1: `python train_layer2.py --layer1_ckpt .../layer1_v9/best.pt --cache_dir_b .../corpus_exhaust_B/cache --out_dir .../layer2_v9`
+> 2. Retrain L3 with new L2: `python train_layer3.py --layer2_ckpt .../layer2_v9/best.pt ...`
+
+### Eval (v9)
+
+```bash
+python exhaust_gen/eval_composition2.py \
+    --l1_ckpt /scratch/gilbreth/gupt1042/runs/layer1_v9/best.pt \
+    --l3_ckpt /scratch/gilbreth/gupt1042/runs/layer3_v9/best.pt \
+    --eval_dir /scratch/gilbreth/gupt1042/runs/composition_eval_v4 \
+    --out_csv  /scratch/gilbreth/gupt1042/runs/eval_v9.csv
+```
+
+### Target
+- `count_exact ≥ 75%` (match or beat v5 baseline)
+- `fp_hd ≥ 86.5%` (match v5; current 84.68% is slightly below)
+- `stable_acc ≥ 81.06%` (match v5)
+
+---
+
+## 8b. Open Hypotheses & Further Steps (if v9 insufficient)
+
+The following approaches are available if v9 retraining is still insufficient:
+
+### 8b.1 Stronger Existence Penalty (already in v9)
 Increase `--eos_coef` during L1 training to make the model more conservative about declaring slots occupied.
 
 ```bash
