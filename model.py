@@ -370,17 +370,13 @@ class SccFixedPointNet(nn.Module):
         with torch.autocast(device_type=h.device.type, enabled=False):
             s, h, g = s.float(), h.float(), g.float()
             gs = g.unsqueeze(1).expand_as(s)
-            # Augment graph embedding with the mean of post-decoder slot embeddings.
-            # This lets the count head see what basins the decoder actually found
-            # instead of counting purely from pre-decoder graph features.
-            g_count = g + s.mean(dim=1)
             return {
                 "exist_logit": self.exist_head(s).squeeze(-1),
                 "stab_logit": self.stab_head(s),
                 "pos": torch.sigmoid(self.pos_head(s, h)),
                 "charpoly": self.charpoly_head(torch.cat([s, gs], dim=-1)),
-                "count_logit": self.count_head(g_count),
-                "stable_count_logit": self.stable_count_head(g_count),
+                "count_logit": self.count_head(g),
+                "stable_count_logit": self.stable_count_head(g),
                 # Intermediate embeddings exposed for Layer II / III
                 "slot_emb": s,    # branch tokens q^(r)  [B, K, d]
                 "graph_emb": g,   # z_j^0               [B, d]
