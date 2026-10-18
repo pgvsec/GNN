@@ -11,6 +11,8 @@
 #SBATCH --partition=a10
 #SBATCH --account=ayg
 
+REPO_ROOT="/scratch/gilbreth/gupt1042/GNN_temp"
+
 # Corpus A (exhaust, n=2..6) cache path — built by run_corpus_a_exhaust_gpu.slurm
 CACHE_DIR="/scratch/gilbreth/gupt1042/corpus_exhaust_A/cache"
 OUT_DIR="/scratch/gilbreth/gupt1042/runs/exhaust_layer1"
@@ -23,8 +25,6 @@ if [ ! -d "${CACHE_DIR}" ]; then
         --cache_dir  "${CACHE_DIR}"
     echo "Cache built."
 fi
-
-REPO_ROOT="/scratch/gilbreth/gupt1042/GNN_temp"
 
 mkdir -p "$OUT_DIR"
 cd "$REPO_ROOT"
