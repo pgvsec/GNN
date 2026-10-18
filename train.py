@@ -89,10 +89,10 @@ class Config:
     w_pos: float = 5.0
     w_cp: float = 2.0
     w_stab: float = 1.0
-    w_count: float = 0.5
+    w_count: float = 2.0
     w_phys: float = 1.0
     w_thomas: float = 0.5
-    eos_coef: float = 0.3                # weight of no-object slots in the existence loss
+    eos_coef: float = 0.5                # weight of no-object slots in the existence loss
     huber_beta: float = 0.05
     gate_tau: float = 0.02               # residual above which an unmatched slot is a true negative
     dup_tol: float = 0.02                # position distance below which an unmatched slot is a duplicate

@@ -406,7 +406,7 @@ def decode_slots(out):
 
 
 @torch.no_grad()
-def predict_fixed_points(model, batch, refine_steps=5):
+def predict_fixed_points(model, batch, refine_steps=20):
     """Fixed-point set for each graph in the batch.
 
     The kept slots are chosen by decode_slots. Their positions are polished
