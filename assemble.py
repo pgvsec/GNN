@@ -569,6 +569,16 @@ def _infer_scc(
             kept_indices.append(k)
             kept_positions.append(xk_n)
 
+    # Enforce Poincaré-Hopf: each SCC must have an odd number of fixed points.
+    # decode_slots already selects an odd k, but the rescue step can add one extra
+    # slot (even parity). Drop the weakest slot (lowest exist_prob) until odd count.
+    if len(kept_indices) % 2 == 0 and len(kept_indices) > 0:
+        # Find the weakest slot among the kept ones and drop it
+        weakest = min(kept_indices, key=lambda k: float(exist_prob[0, k].item()))
+        wi = kept_indices.index(weakest)
+        kept_indices.pop(wi)
+        kept_positions.pop(wi)
+
     results = []
     for i, k in enumerate(kept_indices):
         x_k = kept_positions[i]
