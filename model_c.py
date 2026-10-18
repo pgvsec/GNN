@@ -296,10 +296,16 @@ class CorpusCNet(CorpusBNet):
         n1 = self.n_scc1                    # genes in SCC1 (default 3)
 
         # Split conditioned embeddings: SCC1 = genes 0..n1-1, SCC2 = the rest.
-        h1 = h_cond[:, :n1, :]             # [B, n1, d]
-        h2 = h_cond[:, n1:, :]             # [B, N-n1, d]
-        nm1 = node_mask[:, :n1]            # [B, n1]
-        nm2 = node_mask[:, n1:]            # [B, N-n1]
+        # IMPORTANT: detach before splitting so pairwise count gradients do NOT
+        # flow back through U_ω.  U_ω is supervised exclusively by
+        # pos / exist / stab losses; injecting count gradients through the same
+        # node embeddings causes U_ω to trade off position accuracy against
+        # count accuracy, which in practice collapses fp_hd.
+        h_det = h_cond.detach()
+        h1 = h_det[:, :n1, :]             # [B, n1, d]
+        h2 = h_det[:, n1:, :]             # [B, N-n1, d]
+        nm1 = node_mask[:, :n1]           # [B, n1]
+        nm2 = node_mask[:, n1:]           # [B, N-n1]
 
         # Graph-level summaries for each SCC half (masked mean of node embeddings).
         nm1f = nm1.float().unsqueeze(-1)
