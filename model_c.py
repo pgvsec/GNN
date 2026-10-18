@@ -29,9 +29,39 @@ Port synthesis (Option B — data/model separation):
   samples exceeding this cap are handled by keeping the strongest signals
   (largest |log u|).
 
+Count head (ForcingAwareCountHead):
+  The core difficulty at Layer III is predicting k when forcing u pushes the
+  SCC across a bifurcation boundary (k=3 → k=1 saddle-node).  The correct
+  inputs to the count head are:
+
+    1. sorted sigmoid(exist_logit) [B, K]
+       The SlotDecoder's slot-level evidence for how many FPs exist.  With
+       w_exist_cnt > 0, sigmoid(exist_logit).sum() ≈ k_true during training,
+       making this the strongest available count signal.
+
+    2. Conditioned graph embedding z_cond [B, d]
+       From U_ω after incorporating the forcing signal.  Encodes the forcing
+       indirectly but also the full topology + kinetic context.
+
+    3. Forcing statistics u_stats [B, 3]:
+         (max |log u| over active genes,
+          mean |log u| over active genes,
+          n_forced / n)
+       These directly encode how far the SCC has been pushed from its
+       autonomous operating point.  High |log u| → SCC is near or past a
+       bifurcation boundary.
+
+    4. Thomas class one-hot [B, 3]
+       tc ∈ {1=TC_NEG, 2=TC_POS, 3=TC_BOTH}.  TC_NEG → no positive feedback
+       → multistability is topologically impossible → k_stable ≤ 1.  This is
+       the strongest structural constraint on k and must reach the count head.
+
+  All inputs are detached so count gradients do not flow back through U_ω.
+
 Sections
   1. Port synthesis utilities
-  2. CorpusCNet
+  2. ForcingAwareCountHead
+  3. CorpusCNet
 """
 import torch
 import torch.nn as nn
@@ -45,59 +75,8 @@ from model_b import CorpusBNet
 # Set ≥ typical max inter-SCC fan-in; 8 covers essentially all DAG shapes.
 MAX_PORTS_C = 8
 
-# Default maximum FP count the pairwise head can predict.  Set comfortably above
-# the observed maximum for 2×3-gene compositions (~19) so no GT sample is clamped.
+# Default maximum FP count the forcing-aware head can predict.
 DEFAULT_MAX_COUNT_C = 32
-
-
-# ---------------------------------------------------------------------------
-# Composition count head
-# ---------------------------------------------------------------------------
-
-class CompositionCountHead(nn.Module):
-    """Count head for composed 2-SCC systems.
-
-    Reads three groups of already-computed features from the conditioned portrait
-    (all detached — no gradient flows back through U_ω or the backbone):
-
-      1. Sorted existence probabilities  [B, K]
-         With w_exist_cnt > 0, sigmoid(exist_logit).sum() ≈ k_true at training
-         time, so the sorted probs encode "how many slots are active and with what
-         confidence" — the most direct count signal available.
-
-      2. SCC1 and SCC2 node-embedding means  [B, d_model] × 2
-         Mean-pooled from the conditioned node embeddings h_cond split by SCC,
-         giving the head topology-aware context for each sub-network.
-
-      3. Conditioned graph embedding  [B, d_model]
-         The global representation of the composed system from U_ω.
-
-    Total input: K + 3 * d_model features → 3-layer MLP → count_logit[0..max_count].
-
-    No extra backbone decoder calls.  No out-of-distribution slot embeddings.
-    """
-
-    def __init__(self, d_model: int, K: int, max_count: int = DEFAULT_MAX_COUNT_C,
-                 dropout: float = 0.0):
-        super().__init__()
-        self.max_count = max_count
-        d_in = K + 3 * d_model   # sorted_probs + z_scc1 + z_scc2 + z_graph
-        self.mlp = MLP(d_in, d_model, max_count + 1, n_layers=3, dropout=dropout)
-
-    def forward(self, exist_logit: torch.Tensor,
-                z_graph: torch.Tensor,
-                z_scc1: torch.Tensor,
-                z_scc2: torch.Tensor) -> torch.Tensor:
-        """
-        exist_logit : [B, K]   raw existence logits (will be sigmoid-ed internally)
-        z_graph     : [B, d]   conditioned graph embedding
-        z_scc1      : [B, d]   mean of conditioned SCC1 node embeddings
-        z_scc2      : [B, d]   mean of conditioned SCC2 node embeddings
-        Returns count_logit : [B, max_count + 1]
-        """
-        probs_sorted = torch.sigmoid(exist_logit).sort(dim=1, descending=True).values
-        feat = torch.cat([probs_sorted, z_graph, z_scc1, z_scc2], dim=-1)
-        return self.mlp(feat)
 
 
 # ---------------------------------------------------------------------------
@@ -185,8 +164,86 @@ def synthesize_ports(batch, max_ports=MAX_PORTS_C):
     }
 
 
+def _forcing_stats(u, n, node_mask):
+    """Compute three scalar forcing statistics per sample.
+
+    Returns u_stats [B, 3]:
+      col 0: max  |log u| over active genes (clamped to [-10, 10])
+      col 1: mean |log u| over active genes (masked mean)
+      col 2: n_forced / n  (fraction of genes that are forced)
+
+    These directly encode how far the SCC has been pushed from its autonomous
+    operating point.  The count head uses them to locate the SCC relative to
+    its bifurcation boundaries.
+    """
+    dev    = u.device
+    B, N   = u.shape
+    mask_f = node_mask.float()                        # [B, N]
+    n_f    = mask_f.sum(dim=1).clamp_min(1.0)        # [B]
+
+    log_u_abs = (u - 1.0).abs().clamp_min(1e-9).log().clamp(-10.0, 10.0)  # [B, N]
+    log_u_abs = log_u_abs * mask_f                    # zero out padding
+
+    u_max_log  = log_u_abs.max(dim=1).values          # [B]
+    u_mean_log = log_u_abs.sum(dim=1) / n_f           # [B]
+
+    forced      = ((u - 1.0).abs() > 1e-5) & node_mask   # [B, N]
+    n_forced_norm = forced.float().sum(dim=1) / n_f       # [B]
+
+    return torch.stack([u_max_log, u_mean_log, n_forced_norm], dim=1)  # [B, 3]
+
+
 # ---------------------------------------------------------------------------
-# 2. CorpusCNet
+# 2. ForcingAwareCountHead
+# ---------------------------------------------------------------------------
+
+class ForcingAwareCountHead(nn.Module):
+    """Count head for Corpus C forced SCCs.
+
+    Reads four groups of features (all detached — no gradients flow back
+    through U_ω or the backbone):
+
+      1. sorted sigmoid(exist_logit) [B, K]
+         The SlotDecoder's per-slot existence evidence.  With w_exist_cnt > 0,
+         these are supervised to sum to k_true, making them the most direct
+         count signal available.
+
+      2. Conditioned graph embedding z_cond [B, d]
+         Output of U_ω after incorporating the forcing.  Encodes topology,
+         kinetic parameters, and the forcing signal all at once.
+
+      3. Forcing statistics u_stats [B, 3]
+         (max|log u|, mean|log u|, n_forced/n) — explicit measure of how far
+         the SCC has been pushed from its autonomous bifurcation point.
+
+      4. Thomas class one-hot [B, 3]
+         tc ∈ {1=TC_NEG, 2=TC_POS, 3=TC_BOTH}.  TC_NEG → no positive feedback
+         → k_stable ≤ 1.  Strongest structural constraint on k.
+
+    Total input: K + d_model + 3 + 3 → 3-layer MLP → count_logit[0..max_count].
+    """
+
+    def __init__(self, d_model: int, K: int,
+                 max_count: int = DEFAULT_MAX_COUNT_C,
+                 dropout: float = 0.0):
+        super().__init__()
+        self.max_count = max_count
+        d_in = K + d_model + 3 + 3   # exist_probs + z_cond + u_stats + tc_onehot
+        self.mlp = MLP(d_in, d_model, max_count + 1, n_layers=3, dropout=dropout)
+
+    def forward(self,
+                exist_logit: torch.Tensor,   # [B, K]
+                z_cond:      torch.Tensor,   # [B, d]
+                u_stats:     torch.Tensor,   # [B, 3]
+                tc_onehot:   torch.Tensor,   # [B, 3]
+                ) -> torch.Tensor:           # [B, max_count+1]
+        probs_sorted = torch.sigmoid(exist_logit).sort(dim=1, descending=True).values
+        feat = torch.cat([probs_sorted, z_cond, u_stats, tc_onehot], dim=-1)
+        return self.mlp(feat)
+
+
+# ---------------------------------------------------------------------------
+# 3. CorpusCNet
 # ---------------------------------------------------------------------------
 
 class CorpusCNet(CorpusBNet):
@@ -194,25 +251,22 @@ class CorpusCNet(CorpusBNet):
 
     Inherits all of CorpusBNet (frozen backbone + Φ_ψ + A_η + U_ω + D_φ).
     The only override is forward(): synthesize port tensors from branch_u before
-    delegating to the parent CorpusBNet forward path.
+    delegating to the parent CorpusBNet forward path, then replace count_logit
+    with a forcing-aware prediction.
 
     This means:
       - A Layer II checkpoint (best.pt from train_layer2.py) can be loaded
         directly as a warm-start for Layer III; all parameter names match.
-      - Layer III training fine-tunes only Φ_ψ + A_η + U_ω (backbone still frozen
-        by default, backbone_trainable=False).
+      - Layer III training fine-tunes only Φ_ψ + A_η + U_ω + forcing_count_head
+        (backbone still frozen by default, backbone_trainable=False).
     """
 
     def __init__(self, backbone: SccFixedPointNet, cfg):
         super().__init__(backbone, cfg)
         self.max_ports_c = getattr(cfg, "max_ports_c", MAX_PORTS_C)
 
-        # Pairwise count head for composed 2-SCC graphs.
-        # n_scc1 / n_scc2 name how many genes belong to each SCC (by construction
-        # genes 0..n_scc1-1 are SCC1 and the rest are SCC2).
-        self.n_scc1 = getattr(cfg, "n_scc1", 3)
         max_count_c = getattr(cfg, "max_count_c", DEFAULT_MAX_COUNT_C)
-        self.composition_count_head = CompositionCountHead(
+        self.forcing_count_head = ForcingAwareCountHead(
             d_model=cfg.d_model,
             K=cfg.max_fp,
             max_count=max_count_c,
@@ -222,66 +276,62 @@ class CorpusCNet(CorpusBNet):
     def forward(self, batch, freeze_backbone=True):
         """
         batch : Corpus C batch dict from collate_c, plus node_mask.
-                Must contain: P, K, adj, T, nh, F, u, node_mask, fp_state, ...
+                Must contain: P, K, adj, T, nh, F, u, n, tc, node_mask, fp_state, ...
                 Does NOT need port_* fields — they are synthesized here.
 
         Returns: (out_cond, out0) — same as CorpusBNet.forward
         """
         # Synthesize xmax = P / K (not stored in Corpus C)
         if "xmax" not in batch:
-            batch = dict(batch)    # shallow copy to avoid mutating the original
+            batch = dict(batch)
             batch["xmax"] = _compute_xmax(batch["P"], batch["K"])
 
         # Synthesize port tensors from branch_u
-        ports = synthesize_ports(batch, max_ports=self.max_ports_c)
-        if "port_gene" not in batch:
-            batch = dict(batch)
-            batch.update(ports)
-        else:
-            batch = dict(batch)
-            batch.update(ports)   # always overwrite — C batches don't store ports
+        batch = dict(batch)
+        batch.update(synthesize_ports(batch, max_ports=self.max_ports_c))
 
-        # Also need has_pos_fb for the physics/thomas loss; C doesn't store it —
-        # default to False (disables thomas loss, safe for Corpus C).
+        # has_pos_fb: C doesn't store it — default False (disables thomas loss).
         if "has_pos_fb" not in batch:
             batch["has_pos_fb"] = torch.zeros(
                 batch["P"].shape[0], dtype=torch.bool, device=batch["P"].device)
 
-        # Alias dag_all_solved → consistent (used by SetCriterion via batch["consistent"])
+        # Alias dag_all_solved → consistent (used by SetCriterion)
         if "consistent" not in batch and "dag_all_solved" in batch:
             batch["consistent"] = batch["dag_all_solved"]
 
         out_cond, out0 = super().forward(batch, freeze_backbone=freeze_backbone)
 
-        # ---------------------------------------------------------------
-        # Pairwise count head: replace the backbone count_logit with one
-        # that explicitly models SCC1 × SCC2 slot compatibility.
+        # ------------------------------------------------------------------
+        # Forcing-aware count head: replace backbone count_logit.
         #
-        # We recover the conditioned node embeddings h_cond and graph
-        # embedding z_cond (stored under private keys by CorpusBNet.forward),
-        # split them into the two SCC halves, run the backbone SlotDecoder
-        # once per SCC, then feed both slot sets to PairwiseCountHead.
-        # ---------------------------------------------------------------
-        h_cond = out_cond.pop("_h_cond")   # [B, N, d]
-        z_cond = out_cond.pop("_z_cond")   # [B, d]
+        # The backbone count head reads z_cf and encodes forcing only
+        # implicitly.  Here we give the count head explicit access to:
+        #   - slot existence evidence  (already calibrated to sum to k)
+        #   - conditioned graph embedding
+        #   - forcing magnitude statistics (where the SCC sits relative to
+        #     its bifurcation boundaries)
+        #   - Thomas class (structural constraint on max stable FP count)
+        # All inputs are detached — count gradients must not flow into U_ω.
+        # ------------------------------------------------------------------
+        z_cond = out_cond.pop("_z_cond")      # [B, d]
+        out_cond.pop("_h_cond", None)          # not needed here
 
-        node_mask = batch["node_mask"]      # [B, N]
-        n1 = self.n_scc1                    # genes in SCC1 (default 3)
+        node_mask = batch["node_mask"]         # [B, N]
 
-        # Detach so count gradients do NOT flow back through U_ω.
-        h_det = h_cond.detach()
-        h1 = h_det[:, :n1, :]             # [B, n1, d]
-        h2 = h_det[:, n1:, :]             # [B, N-n1, d]
-        nm1 = node_mask[:, :n1].float().unsqueeze(-1)
-        nm2 = node_mask[:, n1:].float().unsqueeze(-1)
+        # Forcing statistics
+        u_stats = _forcing_stats(batch["u"], batch["n"], node_mask)   # [B, 3]
 
-        # Masked mean of node embeddings per SCC half.
-        z_scc1 = (h1 * nm1).sum(1) / nm1.sum(1).clamp_min(1.0)   # [B, d]
-        z_scc2 = (h2 * nm2).sum(1) / nm2.sum(1).clamp_min(1.0)   # [B, d]
+        # Thomas class one-hot: tc ∈ {1, 2, 3} → indices 0, 1, 2
+        tc = batch.get("tc", torch.ones(
+            batch["P"].shape[0], dtype=torch.long, device=batch["P"].device))
+        tc_onehot = Fnn.one_hot((tc - 1).clamp(0, 2), num_classes=3).float()  # [B, 3]
 
-        # CompositionCountHead: reads in-distribution conditioned features only.
         exist_logit = out_cond["exist_logit"].detach()   # [B, K]
-        out_cond["count_logit"] = self.composition_count_head(
-            exist_logit, z_cond.detach(), z_scc1, z_scc2)
+        out_cond["count_logit"] = self.forcing_count_head(
+            exist_logit,
+            z_cond.detach(),
+            u_stats,
+            tc_onehot,
+        )
 
         return out_cond, out0
