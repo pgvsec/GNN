@@ -116,12 +116,12 @@ class Config:
     w_pos:      float = 5.0
     w_cp:       float = 2.0
     w_stab:     float = 1.0
-    w_count:    float = 2.0
-    w_count_kscale: float = 0.0   # instance weight = k_true * kscale + 1; 0 = flat (physically honest)
+    w_count:    float = 3.0
+    w_count_kscale: float = 0.0   # instance weight = k_true * kscale + 1; 0 = flat (physically hollow)
     sampler_kpower: float = 0.0   # upsample high-k branches; 0 = off
     w_phys:     float = 1.0
     w_thomas:   float = 0.0    # disabled: Corpus C has no has_pos_fb
-    eos_coef:   float = 0.3
+    eos_coef:   float = 0.5
     huber_beta:  float = 0.05
     gate_tau:    float = 0.02
     dup_tol:     float = 0.02
