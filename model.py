@@ -346,8 +346,9 @@ class SccFixedPointNet(nn.Module):
         self.stab_head = MLP(d, d, NUM_STABILITY)
         self.pos_head = SlotNodeHead(d)
         self.charpoly_head = MLP(2 * d, d, N_MAX)
-        self.count_head = MLP(d, d, cfg.max_fp + 1)
-        self.stable_count_head = MLP(d, d, cfg.max_fp + 1)
+        n_count_layers = getattr(cfg, "count_head_layers", 3)
+        self.count_head = MLP(d, d, cfg.max_fp + 1, n_layers=n_count_layers)
+        self.stable_count_head = MLP(d, d, cfg.max_fp + 1, n_layers=n_count_layers)
 
     def forward(self, batch):
         node_mask = batch["node_mask"]
@@ -387,22 +388,29 @@ class SccFixedPointNet(nn.Module):
 # ---------------------------------------------------------------------------
 # 6. Inference
 # ---------------------------------------------------------------------------
-def decode_slots(out):
+def decode_slots(out, exist_thresh: float = 0.0):
     """Boolean [B, K] mask of the slots that form the predicted fixed-point set.
 
     The count head says how many fixed points there are and the existence head ranks the
     slots, so the kept set is the k most probable slots, with k the argmax of the count head
     over odd counts. A generic system has an odd number of hyperbolic fixed points (every
-    index is +1 or -1 and they sum to 1), so even counts are excluded. Thresholding the
-    existence probability is not used: it is overconfident in the middle range and keeps
-    duplicate slots, and on held-out graphs it gave 64% exact counts against 79% for the
-    count head."""
+    index is +1 or -1 and they sum to 1), so even counts are excluded.
+
+    exist_thresh (default 0.0 = disabled): if > 0, a slot is additionally suppressed when
+    sigmoid(exist_logit) < exist_thresh, even if it ranks in the top-k. This gate is useful
+    after retraining with w_exist_cnt > 0, when the existence head is well-calibrated; it
+    should be tuned on a held-out validation set rather than set a priori.
+    """
     logits = out["count_logit"].float()
     even = torch.arange(logits.shape[-1], device=logits.device) % 2 == 0
     k = logits.masked_fill(even, float("-inf")).argmax(dim=-1)
     order = out["exist_logit"].float().argsort(dim=1, descending=True)
     rank = order.argsort(dim=1)                               # position of every slot in the ranking
-    return rank < k.unsqueeze(1)
+    in_topk = rank < k.unsqueeze(1)
+    if exist_thresh > 0.0:
+        confident = torch.sigmoid(out["exist_logit"].float()) >= exist_thresh
+        return in_topk & confident
+    return in_topk
 
 
 @torch.no_grad()

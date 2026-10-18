@@ -118,6 +118,9 @@ class Config:
     w_stab:     float = 1.0
     w_count:    float = 3.0
     w_count_kscale: float = 0.0   # instance weight = k_true * kscale + 1; 0 = flat (physically hollow)
+    w_exist_cnt: float = 0.5      # soft-count consistency loss weight
+    count_focal_gamma: float = 2.0  # focal reweighting of count CE; 0 = plain CE
+    count_head_layers: int = 3    # MLP depth for count/stable_count heads
     sampler_kpower: float = 0.0   # upsample high-k branches; 0 = off
     w_phys:     float = 1.0
     w_thomas:   float = 0.0    # disabled: Corpus C has no has_pos_fb

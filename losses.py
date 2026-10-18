@@ -167,10 +167,32 @@ class SetCriterion(nn.Module):
         stable_true = ((tgt_stab == 0) | (tgt_stab == 1)).sum(1).clamp(max=K)
         ce_k = Fnn.cross_entropy(out["count_logit"], k_true, reduction="none")
         ce_s = Fnn.cross_entropy(out["stable_count_logit"], stable_true, reduction="none")
+
+        # Focal reweighting of count CE: (1 - p_correct)^gamma up-weights hard examples.
+        # gamma=0 recovers plain CE. Useful when many Brouwer-consistent samples are
+        # "easy" (k=1) and the model already gets them right, leaving the hard multi-basin
+        # cases under-represented in the gradient.
+        focal_gamma = getattr(cfg, "count_focal_gamma", 0.0)
+        if focal_gamma > 0.0:
+            with torch.no_grad():
+                pt_k = torch.softmax(out["count_logit"].detach(), dim=-1).gather(
+                    1, k_true.unsqueeze(1)).squeeze(1).clamp(1e-6, 1.0)
+                focal_w = (1.0 - pt_k).pow(focal_gamma)
+            ce_k = focal_w * ce_k
+
         kscale = getattr(cfg, "w_count_kscale", 0.0)
         k_wt = k_true.float() * kscale + 1.0  # 1.0 when kscale=0 (flat); k*s+1 otherwise
         denom = (cons1 * k_wt).sum().clamp_min(1.0)
         l_count = ((ce_k + ce_s) * cons1 * k_wt).sum() / denom
+
+        # Existence soft-count consistency: force sigmoid(exist_logit).sum() ≈ k_true.
+        # Unlike the slot-by-slot BCE, this is a global constraint that simultaneously
+        # penalises over-activating empty slots AND suppresses the mean activation when
+        # the model is counting too high.  Applied only to Brouwer-consistent samples
+        # where k_true is reliable.
+        soft_cnt = torch.sigmoid(exist_logit).sum(1)   # [B]
+        n_cons = cons1.sum().clamp_min(1.0)
+        l_exist_cnt = ((soft_cnt - k_true.float()).pow(2) * cons1).sum() / n_cons
 
         # Thomas: no positive feedback loop => at most one stable fixed point
         p_stable = torch.softmax(stab_logit, dim=-1)[..., :2].sum(-1)
@@ -178,14 +200,17 @@ class SetCriterion(nn.Module):
         nopos = (~batch["has_pos_fb"]).float()
         l_thomas = (torch.relu(exp_stable - 1.0) * nopos).sum() / nopos.sum().clamp_min(1.0)
 
+        w_exist_cnt = getattr(cfg, "w_exist_cnt", 0.0)
         total = (cfg.w_exist * l_exist + cfg.w_pos * l_pos + cfg.w_cp * l_cp
                  + cfg.w_stab * l_stab + cfg.w_count * l_count
-                 + cfg.w_phys * l_phys + cfg.w_thomas * l_thomas)
+                 + cfg.w_phys * l_phys + cfg.w_thomas * l_thomas
+                 + w_exist_cnt * l_exist_cnt)
 
         logs = {
             "total": total.detach(), "exist": l_exist.detach(), "pos": l_pos.detach(),
             "cp": l_cp.detach(), "stab": l_stab.detach(), "count": l_count.detach(),
             "phys": l_phys.detach(), "thomas": l_thomas.detach(),
+            "exist_cnt": l_exist_cnt.detach(),
         }
         aux = {
             "matched": matched, "a_pos": a_pos.detach(), "a_cp": a_cp.detach(),

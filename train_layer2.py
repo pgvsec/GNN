@@ -114,6 +114,9 @@ class Config:
     w_cp:     float = 2.0
     w_stab:   float = 1.0
     w_count:  float = 3.0
+    w_exist_cnt: float = 0.5      # soft-count consistency loss weight
+    count_focal_gamma: float = 2.0  # focal reweighting of count CE; 0 = plain CE
+    count_head_layers: int = 3    # MLP depth for count/stable_count heads
     w_phys:   float = 1.0
     w_thomas: float = 0.5
     eos_coef: float = 0.5

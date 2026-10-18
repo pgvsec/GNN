@@ -408,34 +408,107 @@ python exhaust_gen/eval_composition2.py \
 
 ---
 
-## 8b. Open Hypotheses & Further Steps (if v9 insufficient)
+## 8b. ML Improvement Changes (v10 — in progress)
 
-The following approaches are available if v9 retraining is still insufficient:
+**Hypothesis:** Three simultaneous changes target the overcounting root cause from three angles, going beyond the v9 plan.
 
-### 8b.1 Stronger Existence Penalty (already in v9)
-Increase `--eos_coef` during L1 training to make the model more conservative about declaring slots occupied.
+### 8b.1 Loss Changes (losses.py)
+
+#### Existence Soft-Count Consistency Loss (`w_exist_cnt=0.5`)
+**New loss term:** `l_exist_cnt = MSE(sigmoid(exist_logit).sum(1), k_true.float())` on Brouwer-consistent samples.
+
+Unlike the slot-by-slot existence BCE, this is a *global* constraint: it simultaneously penalises over-activating empty slots AND corrects the average activation when the model is counting too high. The BCE alone can be satisfied by a model that gives every slot p_exist ≈ 0.5 (moderate activation, moderate BCE loss), but the soft-count loss forces `Σ p_exist → k_true`.
+
+#### Focal Count CE (`count_focal_gamma=2.0`)
+**Modified count loss:** `l_count = ((1-pt)^2 * ce_k + ce_s) * cons1 / n_cons`
+
+On Corpus A v2, many Brouwer-consistent samples have k=1 (interior-phase dominant). The model already gets those right, leaving hard multi-basin cases underweighted in the gradient. Focal reweighting down-weights easy examples, concentrating the count gradient on the hard cases where the model is actually wrong.
+
+#### Stronger existence penalty (`eos_coef=0.5`, already in v9)
+Penalises spurious slot activations more symmetrically with true-positive activations.
+
+### 8b.2 Architecture Change (model.py)
+
+#### Deeper Count Head (`count_head_layers=3`)
+Increased MLP depth from 2 → 3 layers for `count_head` and `stable_count_head`. Fixed-point count is determined by the graph's bifurcation structure, which is a complex nonlinear function requiring more capacity.
+
+### 8b.3 Config Changes (train.py / train_layer2.py / train_layer3.py)
+
+| Parameter | Was | Now | Reason |
+|---|---|---|---|
+| `eos_coef` | 0.1 | 0.5 | Stronger empty-slot penalty |
+| `w_count` | 0.5 | 3.0 | Compensate for diluted Brouwer-consistent fraction |
+| `w_exist_cnt` | — | 0.5 | New: soft-count consistency loss |
+| `count_focal_gamma` | — | 2.0 | New: focal reweighting of count CE |
+| `count_head_layers` | 2 | 3 | New: deeper count head |
+
+### 8b.4 Inference Change (model.py)
+
+`decode_slots` now accepts `exist_thresh` (default 0.0 = off). After retraining, this threshold can be tuned on a held-out validation set to further reduce overcounting without retraining.
+
+### 8b.5 Training Commands
 
 ```bash
+cd /scratch/gilbreth/gupt1042/GNN_temp
+git pull origin claude/zealous-wright-eum1ur
+
+# L1 (original corpus_exhaust_A — 30/50/20 split — for cleaner count signal)
+sbatch exhaust_gen/train_layer1_exhaust.slurm   # → exhaust_layer1/best.pt
+
+# L2 (after L1 finishes)
+sbatch exhaust_gen/train_layer2_exhaust.slurm   # → exhaust_layer2/best.pt
+
+# L3 (after L2 finishes)
+sbatch exhaust_gen/train_layer3_exhaust.slurm   # → exhaust_layer3/best.pt
+```
+
+### 8b.6 Open Questions After Retrain
+- Does `exist_thresh=0.3` further improve `count_exact` post-training?
+  (tune on val set: try 0.1, 0.2, 0.3 in `eval_composition2.py`)
+- Is Corpus A v2 still needed, or does the deeper count head + focal loss recover fp_hd on the original corpus?
+- Can `count_focal_gamma` be tuned per corpus (higher gamma when more easy-k=1 cases)?
+
+
+```bash
+cd /scratch/gilbreth/gupt1042/GNN_temp
+git pull origin claude/zealous-wright-eum1ur
+
+# L1 (uses original corpus_exhaust_A — 30/50/20 split — for cleaner count signal)
+sbatch exhaust_gen/train_layer1_exhaust.slurm   # → exhaust_layer1/best.pt
+
+# L2 (after L1 finishes)
+sbatch exhaust_gen/train_layer2_exhaust.slurm   # → exhaust_layer2/best.pt
+
+# L3 (after L2 finishes)
+sbatch exhaust_gen/train_layer3_exhaust.slurm   # → exhaust_layer3/best.pt
+```
+
+Or with Corpus A v2 (more boundary-phase, keeps fp_hd gain):
+```bash
+# Override CACHE_DIR in the L1 script or run manually:
 python train.py \
   --cache_dir /scratch/gilbreth/gupt1042/corpus_exhaust_A_v2/cache \
   --out_dir /scratch/gilbreth/gupt1042/runs/layer1_v5 \
-  --eos_coef 0.3 \      # try 0.3 or 0.5 (default is 0.1)
   --num_workers 8
+
+# Corresponding eval:
+python exhaust_gen/gen_composition_eval.py \
+  --corpus_cache /scratch/gilbreth/gupt1042/corpus_exhaust_A_v2/cache \
+  --out_dir /scratch/gilbreth/gupt1042/runs/composition_eval_v5 \
+  --n_cases 500 --n_cross 2 --seed 42
+
+python exhaust_gen/eval_composition2.py \
+  --l1_ckpt /scratch/gilbreth/gupt1042/runs/layer1_v5/best.pt \
+  --l3_ckpt /scratch/gilbreth/gupt1042/runs/layer3_v5/best.pt \
+  --eval_dir /scratch/gilbreth/gupt1042/runs/composition_eval_v5 \
+  --out_csv /scratch/gilbreth/gupt1042/runs/eval_v8.csv
 ```
 
-### 8.2 Count Prior Bias at Inference
-At inference time the model decodes k via `argmax` over odd counts of `count_logit`. Adding a small prior penalty on higher k values (without retraining) could reduce overcounting.
-
-This would be a change in `model_c.py` or `demo_assemble.py` in the `decode_slots` function.
-
-### 8.3 Separate Existence Threshold Tuning
-Instead of argmax on count_logit, threshold `exist_logit` at a higher value. Currently the top-k exist logits are used where k = predicted count. If instead a fixed threshold on `sigmoid(exist_logit) > τ` determines occupancy, τ can be tuned post-training on a held-out validation set.
-
-### 8.4 Revert to Original Corpus A
-If the goal is to match or beat v5 on count_exact, the most conservative approach is to go back to the original 30/50/20 phase split corpus and only change the model architecture. The Corpus A v2 fp_hd gain may not be worth the count_exact penalty.
-
-### 8.5 Curriculum: Train on Easy Cases First
-Phase 1: train only on n_fp=1 cases (easy count prediction). Phase 2: gradually introduce multi-basin cases. This could teach the model count discipline before being exposed to hard multi-attractor landscapes.
+### 8.6 Open Questions After v5 Retrain
+- Does `exist_thresh=0.3` further improve `count_exact` post-training?  
+  (tune on val set: try 0.1, 0.2, 0.3 in `eval_composition2.py`)
+- Is Corpus A v2 still needed, or does the deeper count head + focal loss recover fp_hd on the original corpus?
+- Can `count_focal_gamma` be tuned per corpus (higher gamma when more easy-k=1 cases)?
 
 ---
 
