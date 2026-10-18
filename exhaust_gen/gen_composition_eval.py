@@ -42,11 +42,11 @@ import numpy as np
 SCFG = SimpleNamespace(
     eps_box=0.05,
     newton_steps=200,
-    tol=1e-10,
-    accept_tol=1e-6,
-    seeds=[0, 8, 16, 32, 64, 96],   # indexed by n-2
+    tol=1e-12,           # match solver.py production default (was 1e-10)
+    accept_tol=1e-9,     # match solver.py production default (was 1e-6, 1000× looser)
+    seeds=[96, 128, 160, 192, 224, 256],  # match solver.py per-n seed counts (was 0,8,16,32,64,96)
     max_corners=256,
-    rounds=8,
+    rounds=10,           # more rounds for n=6 high-FP cases (was 8)
     confirm=True,
 )
 
@@ -189,18 +189,23 @@ def compose_6gene(adj_a, par_a, adj_b, par_b, cross_edges, rng):
 
 
 def solve_one(par6, device):
-    """Solve fixed points for a single 6-gene draw. Returns fp_state [M,6], fp_stab [M]."""
+    """Solve fixed points for a single 6-gene draw.
+
+    Returns (fp_state [M,6], fp_stab [M], brouwer_certified bool).
+    brouwer_certified=True means: index sum=1, all FPs hyperbolic, confirmed round found nothing new.
+    """
     import torch
     from solver import solve_draws
     gen = torch.Generator(device=device)
     gen.manual_seed(0)
     res = solve_draws(par6, SCFG, n=6, gen=gen, device=device)
     counts = res["counts"]   # [1]
+    certified = bool(res["cons"][0])
     if counts[0] == 0:
-        return np.zeros((0, 6), dtype=np.float32), np.zeros(0, dtype=np.uint8)
+        return np.zeros((0, 6), dtype=np.float32), np.zeros(0, dtype=np.uint8), certified
     states = res["state"].astype(np.float32)   # [M, 6]
     stabs  = res["stab"].astype(np.uint8)       # [M]
-    return states, stabs
+    return states, stabs, certified
 
 
 def main():
@@ -243,8 +248,10 @@ def main():
     all_stab  = []
     fp_ptr    = []
     n_fp_arr  = []
+    n_cert_arr = []   # 1 if Brouwer-certified, 0 otherwise
     fp_cursor = 0
     errors    = 0
+    n_even_gt = 0
 
     for case_i in range(args.n_cases):
         # sample two distinct 3-gene samples
@@ -271,12 +278,16 @@ def main():
         adj6, par6 = compose_6gene(adj_a, par_a, adj_b, par_b, cross_edges, rng)
 
         try:
-            fps, stabs = solve_one(par6, device)
+            fps, stabs, certified = solve_one(par6, device)
         except Exception as exc:
             errors += 1
             if errors <= 5:
                 print(f"  case {case_i}: solver error: {exc}")
             continue
+
+        n_fp = len(fps)
+        if n_fp % 2 == 0 and n_fp > 0:
+            n_even_gt += 1
 
         all_adj.append(adj6)
         all_P.append(par6["P"][0])
@@ -285,17 +296,30 @@ def main():
         all_nh.append(par6["nh"][0])
         all_F.append(par6["F"][0])
         fp_ptr.append(fp_cursor)
-        n_fp_arr.append(len(fps))
-        fp_cursor += len(fps)
-        if len(fps) > 0:
+        n_fp_arr.append(n_fp)
+        n_cert_arr.append(int(certified))
+        fp_cursor += n_fp
+        if n_fp > 0:
             all_fps.append(fps)
             all_stab.append(stabs)
 
         if (case_i + 1) % 50 == 0:
-            print(f"  {case_i+1}/{args.n_cases}  fp_cursor={fp_cursor}  errors={errors}")
+            n_done = len(n_fp_arr)
+            cert_frac = sum(n_cert_arr) / max(n_done, 1)
+            print(f"  {case_i+1}/{args.n_cases}  fp_cursor={fp_cursor}  "
+                  f"errors={errors}  even_gt={n_even_gt}  certified={cert_frac:.1%}")
 
     n_cases = len(all_adj)
+    cert_frac = sum(n_cert_arr) / max(n_cases, 1)
+    n_fp_arr_np = np.array(n_fp_arr, dtype=np.int32)
+    n_even = int((n_fp_arr_np % 2 == 0).sum())
     print(f"\nGenerated {n_cases} cases ({errors} errors), {fp_cursor} total FPs")
+    print(f"  Brouwer-certified: {sum(n_cert_arr)}/{n_cases} ({cert_frac:.1%})")
+    print(f"  Even GT counts (Poincare-Hopf violation): {n_even}/{n_cases} ({n_even/max(n_cases,1):.1%})")
+    from collections import Counter
+    ct = Counter(n_fp_arr_np.tolist())
+    for k in sorted(ct):
+        print(f"    gt={k}: {ct[k]} cases {'  *** EVEN (solver artifact)' if k % 2 == 0 else ''}")
 
     np.save(out_dir / "adj.npy",      np.array(all_adj,  dtype=np.float32))
     np.save(out_dir / "P.npy",        np.array(all_P,    dtype=np.float64))
@@ -304,7 +328,8 @@ def main():
     np.save(out_dir / "nh.npy",       np.array(all_nh,   dtype=np.float64))
     np.save(out_dir / "F.npy",        np.array(all_F,    dtype=np.float64))
     np.save(out_dir / "fp_ptr.npy",   np.array(fp_ptr,   dtype=np.int64))
-    np.save(out_dir / "n_fp.npy",     np.array(n_fp_arr, dtype=np.int32))
+    np.save(out_dir / "n_fp.npy",     n_fp_arr_np)
+    np.save(out_dir / "n_cert.npy",   np.array(n_cert_arr, dtype=np.uint8))
     if all_fps:
         np.save(out_dir / "fp_state.npy", np.concatenate(all_fps,  axis=0))
         np.save(out_dir / "fp_stab.npy",  np.concatenate(all_stab, axis=0))
