@@ -51,80 +51,53 @@ DEFAULT_MAX_COUNT_C = 32
 
 
 # ---------------------------------------------------------------------------
-# Pairwise count head
+# Composition count head
 # ---------------------------------------------------------------------------
 
-class PairwiseCountHead(nn.Module):
-    """Count head for composed 2-SCC systems via SCC1 × SCC2 slot compatibility.
+class CompositionCountHead(nn.Module):
+    """Count head for composed 2-SCC systems.
 
-    Physical motivation: every fixed point of the composed (SCC1 ⊕ SCC2) system
-    lies near a *pair* (FP_i of SCC1, FP_j of SCC2) perturbed by the cross-edge
-    forcing.  We learn which pairs are mutually compatible and predict the count
-    by aggregating pairwise compatibility scores — directly implementing the
-    combinatorial structure of composition.
+    Reads three groups of already-computed features from the conditioned portrait
+    (all detached — no gradient flows back through U_ω or the backbone):
 
-    Unlike the backbone's count head (which reads a single graph embedding trained
-    on 3-gene autonomous SCCs), this head explicitly models the K×K coupling
-    between both SCCs' slot embeddings, and its output dimension covers k = 0 … max_count,
-    which can exceed the backbone slot count K.
+      1. Sorted existence probabilities  [B, K]
+         With w_exist_cnt > 0, sigmoid(exist_logit).sum() ≈ k_true at training
+         time, so the sorted probs encode "how many slots are active and with what
+         confidence" — the most direct count signal available.
 
-    Args:
-        d_model   : slot embedding dimension
-        K         : backbone slot count (slots per SCC pass)
-        max_count : maximum predicted FP count (output size = max_count + 1)
-        dropout   : dropout on cross-attention
+      2. SCC1 and SCC2 node-embedding means  [B, d_model] × 2
+         Mean-pooled from the conditioned node embeddings h_cond split by SCC,
+         giving the head topology-aware context for each sub-network.
+
+      3. Conditioned graph embedding  [B, d_model]
+         The global representation of the composed system from U_ω.
+
+    Total input: K + 3 * d_model features → 3-layer MLP → count_logit[0..max_count].
+
+    No extra backbone decoder calls.  No out-of-distribution slot embeddings.
     """
 
     def __init__(self, d_model: int, K: int, max_count: int = DEFAULT_MAX_COUNT_C,
                  dropout: float = 0.0):
         super().__init__()
-        self.K = K
         self.max_count = max_count
+        d_in = K + 3 * d_model   # sorted_probs + z_scc1 + z_scc2 + z_graph
+        self.mlp = MLP(d_in, d_model, max_count + 1, n_layers=3, dropout=dropout)
 
-        # Bidirectional cross-attention between the two SCC slot sets.
-        # s2 slots attend to s1, and s1 slots attend to s2.
-        self.cross_12 = nn.MultiheadAttention(
-            d_model, num_heads=4, dropout=dropout, batch_first=True)
-        self.cross_21 = nn.MultiheadAttention(
-            d_model, num_heads=4, dropout=dropout, batch_first=True)
-        self.norm1 = nn.LayerNorm(d_model)
-        self.norm2 = nn.LayerNorm(d_model)
-
-        # Pairwise compatibility: score each (SCC1 slot, SCC2 slot) pair.
-        self.compat_mlp = MLP(2 * d_model, d_model, 1, n_layers=2, dropout=dropout)
-
-        # Count head: reads row-wise and column-wise soft-sum of compatibility.
-        # Input size = K (SCC1 perspective) + K (SCC2 perspective) = 2K.
-        self.count_head = MLP(2 * K, d_model, max_count + 1, n_layers=3, dropout=dropout)
-
-    def forward(self, s1: torch.Tensor, s2: torch.Tensor) -> torch.Tensor:
+    def forward(self, exist_logit: torch.Tensor,
+                z_graph: torch.Tensor,
+                z_scc1: torch.Tensor,
+                z_scc2: torch.Tensor) -> torch.Tensor:
         """
-        s1 : [B, K, d]  SCC1 slot embeddings (conditioned on cross-edge forcing)
-        s2 : [B, K, d]  SCC2 slot embeddings (conditioned on cross-edge forcing)
+        exist_logit : [B, K]   raw existence logits (will be sigmoid-ed internally)
+        z_graph     : [B, d]   conditioned graph embedding
+        z_scc1      : [B, d]   mean of conditioned SCC1 node embeddings
+        z_scc2      : [B, d]   mean of conditioned SCC2 node embeddings
         Returns count_logit : [B, max_count + 1]
         """
-        B, K, d = s1.shape
-
-        # Cross-attention (residual + LN)
-        s2_ctx, _ = self.cross_12(s2, s1, s1)   # s2 queries s1
-        s2_ctx = self.norm1(s2 + s2_ctx)         # [B, K, d]
-
-        s1_ctx, _ = self.cross_21(s1, s2, s2)   # s1 queries s2
-        s1_ctx = self.norm2(s1 + s1_ctx)         # [B, K, d]
-
-        # Pairwise compatibility matrix  [B, K, K]
-        s1_exp = s1_ctx.unsqueeze(2).expand(B, K, K, d)   # [B, K, K, d]
-        s2_exp = s2_ctx.unsqueeze(1).expand(B, K, K, d)   # [B, K, K, d]
-        compat = self.compat_mlp(
-            torch.cat([s1_exp, s2_exp], dim=-1)            # [B, K, K, 2d]
-        ).squeeze(-1)                                       # [B, K, K]
-
-        # Soft-sum along each axis: expected compatible partners per slot
-        row_score = torch.sigmoid(compat).sum(dim=2)  # [B, K] — SCC1 perspective
-        col_score = torch.sigmoid(compat).sum(dim=1)  # [B, K] — SCC2 perspective
-        feat = torch.cat([row_score, col_score], dim=-1)   # [B, 2K]
-
-        return self.count_head(feat)   # [B, max_count + 1]
+        probs_sorted = torch.sigmoid(exist_logit).sort(dim=1, descending=True).values
+        feat = torch.cat([probs_sorted, z_graph, z_scc1, z_scc2], dim=-1)
+        return self.mlp(feat)
 
 
 # ---------------------------------------------------------------------------
@@ -239,7 +212,7 @@ class CorpusCNet(CorpusBNet):
         # genes 0..n_scc1-1 are SCC1 and the rest are SCC2).
         self.n_scc1 = getattr(cfg, "n_scc1", 3)
         max_count_c = getattr(cfg, "max_count_c", DEFAULT_MAX_COUNT_C)
-        self.pairwise_count_head = PairwiseCountHead(
+        self.composition_count_head = CompositionCountHead(
             d_model=cfg.d_model,
             K=cfg.max_fp,
             max_count=max_count_c,
@@ -295,28 +268,20 @@ class CorpusCNet(CorpusBNet):
         node_mask = batch["node_mask"]      # [B, N]
         n1 = self.n_scc1                    # genes in SCC1 (default 3)
 
-        # Split conditioned embeddings: SCC1 = genes 0..n1-1, SCC2 = the rest.
-        # IMPORTANT: detach before splitting so pairwise count gradients do NOT
-        # flow back through U_ω.  U_ω is supervised exclusively by
-        # pos / exist / stab losses; injecting count gradients through the same
-        # node embeddings causes U_ω to trade off position accuracy against
-        # count accuracy, which in practice collapses fp_hd.
+        # Detach so count gradients do NOT flow back through U_ω.
         h_det = h_cond.detach()
         h1 = h_det[:, :n1, :]             # [B, n1, d]
         h2 = h_det[:, n1:, :]             # [B, N-n1, d]
-        nm1 = node_mask[:, :n1]           # [B, n1]
-        nm2 = node_mask[:, n1:]           # [B, N-n1]
+        nm1 = node_mask[:, :n1].float().unsqueeze(-1)
+        nm2 = node_mask[:, n1:].float().unsqueeze(-1)
 
-        # Graph-level summaries for each SCC half (masked mean of node embeddings).
-        nm1f = nm1.float().unsqueeze(-1)
-        nm2f = nm2.float().unsqueeze(-1)
-        z1 = (h1 * nm1f).sum(1) / nm1f.sum(1).clamp_min(1.0)   # [B, d]
-        z2 = (h2 * nm2f).sum(1) / nm2f.sum(1).clamp_min(1.0)   # [B, d]
+        # Masked mean of node embeddings per SCC half.
+        z_scc1 = (h1 * nm1).sum(1) / nm1.sum(1).clamp_min(1.0)   # [B, d]
+        z_scc2 = (h2 * nm2).sum(1) / nm2.sum(1).clamp_min(1.0)   # [B, d]
 
-        # Decode K slots for each SCC half using the shared backbone decoder.
-        with torch.autocast(device_type=h_cond.device.type, enabled=False):
-            s1 = self.backbone.decoder(z1, h1, nm1).float()     # [B, K, d]
-            s2 = self.backbone.decoder(z2, h2, nm2).float()     # [B, K, d]
-            out_cond["count_logit"] = self.pairwise_count_head(s1, s2)
+        # CompositionCountHead: reads in-distribution conditioned features only.
+        exist_logit = out_cond["exist_logit"].detach()   # [B, K]
+        out_cond["count_logit"] = self.composition_count_head(
+            exist_logit, z_cond.detach(), z_scc1, z_scc2)
 
         return out_cond, out0
