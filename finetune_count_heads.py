@@ -318,8 +318,11 @@ def compute_case_loss(case, dag, l1_model, l3_model, device, scc_gt_counts,
             count_logit = out["count_logit"][0]   # [max_fp+1]
             max_count = count_logit.shape[0] - 1
             loss = _odd_ce_loss(count_logit, gt_k, max_count)
-            # Up-weight multistable SCCs — these are the primary failure mode
-            w = multistable_weight if gt_k >= 3 else 1.0
+            # Weight proportional to k_gt: harder multistable cases get more
+            # gradient signal (k=1→1×, k=3→3×, k=5→5×, k=9→9×).
+            # multistable_weight scales the overall magnitude; set to 1.0 to
+            # use raw k_gt proportional weighting.
+            w = multistable_weight * max(1, gt_k) / 3.0
             total_loss = total_loss + w * loss
             n_terms += 1
             # Predicted k for metrics
