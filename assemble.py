@@ -488,6 +488,16 @@ def _infer_scc(
     is_root = np.all(np.abs(u - 1.0) < U_FORCED_TOL)
     batch = _make_scc_batch(scc, u, device)
 
+    # Compute has_pos_fb from intra-SCC signed adjacency and add to batch
+    # so StructuralCountHead can use the TC_NEG → k≤1 constraint.
+    try:
+        from topology import feedback_loops
+        fb = feedback_loops(scc.adj_intra)
+        has_pos = bool(fb[0]) if fb is not None else True
+    except Exception:
+        has_pos = True
+    batch["has_pos_fb"] = torch.tensor([has_pos], dtype=torch.bool, device=device)
+
     with torch.no_grad():
         if is_root:
             out = l1_model(batch)
