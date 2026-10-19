@@ -496,7 +496,7 @@ def run_eval(cfg):
                 if f.name in saved_cfg:
                     object.__setattr__(cfg, f.name, saved_cfg[f.name])
         model = load_layer2_checkpoint(cfg, device)
-        model.load_state_dict({k: v.to(device) for k, v in ck["ema"].items()})
+        model.load_state_dict({k: v.to(device) for k, v in ck["ema"].items()}, strict=False)
 
     model.eval()
     criterion = SetCriterion(cfg)
