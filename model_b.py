@@ -316,14 +316,18 @@ class CorpusBNet(nn.Module):
             sf, hf, gf = s.float(), h.float(), g.float()
             ef = e.float()
             gsf = gf.unsqueeze(1).expand_as(sf)
-            gf_count = gf + sf.mean(dim=1)   # slot-augmented graph emb (mirrors backbone.forward)
+            exist_logit_0 = self.backbone.exist_head(sf).squeeze(-1)   # [B, K]
+            has_pos_fb = batch.get("has_pos_fb",
+                torch.ones(gf.shape[0], dtype=torch.bool, device=gf.device))
             out0 = {
-                "exist_logit":       self.backbone.exist_head(sf).squeeze(-1),
+                "exist_logit":       exist_logit_0,
                 "stab_logit":        self.backbone.stab_head(sf),
                 "pos":               torch.sigmoid(self.backbone.pos_head(sf, hf)),
                 "charpoly":          self.backbone.charpoly_head(torch.cat([sf, gsf], dim=-1)),
-                "count_logit":       self.backbone.count_head(gf_count),
-                "stable_count_logit":self.backbone.stable_count_head(gf_count),
+                "count_logit":       self.backbone.count_head(
+                    exist_logit_0.detach(), gf.detach(), has_pos_fb),
+                "stable_count_logit":self.backbone.stable_count_head(
+                    exist_logit_0.detach(), gf.detach(), has_pos_fb),
                 "slot_emb": sf,
                 "graph_emb": gf,
                 "node_emb":  hf,
@@ -385,14 +389,18 @@ class CorpusBNet(nn.Module):
             z_cf   = z_cond.float()
             gs_c   = z_cf.unsqueeze(1).expand_as(s_cond)
             nb     = N
-            z_cf_count = z_cf + s_cond.mean(dim=1)   # slot-augmented (mirrors backbone.forward)
+            exist_logit_cond = self.backbone.exist_head(s_cond).squeeze(-1)   # [B, K]
+            has_pos_fb_cond = batch.get("has_pos_fb",
+                torch.ones(z_cf.shape[0], dtype=torch.bool, device=z_cf.device))
             out_cond = {
-                "exist_logit":        self.backbone.exist_head(s_cond).squeeze(-1),
+                "exist_logit":        exist_logit_cond,
                 "stab_logit":         self.backbone.stab_head(s_cond),
                 "pos":                torch.sigmoid(self.backbone.pos_head(s_cond, h_cond.float())),
                 "charpoly":           self.backbone.charpoly_head(torch.cat([s_cond, gs_c], dim=-1)),
-                "count_logit":        self.backbone.count_head(z_cf_count),
-                "stable_count_logit": self.backbone.stable_count_head(z_cf_count),
+                "count_logit":        self.backbone.count_head(
+                    exist_logit_cond.detach(), z_cf.detach(), has_pos_fb_cond),
+                "stable_count_logit": self.backbone.stable_count_head(
+                    exist_logit_cond.detach(), z_cf.detach(), has_pos_fb_cond),
                 # Embeddings for downstream use
                 "slot_emb":  s_cond,
                 "graph_emb": z_cf,
