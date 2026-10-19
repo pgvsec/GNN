@@ -319,6 +319,37 @@ class SlotNodeHead(nn.Module):
         return self.mlp(torch.cat([ss, hh, ss * hh], dim=-1)).squeeze(-1)
 
 
+class StructuralCountHead(nn.Module):
+    """Count head for Layer I that reads structural constraints alongside slot evidence.
+
+    Inputs (all detached — count gradients do not flow back through the backbone):
+      1. sorted sigmoid(exist_logit) [B, K]  — slot-level evidence; sums to k_true when
+         w_exist_cnt > 0 during training.
+      2. graph embedding g [B, d]            — full topology + kinetic context.
+      3. has_pos_fb [B, 1]                   — 0 = TC_NEG (multistability impossible),
+                                               1 = TC_POS/TC_BOTH.
+
+    TC_NEG is the strongest structural constraint: no positive feedback → k_stable ≤ 1.
+    Giving it directly to the count head lets the model learn this rule cleanly.
+    """
+
+    def __init__(self, d_model: int, K: int, max_count: int, dropout: float = 0.0):
+        super().__init__()
+        self.max_count = max_count
+        d_in = K + d_model + 1    # exist_probs + graph_emb + has_pos_fb
+        self.mlp = MLP(d_in, d_model, max_count + 1, n_layers=3, dropout=dropout)
+
+    def forward(self,
+                exist_logit:  torch.Tensor,   # [B, K]
+                g:            torch.Tensor,   # [B, d]
+                has_pos_fb:   torch.Tensor,   # [B] bool or float
+                ) -> torch.Tensor:            # [B, max_count+1]
+        probs_sorted = torch.sigmoid(exist_logit).sort(dim=1, descending=True).values
+        pos_fb = has_pos_fb.float().unsqueeze(-1)   # [B, 1]
+        feat = torch.cat([probs_sorted, g, pos_fb], dim=-1)
+        return self.mlp(feat)
+
+
 # ---------------------------------------------------------------------------
 # 5. Network
 # ---------------------------------------------------------------------------
@@ -346,9 +377,8 @@ class SccFixedPointNet(nn.Module):
         self.stab_head = MLP(d, d, NUM_STABILITY)
         self.pos_head = SlotNodeHead(d)
         self.charpoly_head = MLP(2 * d, d, N_MAX)
-        n_count_layers = getattr(cfg, "count_head_layers", 2)
-        self.count_head = MLP(d, d, cfg.max_fp + 1, n_layers=n_count_layers)
-        self.stable_count_head = MLP(d, d, cfg.max_fp + 1, n_layers=n_count_layers)
+        self.count_head = StructuralCountHead(d, cfg.max_fp, cfg.max_fp, cfg.dropout)
+        self.stable_count_head = StructuralCountHead(d, cfg.max_fp, cfg.max_fp, cfg.dropout)
 
     def forward(self, batch):
         node_mask = batch["node_mask"]
@@ -371,13 +401,18 @@ class SccFixedPointNet(nn.Module):
         with torch.autocast(device_type=h.device.type, enabled=False):
             s, h, g = s.float(), h.float(), g.float()
             gs = g.unsqueeze(1).expand_as(s)
+            exist_logit = self.exist_head(s).squeeze(-1)     # [B, K]
+            has_pos_fb  = batch.get("has_pos_fb",
+                              torch.ones(g.shape[0], dtype=torch.bool, device=g.device))
             return {
-                "exist_logit": self.exist_head(s).squeeze(-1),
+                "exist_logit": exist_logit,
                 "stab_logit": self.stab_head(s),
                 "pos": torch.sigmoid(self.pos_head(s, h)),
                 "charpoly": self.charpoly_head(torch.cat([s, gs], dim=-1)),
-                "count_logit": self.count_head(g),
-                "stable_count_logit": self.stable_count_head(g),
+                "count_logit": self.count_head(
+                    exist_logit.detach(), g.detach(), has_pos_fb),
+                "stable_count_logit": self.stable_count_head(
+                    exist_logit.detach(), g.detach(), has_pos_fb),
                 # Intermediate embeddings exposed for Layer II / III
                 "slot_emb": s,    # branch tokens q^(r)  [B, K, d]
                 "graph_emb": g,   # z_j^0               [B, d]
