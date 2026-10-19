@@ -1,156 +1,126 @@
 #!/usr/bin/env python3
-"""
-Diagnostic script for composition eval CSV output.
-
-Analyzes:
-1. fp_hd conditioned on count_exact (correct vs wrong)
-2. Count accuracy broken down by n_sccs
-3. Fraction of count errors that are under- vs over-predictions
-"""
-
+"""Diagnostic script for composition eval CSV output (no pandas required)."""
 import argparse
+import csv
 import sys
-import pandas as pd
-import numpy as np
+from collections import defaultdict
+
+
+def mean(vals):
+    return sum(vals) / len(vals) if vals else float("nan")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Diagnose composition eval CSV output")
-    parser.add_argument("--csv", required=True, help="Path to the composition eval CSV file")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--csv", required=True)
     args = parser.parse_args()
 
-    # Load CSV
-    try:
-        df = pd.read_csv(args.csv)
-    except FileNotFoundError:
-        print(f"ERROR: File not found: {args.csv}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"ERROR: Could not read CSV: {e}", file=sys.stderr)
-        sys.exit(1)
+    rows = []
+    with open(args.csv) as f:
+        reader = csv.DictReader(f)
+        cols = reader.fieldnames
+        print(f"Columns: {cols}\n")
+        for row in reader:
+            rows.append(row)
 
+    if not rows:
+        print("Empty CSV")
+        return
+
+    # Parse numeric fields
+    def get(row, key, default=None):
+        v = row.get(key, None)
+        if v is None or v == "":
+            return default
+        try:
+            return float(v)
+        except ValueError:
+            return default
+
+    k_true  = [get(r, "k_true")  for r in rows]
+    k_pred  = [get(r, "k_pred")  for r in rows]
+    fp_hd   = [get(r, "fp_hd")   for r in rows]
+    ce      = [get(r, "count_exact") for r in rows]
+    n_sccs  = [get(r, "n_sccs")  for r in rows]
+
+    N = len(rows)
+
+    # ── 1. fp_hd by count_exact ──────────────────────────────────────────────
     print("=" * 60)
-    print("CSV COLUMNS PRESENT")
+    print("1. fp_hd conditioned on count accuracy")
     print("=" * 60)
-    print(f"Total rows: {len(df)}")
-    print(f"Columns ({len(df.columns)}):")
-    for col in df.columns:
-        dtype = df[col].dtype
-        n_null = df[col].isna().sum()
-        print(f"  {col!r:40s}  dtype={str(dtype):12s}  nulls={n_null}")
+    hd_correct = [fp_hd[i] for i in range(N) if ce[i] is not None and fp_hd[i] is not None and ce[i] == 1.0]
+    hd_wrong   = [fp_hd[i] for i in range(N) if ce[i] is not None and fp_hd[i] is not None and ce[i] == 0.0]
+    print(f"  count correct (n={len(hd_correct)}): fp_hd mean={mean(hd_correct):.4f}  "
+          f"min={min(hd_correct, default=float('nan')):.3f}  max={max(hd_correct, default=float('nan')):.3f}")
+    print(f"  count wrong   (n={len(hd_wrong)}):   fp_hd mean={mean(hd_wrong):.4f}  "
+          f"min={min(hd_wrong, default=float('nan')):.3f}  max={max(hd_wrong, default=float('nan')):.3f}")
+
+    # ── 2. Count accuracy by n_sccs ──────────────────────────────────────────
     print()
-
-    # ------------------------------------------------------------------ #
-    # Check required columns
-    # ------------------------------------------------------------------ #
-    required = {"k_true", "k_pred", "fp_hd", "count_exact"}
-    missing = required - set(df.columns)
-    if missing:
-        print(f"WARNING: Missing expected columns: {missing}")
-        print("Analysis may be partial.\n")
-
-    # ------------------------------------------------------------------ #
-    # Question 1: fp_hd conditioned on count_exact
-    # ------------------------------------------------------------------ #
     print("=" * 60)
-    print("Q1: fp_hd CONDITIONED ON count_exact")
+    print("2. Count accuracy by n_sccs")
     print("=" * 60)
-    if "fp_hd" in df.columns and "count_exact" in df.columns:
-        df["_count_correct"] = df["count_exact"].astype(int)
-        for label, mask in [("count_exact == 1 (correct)", df["_count_correct"] == 1),
-                             ("count_exact == 0 (wrong)",   df["_count_correct"] == 0)]:
-            sub = df.loc[mask, "fp_hd"].dropna()
-            if len(sub) == 0:
-                print(f"  {label}: no rows")
-            else:
-                print(f"  {label}:")
-                print(f"    n       = {len(sub)}")
-                print(f"    mean    = {sub.mean():.4f}")
-                print(f"    median  = {sub.median():.4f}")
-                print(f"    std     = {sub.std():.4f}")
-                print(f"    min     = {sub.min():.4f}")
-                print(f"    max     = {sub.max():.4f}")
+    has_nsccs = any(v is not None for v in n_sccs)
+    if not has_nsccs:
+        print("  n_sccs column not present — showing overall only")
+        correct = sum(1 for v in ce if v == 1.0)
+        print(f"  Overall: {correct}/{N} = {correct/N:.4f}")
     else:
-        missing_q1 = {"fp_hd", "count_exact"} - set(df.columns)
-        print(f"  SKIPPED — missing columns: {missing_q1}")
-    print()
-
-    # ------------------------------------------------------------------ #
-    # Question 2: count accuracy by n_sccs
-    # ------------------------------------------------------------------ #
-    print("=" * 60)
-    print("Q2: COUNT ACCURACY BROKEN DOWN BY n_sccs")
-    print("=" * 60)
-    if "count_exact" in df.columns and "n_sccs" in df.columns:
-        df["_n_sccs_bucket"] = df["n_sccs"].apply(lambda x: x if (pd.notna(x) and int(x) < 4) else "4+")
-        bucket_order = ["1", "2", "3", "4+"]
-
-        rows = []
-        for bucket in bucket_order:
-            mask = df["_n_sccs_bucket"].astype(str) == str(bucket)
-            sub = df.loc[mask, "count_exact"].dropna()
-            if len(sub) == 0:
+        buckets = defaultdict(list)
+        for i in range(N):
+            if ce[i] is None:
                 continue
-            acc = sub.astype(int).mean()
-            rows.append({
-                "n_sccs": bucket,
-                "n_rows": len(sub),
-                "count_accuracy": acc,
-                "n_correct": int(sub.astype(int).sum()),
-                "n_wrong": int(len(sub) - sub.astype(int).sum()),
-            })
+            ns = n_sccs[i]
+            if ns is None:
+                key = "?"
+            elif ns >= 4:
+                key = "4+"
+            else:
+                key = str(int(ns))
+            buckets[key].append(ce[i])
+        for key in sorted(buckets.keys()):
+            vals = buckets[key]
+            acc = mean(vals)
+            print(f"  n_sccs={key}: n={len(vals):4d}  count_exact={acc:.4f}  "
+                  f"correct={sum(1 for v in vals if v==1.0)}")
 
-        if rows:
-            result_df = pd.DataFrame(rows)
-            print(result_df.to_string(index=False))
-        else:
-            print("  No data after bucketing.")
-    elif "count_exact" in df.columns and "n_sccs" not in df.columns:
-        print("  NOTE: 'n_sccs' column not found. Showing overall count accuracy only.")
-        acc = df["count_exact"].astype(int).mean()
-        print(f"  Overall count accuracy: {acc:.4f}  (n={len(df)})")
-    else:
-        missing_q2 = {"count_exact"} - set(df.columns)
-        print(f"  SKIPPED — missing columns: {missing_q2}")
-    print()
-
-    # ------------------------------------------------------------------ #
-    # Question 3: under- vs over-predictions among count errors
-    # ------------------------------------------------------------------ #
-    print("=" * 60)
-    print("Q3: UNDER- vs OVER-PREDICTIONS AMONG COUNT ERRORS")
-    print("=" * 60)
-    if "k_true" in df.columns and "k_pred" in df.columns:
-        # Errors are rows where k_pred != k_true
-        errors = df[df["k_pred"].astype(int) != df["k_true"].astype(int)].copy()
-        n_errors = len(errors)
-        print(f"  Total count errors: {n_errors}  (out of {len(df)} rows)")
-
-        if n_errors == 0:
-            print("  No errors to analyze.")
-        else:
-            errors["_diff"] = errors["k_pred"].astype(int) - errors["k_true"].astype(int)
-            n_under = (errors["_diff"] < 0).sum()
-            n_over  = (errors["_diff"] > 0).sum()
-            n_exact_diff_zero = (errors["_diff"] == 0).sum()  # shouldn't happen by definition
-
-            print(f"  Under-predictions (k_pred < k_true): {n_under:5d}  ({100*n_under/n_errors:.1f}%)")
-            print(f"  Over-predictions  (k_pred > k_true): {n_over:5d}  ({100*n_over/n_errors:.1f}%)")
-            if n_exact_diff_zero > 0:
-                print(f"  [Unexpected zero-diff errors:         {n_exact_diff_zero}]")
-
-            print()
-            print("  Distribution of prediction error (k_pred - k_true) among errors:")
-            diff_counts = errors["_diff"].value_counts().sort_index()
-            for diff_val, cnt in diff_counts.items():
-                bar = "#" * min(int(cnt), 40)
-                print(f"    {diff_val:+4d}: {cnt:5d}  {bar}")
-    else:
-        missing_q3 = {"k_true", "k_pred"} - set(df.columns)
-        print(f"  SKIPPED — missing columns: {missing_q3}")
+    # ── 3. Under vs over predictions ─────────────────────────────────────────
     print()
     print("=" * 60)
-    print("Done.")
+    print("3. Count error direction (k_pred - k_true)")
+    print("=" * 60)
+    diffs = []
+    for i in range(N):
+        if k_true[i] is not None and k_pred[i] is not None and ce[i] == 0.0:
+            diffs.append(int(k_pred[i]) - int(k_true[i]))
+    if not diffs:
+        print("  No count errors found.")
+        return
+
+    under = sum(1 for d in diffs if d < 0)
+    over  = sum(1 for d in diffs if d > 0)
+    total_err = len(diffs)
+    print(f"  Total errors: {total_err}  under={under} ({under/total_err:.1%})  over={over} ({over/total_err:.1%})")
+    print()
+    # Distribution
+    dist = defaultdict(int)
+    for d in diffs:
+        dist[d] += 1
+    max_bar = 40
+    max_cnt = max(dist.values())
+    print(f"  {'diff':>6}  {'count':>5}  bar")
+    for d in sorted(dist.keys()):
+        cnt = dist[d]
+        bar = "█" * int(cnt / max_cnt * max_bar)
+        print(f"  {d:>6}  {cnt:>5}  {bar}")
+
+    # Also show mean k_true for errors vs correct
+    print()
+    kt_err = [k_true[i] for i in range(N) if ce[i] == 0.0 and k_true[i] is not None]
+    kt_ok  = [k_true[i] for i in range(N) if ce[i] == 1.0 and k_true[i] is not None]
+    print(f"  mean k_true when wrong:   {mean(kt_err):.2f}")
+    print(f"  mean k_true when correct: {mean(kt_ok):.2f}")
 
 
 if __name__ == "__main__":
