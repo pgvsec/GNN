@@ -291,9 +291,13 @@ def _odd_ce_loss(count_logit: torch.Tensor, k_gt: int, max_count: int) -> torch.
     return F.cross_entropy(logit.unsqueeze(0) if logit.dim() == 1 else logit, target)
 
 
-def compute_case_loss(case, dag, l1_model, l3_model, device, scc_gt_counts):
+def compute_case_loss(case, dag, l1_model, l3_model, device, scc_gt_counts,
+                      multistable_weight: float = 1.0):
     """
     Compute count head loss for one composition case.
+
+    multistable_weight: multiplier on loss for SCCs where k_gt >= 3 (the
+    primary failure mode — L1 predicts k=1 for multistable SCCs).
 
     Returns scalar loss tensor and a dict of per-SCC predictions for metrics.
     """
@@ -314,7 +318,9 @@ def compute_case_loss(case, dag, l1_model, l3_model, device, scc_gt_counts):
             count_logit = out["count_logit"][0]   # [max_fp+1]
             max_count = count_logit.shape[0] - 1
             loss = _odd_ce_loss(count_logit, gt_k, max_count)
-            total_loss = total_loss + loss
+            # Up-weight multistable SCCs — these are the primary failure mode
+            w = multistable_weight if gt_k >= 3 else 1.0
+            total_loss = total_loss + w * loss
             n_terms += 1
             # Predicted k for metrics
             even = torch.arange(count_logit.shape[0]) % 2 == 0
@@ -365,7 +371,7 @@ def compute_case_loss(case, dag, l1_model, l3_model, device, scc_gt_counts):
 # ---------------------------------------------------------------------------
 
 def run_epoch(cases, dag_cache, l1_model, l3_model, device,
-              optimizer=None, max_cases=None):
+              optimizer=None, max_cases=None, multistable_weight=1.0):
     """Run one training or validation epoch. Returns metrics dict."""
     is_train = optimizer is not None
 
@@ -396,7 +402,8 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
         try:
             if is_train:
                 loss, pred_counts = compute_case_loss(
-                    case, dag, l1_model, l3_model, device, scc_gt_counts)
+                    case, dag, l1_model, l3_model, device, scc_gt_counts,
+                    multistable_weight=multistable_weight)
                 if loss.requires_grad:
                     optimizer.zero_grad()
                     loss.backward()
@@ -492,6 +499,9 @@ def main():
     ap.add_argument("--wd",         type=float, default=1e-4)
     ap.add_argument("--max_train",  type=int,   default=None,
                     help="Cap training cases per epoch (for quick tests)")
+    ap.add_argument("--multistable_weight", type=float, default=3.0,
+                    help="Loss multiplier for SCCs with k_gt>=3 (multistable). "
+                         "Default 3.0 — these are 62%% of errors.")
     ap.add_argument("--no_cuda",    action="store_true")
     ap.add_argument("--seed",       type=int,   default=42)
     args = ap.parse_args()
@@ -552,7 +562,8 @@ def main():
         l1_model.train()
         l3_model.forcing_count_head.train()
         train_m = run_epoch(train_cases, train_dags, l1_model, l3_model, device,
-                            optimizer=optimizer, max_cases=args.max_train)
+                            optimizer=optimizer, max_cases=args.max_train,
+                            multistable_weight=args.multistable_weight)
 
         l1_model.eval()
         l3_model.forcing_count_head.eval()
