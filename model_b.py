@@ -214,6 +214,9 @@ class UOmega(nn.Module):
         # Pad pos to N_MAX along the gene dimension so portrait_raw_dim is constant
         from data import N_MAX as _N_MAX
         K_port = exist_logit.shape[1]
+        # Positions of padded genes are sigmoid outputs, not zeros; mask them so the portrait
+        # of an SCC does not depend on how far its batch is padded.
+        pos = pos * node_mask.unsqueeze(1).to(pos.dtype)
         if pos.shape[-1] < _N_MAX:
             pad = torch.zeros(B, K_port, _N_MAX - pos.shape[-1],
                               device=pos.device, dtype=pos.dtype)

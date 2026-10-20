@@ -137,8 +137,11 @@ class SetCriterion(nn.Module):
         a_stab = torch.gather(tgt_stab, 1, idx).clamp_min(0)
 
         # physics: ODE residual at the decoded position of every slot
+        # Forced samples (Corpus C) carry P_phys = P * u: the stored fixed points belong to
+        # the forced system, so the residual must be taken there, not at the unforced P.
         x_hat = decode_position(pos, xmax.unsqueeze(1))
-        res = hill_residual(x_hat, P, Kd, xmax, adj, T, nh, fold)
+        P_res = batch["P_phys"].float() if "P_phys" in batch else P
+        res = hill_residual(x_hat, P_res, Kd, xmax, adj, T, nh, fold)
         res_slot = (res.abs() * nm.unsqueeze(1)).sum(-1) / n_valid.unsqueeze(1)
 
         def slot_mean(per_node):
@@ -331,6 +334,8 @@ def batch_metrics(out, batch, aux, refine_steps=0):
         adj, T = batch["adj"], batch["T"].float()
         nh, fold = batch["nh"].float(), batch["F"].float()
         x = decode_position(out["pos"], xmax.unsqueeze(1))
+        if "P_phys" in batch:
+            P, xmax = batch["P_phys"].float(), batch["xmax_phys"].float()
         x = newton_refine(x, P, Kd, xmax, adj, T, nh, fold, node_mask, refine_steps)
         res = hill_residual(x, P, Kd, xmax, adj, T, nh, fold).abs() * nm.unsqueeze(1)
         converged = res.max(dim=-1).values < 1e-6
@@ -434,7 +439,8 @@ def label_residual(batch):
     round-off mean the labels are true fixed points of the model being trained and that edge
     parameters are aligned with fixed points; large values flag corrupted parameters."""
     res = hill_residual(
-        batch["fp_state"].float().clamp_min(1e-30), batch["P"].float(), batch["K"].float(),
+        batch["fp_state"].float().clamp_min(1e-30), batch.get("P_phys", batch["P"]).float(),
+        batch["K"].float(),
         batch["xmax"].float(), batch["adj"], batch["T"].float(), batch["nh"].float(),
         batch["F"].float())
     valid = batch["fp_mask"].unsqueeze(-1) & batch["node_mask"].unsqueeze(1)

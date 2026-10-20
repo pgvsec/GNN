@@ -47,7 +47,7 @@ from dataclasses import asdict, dataclass, fields
 import numpy as np
 import torch
 
-from data_c import make_loader_c, describe_dataset_c
+from data_c import apply_frame, make_loader_c, describe_dataset_c
 from losses import (CalibrationTable, MetricAccumulator, SetCriterion,
                     batch_metrics)
 from model import SccFixedPointNet
@@ -106,6 +106,8 @@ class Config:
     n_u_layers:    int   = 2
     freeze_backbone: bool = True
     max_ports_c:   int   = 8                 # port slots for Corpus C
+    frame:         str   = "raw"             # input frame of forced branches: raw | forced
+                                             # (data_c.apply_frame; must match assembly)
 
     # matching / loss weights (same as Layer II defaults)
     cost_exist: float = 1.0
@@ -306,7 +308,7 @@ def evaluate_loader_c(model, criterion, loader, device, cfg):
     calib = CalibrationTable()
     loss_sum, n_batches = {}, 0
     for batch in loader:
-        batch = to_device(batch, device)
+        batch = apply_frame(to_device(batch, device), cfg.frame)
         with torch.no_grad(), autocast_ctx(cfg, device):
             out_cond, _out0 = model(batch, freeze_backbone=cfg.freeze_backbone)
         _, logs, aux = criterion(out_cond, batch)
@@ -417,7 +419,7 @@ def run_train(cfg):
         epoch_sum, n_epoch = {}, 0
 
         for it, batch in enumerate(train_loader):
-            batch = to_device(batch, device)
+            batch = apply_frame(to_device(batch, device), cfg.frame)
             if "phase" not in batch:
                 batch["phase"] = torch.zeros(batch["tc"].shape[0], dtype=torch.long, device=batch["tc"].device)
 

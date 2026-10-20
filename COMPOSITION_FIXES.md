@@ -1,0 +1,102 @@
+# Composition count fixes
+
+Status after the 2026-10-19 session: count_exact 66.6%, fp_hd 63.4% on composition_eval_v5,
+against targets of 75% / 86.5% / 81.06% (stable_acc). fp_hd is 94.2% on cases whose count
+is right, so the count is the bottleneck. This change fixes four defects on that path and
+replaces the count-head fine-tuning. None of it has been run on the real checkpoints yet;
+`run_composition_fix.slurm` does that in one job.
+
+## Defects found
+
+| # | Where | Defect | Effect on count |
+|---|-------|--------|-----------------|
+| 1 | `assemble.py` | The SCC batch never carried `tc`, so `ForcingAwareCountHead` read `tc = 1` (TC_NEG, "multistability impossible") for **every** forced SCC. `finetune_count_heads.py` did pass `tc`, so the fine-tuned head was trained on one input and evaluated on another. | Pushes forced branches toward k = 1: the dominant −2 error. Also explains why fine-tuning reported 82.6% val but 66.6% in the real pipeline on the same set. |
+| 2 | `assemble.py`, `model_b.py`, `model_c.py` | Layer III depended on how far a batch was padded. `UOmega` builds its portrait from the backbone `pos` of every gene slot, and padded slots hold `sigmoid(...)` values rather than zeros. `_forcing_stats` took a `max` over genes after zeroing padded entries, so a zero beat the negative values of weakly forced genes. Training collates trim each batch to its largest graph; the assembler padded every SCC to `N_MAX = 10`. | At inference L3 was conditioned on inputs it never saw in training. In a random-weight test model the count-head inputs of the same SCC differed by up to 5.6 (abs) between the two paddings; the size of the effect on the trained checkpoint is unknown until the ablation runs. |
+| 3 | `finetune_count_heads.py` | Every branch of a forced SCC was trained toward the **modal** count over its parent states, only the first parent's forcing was used, and the reported "val CE" multiplied per-SCC counts instead of using the sum formula. | A child that is bistable under one parent state and monostable under two was labelled k = 1 everywhere. That trains in the under-prediction. |
+| 4 | `losses.py` (L3 training) | The ODE-residual loss used the unforced `P` while the GT positions belong to `P * u`. | The physics term fought the position term on every forced branch. It does not affect the current checkpoint at inference; it matters on the next L3 retrain. |
+
+Also: `_model_is_degenerate` called `topk(k)` with k from L3's 33-way count head, which can exceed
+the slot count (crash). And the exact-solver fallback in `_infer_scc` is a non-ML path. It is now
+counted (`n_solver_fallback` in every eval) and can be turned off (`solver_fallback=0`).
+
+## Open question: L3 input frame
+
+L2 was trained on Corpus B with `P = P * u` (forcing absorbed into P). L3 was trained on
+Corpus C with the **unforced** `P` and forcing only through the ports (`data_c.load_branch`).
+The assembler fed `P * u` *and* the ports. Which frame suits the current L3 checkpoint is
+an empirical question, so it is an option (`InferenceOptions.l3_frame`) and the ablation
+reports both. Newton refinement always uses the physical `P * u`.
+
+A third option needs no L3 at all: under constant forcing a forced SCC *is* an autonomous
+SCC with production `P * u`, so L1 (trained on 111k+ Corpus A samples) can predict it
+directly (`forced_model=l1`). This is an exact reparametrisation of the input, not a heuristic.
+
+## What changed
+
+- `assemble.py`: `InferenceOptions` (`l3_frame`, `forced_model`, `pass_tc`, `solver_fallback`),
+  `thomas_class()`. `_make_scc_batch` trims to the SCC size and carries `tc`, `has_pos_fb`,
+  `P_phys`, `xmax_phys`. Refinement, residuals and dedup use the physical system.
+  `INFER_STATS` counts L1/L3 calls and solver fallbacks.
+- `model_b.py`, `model_c.py`: padded genes are masked out of the portrait and the forcing max.
+- `composition_labels.py` (new): exact per-branch labels from composition GT, plus
+  `enumerate_count()` (the sum formula on any DAG) as a self-check. The check reproduces the GT
+  count on 299/300 synthetic cases; the one miss is a GT gap. Branches with even counts or
+  contradictory contexts are flagged (`consistent=False`). About 1% of synthetic GT cases are
+  visibly incomplete; on those, count_exact penalises a correct model.
+- `composition_eval.py` (new): evaluates several inference variants in one run. It reports
+  count_exact, fp_hd and stable_acc (using `eval_composition2.py`'s own metric functions) on all
+  cases and on clean-GT cases, under/over counts, root-vs-forced error attribution, and solver
+  fallbacks.
+- `finetune_count_heads.py` (rewritten): exact per-branch labels. Batches come from the same
+  builder and frame as inference. The head inputs are cached once through forward hooks, and the
+  heads are trained on the cache with real minibatches. A sweep over loss weighting
+  (none/sqrt/linear/balanced) × learning rate picks the best configuration on a validation split
+  of the *training* dirs. The test dir is scored once at the end, so there is no selection on
+  test. Optional Corpus C branches (`--corpus_c_cache`); `--eval_assemble` reruns the full
+  pipeline before and after.
+- `data_c.py`, `losses.py`, `train_layer3.py`: `P_phys`/`xmax_phys` in the collate and
+  `apply_frame()`. Physics losses use `P_phys`. `train_layer3.py --frame raw|forced` selects
+  the input frame for a retrain.
+- `tests/test_composition_fixes.py`: regression tests (padding invariance, batch contents,
+  Corpus C path == assembly path, label self-check). The padding tests fail on the old model code.
+
+## How to run
+
+```bash
+mkdir -p /scratch/gilbreth/gupt1042/runs/comp_fix
+sbatch run_composition_fix.slurm
+```
+
+Steps (all paths overridable from the environment):
+1. Ablation of the existing checkpoints on composition_eval_v5 (`comp_fix/ablate_base/summary.json`).
+2. Four new composition training sets of 2000 cases (seeds 1001–1004), about 0.15 s per case.
+3. Count-head fine-tuning for the `forced`, `raw` and `l1` variants (`comp_fix/ft_*`).
+4. Pure-ML (no solver fallback) held-out numbers of each fine-tuned variant (`comp_fix/final_*`).
+
+Single runs:
+```bash
+python composition_eval.py --l1_ckpt L1 --l3_ckpt L3 --eval_dir DIR --out_dir OUT \
+    --variants tc:pass_tc=1 tc_raw:l3_frame=raw l1_forced:forced_model=l1
+python finetune_count_heads.py --l1_ckpt L1 --l3_ckpt L3 --train_dirs D1 D2 ... \
+    --test_dir composition_eval_v5 --out_dir OUT --l3_frame raw --eval_assemble
+python composition_eval.py ... --heads OUT/count_heads.pt --variants ft:l3_frame=raw
+```
+
+## Reading the results
+
+- `blame` splits count errors into root SCC (L1), forced SCC (L3) and both. The `tc` variants should
+  mostly shrink the forced share. If `root` dominates afterwards, the next lever is L1, starting
+  with `finetune_l1_on_corpusA.py`.
+- `clean CE` is count_exact on cases whose GT passes the consistency check. The gap to plain
+  count_exact is error that no model can remove.
+- fp_hd should follow count_exact (94.2% when the count is right).
+- Report the `*_nofb` numbers: they are the pure-ML ones.
+
+## If still below target
+
+1. Retrain L3 (`train_layer3.py`) with the physics fix and the frame that wins the ablation,
+   with `w_count_kscale > 0`. The padding fix also removes a train-time artifact (mixed-size
+   batches fed garbage positions into the portrait).
+2. Unfreeze L1's decoder and exist head on Corpus A with k-weighted count loss
+   (`finetune_l1_on_corpusA.py` currently trains only the count head).
+3. Generate more composition training data. It is cheap, and it matches the test distribution.

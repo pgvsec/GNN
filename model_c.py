@@ -184,7 +184,9 @@ def _forcing_stats(u, n, node_mask):
     log_u_abs = (u - 1.0).abs().clamp_min(1e-9).log().clamp(-10.0, 10.0)  # [B, N]
     log_u_abs = log_u_abs * mask_f                    # zero out padding
 
-    u_max_log  = log_u_abs.max(dim=1).values          # [B]
+    # Padded genes must not win the max (a zero beats the negative values of weakly forced
+    # genes), or the feature would depend on how far the batch is padded.
+    u_max_log  = log_u_abs.masked_fill(~node_mask, -10.0).max(dim=1).values   # [B]
     u_mean_log = log_u_abs.sum(dim=1) / n_f           # [B]
 
     forced      = ((u - 1.0).abs() > 1e-5) & node_mask   # [B, N]
