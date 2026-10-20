@@ -29,12 +29,15 @@ N_EXTRA_SETS=${N_EXTRA_SETS:-4}          # extra composition training sets ...
 N_EXTRA_CASES=${N_EXTRA_CASES:-2000}     # ... of this many cases each
 OUT=${OUT:-$RUNS/comp_fix}
 
+# conda's activate/deactivate hooks read unset variables, so relax -u around them.
+set +u
 module --force purge
 module load external
 module load anaconda/2025.06-py313
 module load cuda
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate /home/gupt1042/.conda/envs/2025.06-py313/gnn
+set -u
 
 cd "$SLURM_SUBMIT_DIR"
 mkdir -p "$OUT"
