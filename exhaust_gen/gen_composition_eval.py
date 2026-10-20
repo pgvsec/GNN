@@ -216,6 +216,9 @@ def main():
     ap.add_argument("--n_cross",      type=int, default=2,
                     help="Number of cross-SCC edges to add (A→B only)")
     ap.add_argument("--seed",         type=int, default=42)
+    ap.add_argument("--split",        default="all", choices=["all", "train", "val", "test"],
+                    help="draw the 3-gene SCCs only from this Corpus A topology split "
+                         "(test: topologies no model was trained on)")
     ap.add_argument("--no_cuda",      action="store_true")
     args = ap.parse_args()
 
@@ -227,8 +230,10 @@ def main():
     C = load_corpus_cache(args.corpus_cache)
 
     # Collect all 3-gene sample indices (test split or all)
+    split_code = {"train": 1, "val": 2, "test": 3}.get(args.split)   # data.SPLIT_*
     three_gene_samples = [si for si in range(C["n_s"])
-                          if int(C["g_n"][int(C["s_graph"][si])]) == 3]
+                          if int(C["g_n"][int(C["s_graph"][si])]) == 3 and
+                          (split_code is None or int(C["g_split"][int(C["s_graph"][si])]) == split_code)]
     print(f"Found {len(three_gene_samples)} 3-gene samples in corpus")
     if len(three_gene_samples) < 2:
         print("Not enough 3-gene samples.")

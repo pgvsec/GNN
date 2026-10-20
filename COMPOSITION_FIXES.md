@@ -131,3 +131,25 @@ Changes:
 - `run_count_net.slurm`: post-processing ablation -> CountNet training -> held-out eval.
 - composition_eval reports `count_right` (fp_hd and stable_acc on count-correct cases). This
   tells whether stable_acc needs its own fix once the count is right.
+
+## Round 3: post-processing and CountNet results (composition_eval_v5)
+
+| variant (L1 on every SCC, no solver fallback) | count_exact | fp_hd | stable_acc |
+|---|---|---|---|
+| legacy post-processing | 66.6% | 68.1% | 72.8% |
+| **log-space dedup** | **81.2%** | **88.1%** | **83.4%** |
+| head-only count (pure ML) | 72.8% | 79.3% | 78.9% |
+| CountNet v1 + log dedup | 87.4% | 87.6% | 87.8% |
+| CountNet v1 + head-only | 93.0% | 87.0% | 92.3% |
+
+- The 2%-of-xmax dedup was the largest single defect (159 SCC calls lost points). Log-space
+  dedup changes no weights and clears all three targets on v5. The variant was chosen after
+  seeing v5, so it still needs a fresh test set.
+- **CountNet v1 is not yet trustworthy.** Its teacher-forced score is 78.7% on its validation
+  split but 96.0% on v5, while L1's is 74.1% vs 74.8% and CountNet's Corpus A accuracy did not
+  move. That pattern indicates v5 cases (or duplicates of them) in its training dirs.
+- `run_verify.slurm`: `check_overlap.py` measures the overlap. A strict test set is built from
+  Corpus A test-split topologies (`gen_composition_eval.py --split test`). CountNet v2 trains
+  only on train-split compositions. Everything is re-scored on the strict set and on v5.
+- Note: the log and legacy variants keep the residual "rescue" step (Newton polish). The
+  head-only rows are the strictly pure-ML count.
