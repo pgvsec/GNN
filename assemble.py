@@ -86,6 +86,9 @@ class InferenceOptions:
                 merges distinct low-expression points, e.g. 0.001 and 0.01 of xmax).
       "log":    merge only slots within 0.01 decades in every gene.
       "none":   keep every selected slot.
+      "fill":   keep exactly the count head's k, filled with distinct refined points (the
+                next-ranked slot replaces one that duplicates an earlier pick). Ignores rescue
+                and parity_drop.
     parity_drop
       Drop the weakest slot when the kept set has an even size.
     With rescue=False, dedup="none", parity_drop=False the count is exactly the count head's.
@@ -673,10 +676,31 @@ def _infer_scc(
             kept_indices.append(k)
             kept_positions.append(xk_n)
 
+    if opts.dedup == "fill":
+        # Count stays exactly the count head's k; the k slots are filled with distinct
+        # refined points, taking the next-ranked slot when one duplicates an earlier pick.
+        k_target = int(exist[0].sum().item())
+        xmax_n = xmax.squeeze(0)[:n].cpu().numpy()
+        cand = []
+        for k in slot_order:
+            xk = x_ref[0, k, :n].cpu().numpy()
+            cand.append((k, np.log10(np.clip(np.where(np.isfinite(xk), xk, xmax_n * 0.5), 1e-30, None))))
+        picked, dups = [], []
+        for k, lx in cand:
+            if len(picked) == k_target:
+                break
+            if any(np.max(np.abs(lx - ly)) < 0.01 for _, ly in picked):
+                dups.append((k, lx))
+            else:
+                picked.append((k, lx))
+        picked += dups[:k_target - len(picked)]   # too few distinct points: keep the count
+        kept_indices = [k for k, _ in picked]
+        kept_positions = [10.0 ** lx for _, lx in picked]
+
     # Enforce Poincaré-Hopf: each SCC must have an odd number of fixed points.
     # decode_slots already selects an odd k, but the rescue step can add one extra
     # slot (even parity). Drop the weakest slot (lowest exist_prob) until odd count.
-    if opts.parity_drop and len(kept_indices) % 2 == 0 and len(kept_indices) > 0:
+    if opts.parity_drop and opts.dedup != "fill" and len(kept_indices) % 2 == 0 and len(kept_indices) > 0:
         # Find the weakest slot among the kept ones and drop it
         weakest = min(kept_indices, key=lambda k: float(exist_prob[0, k].item()))
         wi = kept_indices.index(weakest)

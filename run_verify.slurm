@@ -83,5 +83,6 @@ for name in strict:$STRICT v5:$V5; do
     python composition_eval.py --l1_ckpt "$L1_CKPT" --l3_ckpt "$L3_CKPT" \
         --count_net "$OUT/count_net_v2/best.pt" --eval_dir "$dir" --out_dir "$OUT/verify_$tag" \
         --variants legacy:$L1F log:$L1F,dedup=log head:$L1F,$HEAD \
-                   cn_log:$L1F,dedup=log,count_net=1 cn_head:$L1F,$HEAD,count_net=1
+                   cn_log:$L1F,dedup=log,count_net=1 cn_head:$L1F,$HEAD,count_net=1 \
+                   fill:$L1F,dedup=fill cn_fill:$L1F,dedup=fill,count_net=1
 done

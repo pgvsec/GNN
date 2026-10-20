@@ -153,3 +153,8 @@ Changes:
   only on train-split compositions. Everything is re-scored on the strict set and on v5.
 - Note: the log and legacy variants keep the residual "rescue" step (Newton polish). The
   head-only rows are the strictly pure-ML count.
+
+`dedup=fill` (added after round 3): the count is exactly the count head's k, and the k slots are
+filled with distinct refined points. A slot that converges onto an earlier pick is replaced by the
+next-ranked one. Head-only lost fp_hd this way (90.3% on count-correct cases vs 95.3% with log
+dedup) without any change to the count. `cn_fill` is the candidate for >85% on all three metrics.
