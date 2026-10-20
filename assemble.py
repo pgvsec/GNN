@@ -79,15 +79,33 @@ class InferenceOptions:
     solver_fallback
       Call the exact numerical solver when the network output is degenerate. This is a
       non-ML path; INFER_STATS["solver_fallback"] counts how often it fires.
+    rescue
+      Add slots outside the predicted top-k whose Newton-refined residual is below 1e-6.
+    dedup
+      "linear": merge refined slots closer than 2% of xmax in every gene (historical; it also
+                merges distinct low-expression points, e.g. 0.001 and 0.01 of xmax).
+      "log":    merge only slots within 0.01 decades in every gene.
+      "none":   keep every selected slot.
+    parity_drop
+      Drop the weakest slot when the kept set has an even size.
+    With rescue=False, dedup="none", parity_drop=False the count is exactly the count head's.
+    count_model
+      Optional network whose count_logit replaces the count head of every Layer I call
+      (count_net.CountNet). Slots, positions and stability still come from Layer I.
     """
     l3_frame: str = "forced"
     forced_model: str = "l3"
     pass_tc: bool = True
     solver_fallback: bool = True
+    rescue: bool = True
+    dedup: str = "linear"
+    parity_drop: bool = True
+    count_model: Any = field(default=None, repr=False)
 
 
 # Counters for the last predictions (reset by the caller when needed).
-INFER_STATS: Dict[str, int] = {"solver_fallback": 0, "l1_calls": 0, "l3_calls": 0}
+INFER_STATS: Dict[str, int] = {"solver_fallback": 0, "l1_calls": 0, "l3_calls": 0,
+                               "post_up": 0, "post_down": 0}
 
 
 def thomas_class(adj_intra: np.ndarray) -> Tuple[int, bool]:
@@ -564,6 +582,9 @@ def _infer_scc(
     with torch.no_grad():
         if use_l1:
             out = l1_model(batch)
+            if opts.count_model is not None:
+                out = dict(out)
+                out["count_logit"] = opts.count_model(batch).float()
             INFER_STATS["l1_calls"] += 1
         else:
             out, _out0 = l3_model(batch, freeze_backbone=True)
@@ -612,7 +633,7 @@ def _infer_scc(
     max_res = (res_all.abs() * nm_res).max(dim=-1).values  # [1, K]
     _RESCUED_THRESH = 1e-6  # below this the slot is a genuine FP (tight: requires full Newton convergence)
     rescued = (max_res[0] < _RESCUED_THRESH)                         # [K] bool
-    exist_final = exist[0] | rescued                                  # [K] bool
+    exist_final = exist[0] | rescued if opts.rescue else exist[0].clone()   # [K] bool
 
     # Diagnostic: print count_logit distribution for this SCC
     if getattr(_infer_scc, "_verbose", False):
@@ -641,8 +662,12 @@ def _infer_scc(
         xk_n = np.where(np.isfinite(xk_n), xk_n, xmax_n * 0.5)
         is_dup = False
         for xj in kept_positions:
-            if np.max(np.abs(xk_n - xj) / (xmax_n + 1e-30)) < _DUP_TOL:
-                is_dup = True
+            if opts.dedup == "linear":
+                is_dup = np.max(np.abs(xk_n - xj) / (xmax_n + 1e-30)) < _DUP_TOL
+            elif opts.dedup == "log":
+                is_dup = np.max(np.abs(np.log10(np.clip(xk_n, 1e-30, None)) -
+                                       np.log10(np.clip(xj, 1e-30, None)))) < 0.01
+            if is_dup:
                 break
         if not is_dup:
             kept_indices.append(k)
@@ -651,12 +676,16 @@ def _infer_scc(
     # Enforce Poincaré-Hopf: each SCC must have an odd number of fixed points.
     # decode_slots already selects an odd k, but the rescue step can add one extra
     # slot (even parity). Drop the weakest slot (lowest exist_prob) until odd count.
-    if len(kept_indices) % 2 == 0 and len(kept_indices) > 0:
+    if opts.parity_drop and len(kept_indices) % 2 == 0 and len(kept_indices) > 0:
         # Find the weakest slot among the kept ones and drop it
         weakest = min(kept_indices, key=lambda k: float(exist_prob[0, k].item()))
         wi = kept_indices.index(weakest)
         kept_indices.pop(wi)
         kept_positions.pop(wi)
+
+    k_head = int(exist[0].sum().item())
+    INFER_STATS["post_up"] += int(len(kept_indices) > k_head)
+    INFER_STATS["post_down"] += int(len(kept_indices) < k_head)
 
     results = []
     for i, k in enumerate(kept_indices):

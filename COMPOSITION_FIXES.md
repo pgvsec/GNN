@@ -100,3 +100,34 @@ python composition_eval.py ... --heads OUT/count_heads.pt --variants ft:l3_frame
 2. Unfreeze L1's decoder and exist head on Corpus A with k-weighted count loss
    (`finetune_l1_on_corpusA.py` currently trains only the count head).
 3. Generate more composition training data. It is cheap, and it matches the test distribution.
+
+## Round 2: results of run_composition_fix.slurm (composition_eval_v5, 500 cases)
+
+| variant | count_exact | fp_hd | stable_acc |
+|---|---|---|---|
+| old (no tc) | 64.8% | 62.8% | 71.2% |
+| tc | 65.4% | 64.2% | 71.6% |
+| tc_raw | 64.8% | 64.8% | 71.6% |
+| l1_forced (no solver fallback) | **66.6%** | **68.1%** | **72.8%** |
+| fine-tuned heads, best variant | 66.6% | 68.1% | 72.8% |
+
+What the numbers say:
+- The inference fixes give +1.8 pp. Running L1 on forced SCCs (with P * u) beats L3.
+- Head fine-tuning on frozen features is saturated. For `l1_forced` the sweep kept the original
+  heads; per-branch accuracy stays near 78% for k = 3 and 54% for k = 5.
+- With counts taken from the head under true forcing, 74.7% of cases are exactly right. The
+  pipeline gets 67.4% on the same clean cases. fp_hd is ~94% when the count is right, so the ~7 pp
+  are lost in `_infer_scc` post-processing: linear dedup at 2% of xmax merges distinct
+  low-expression points, and the parity drop then removes another slot (3 -> 2 -> 1).
+
+Changes:
+- `InferenceOptions.rescue / dedup (linear|log|none) / parity_drop`. The pure-ML head-only count
+  is `rescue=0,dedup=none,parity_drop=0`. `INFER_STATS` counts post-processing count changes
+  (`post up/down` column).
+- `count_net.py`, `train_count_net.py`: CountNet is a Layer I copy with every weight trained for
+  the count (`SccFixedPointNet.count_detach = False`). It trains on Corpus A plus all composition
+  branches as autonomous SCCs with P * u, and is selected on the teacher-forced composition score.
+  At inference it only replaces `count_logit`; slots, positions and stability stay with Layer I.
+- `run_count_net.slurm`: post-processing ablation -> CountNet training -> held-out eval.
+- composition_eval reports `count_right` (fp_hd and stable_acc on count-correct cases). This
+  tells whether stable_acc needs its own fix once the count is right.

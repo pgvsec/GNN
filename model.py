@@ -379,6 +379,8 @@ class SccFixedPointNet(nn.Module):
         self.charpoly_head = MLP(2 * d, d, N_MAX)
         self.count_head = StructuralCountHead(d, cfg.max_fp, cfg.max_fp, cfg.dropout)
         self.stable_count_head = StructuralCountHead(d, cfg.max_fp, cfg.max_fp, cfg.dropout)
+        # False lets the count loss train the whole network (count_net.CountNet).
+        self.count_detach = True
 
     def forward(self, batch):
         node_mask = batch["node_mask"]
@@ -410,7 +412,8 @@ class SccFixedPointNet(nn.Module):
                 "pos": torch.sigmoid(self.pos_head(s, h)),
                 "charpoly": self.charpoly_head(torch.cat([s, gs], dim=-1)),
                 "count_logit": self.count_head(
-                    exist_logit.detach(), g.detach(), has_pos_fb),
+                    exist_logit.detach() if self.count_detach else exist_logit,
+                    g.detach() if self.count_detach else g, has_pos_fb),
                 "stable_count_logit": self.stable_count_head(
                     exist_logit.detach(), g.detach(), has_pos_fb),
                 # Intermediate embeddings exposed for Layer II / III

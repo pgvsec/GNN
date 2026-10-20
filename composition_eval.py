@@ -15,6 +15,8 @@ the root SCC, to a forced SCC, or to both, using the exact per-branch labels.
 
 Variants are given as name:key=value,... with keys from assemble.InferenceOptions:
   l3_frame=forced|raw  forced_model=l3|l1  pass_tc=0|1  solver_fallback=0|1
+  rescue=0|1  dedup=linear|log|none  parity_drop=0|1  count_net=0|1 (needs --count_net)
+  head-only count (pure ML): rescue=0,dedup=none,parity_drop=0
 
 Usage (from REPO_ROOT, on the cluster):
   python composition_eval.py \\
@@ -114,15 +116,20 @@ def attach_labels(cases):
     return cases
 
 
-def parse_variant(spec):
+def parse_variant(spec, count_net=None):
     name, _, kv = spec.partition(":")
     opts = InferenceOptions()
     for item in filter(None, kv.split(",")):
         k, v = item.split("=")
-        if k in ("pass_tc", "solver_fallback"):
+        if k in ("pass_tc", "solver_fallback", "rescue", "parity_drop"):
             setattr(opts, k, v.lower() in ("1", "true", "yes"))
-        elif k in ("l3_frame", "forced_model"):
+        elif k in ("l3_frame", "forced_model", "dedup"):
             setattr(opts, k, v)
+        elif k == "count_net":
+            if v.lower() in ("1", "true", "yes"):
+                if count_net is None:
+                    raise ValueError(f"variant {spec!r} needs --count_net")
+                opts.count_model = count_net
         else:
             raise ValueError(f"unknown option {k!r} in variant {spec!r}")
     return name, opts
@@ -230,7 +237,8 @@ def summarize(rows):
         return {"n": len(rs), "count_exact": ce, "fp_hd": hd,
                 "stable_acc": float(np.mean(sa)) if sa else float("nan")}
 
-    out = {"all": agg(rows), "gt_consistent": agg([r for r in rows if r["gt_consistent"]])}
+    out = {"all": agg(rows), "gt_consistent": agg([r for r in rows if r["gt_consistent"]]),
+           "count_right": agg([r for r in rows if r["count_exact"]])}
     wrong = [r for r in rows if not r["count_exact"]]
     out["blame"] = dict(Counter(r["blame"] for r in wrong))
     out["under"] = sum(r["n_fp_pred"] < r["n_fp_gt"] for r in wrong)
@@ -244,14 +252,14 @@ def summarize(rows):
 
 def print_table(results):
     print(f"\n{'variant':<18} {'count_exact':>11} {'fp_hd':>7} {'stable':>7} | "
-          f"{'clean CE':>8} {'clean hd':>8} | {'under':>5} {'over':>4}  blame (root/forced/both)  fallback")
+          f"{'clean CE':>8} {'clean hd':>8} | {'under':>5} {'over':>4}  blame r/f/b    fallback  post up/down")
     for name, m in results.items():
         a, g, b = m["all"], m["gt_consistent"], m["blame"]
         print(f"{name:<18} {a['count_exact']:>11.4f} {a['fp_hd']:>7.4f} {a['stable_acc']:>7.4f} | "
               f"{g.get('count_exact', float('nan')):>8.4f} {g.get('fp_hd', float('nan')):>8.4f} | "
               f"{m['under']:>5} {m['over']:>4}  "
-              f"{b.get('root', 0)}/{b.get('forced', 0)}/{b.get('both', 0)}"
-              f"{'':>17}{m['n_solver_fallback']}")
+              f"{b.get('root', 0):>4}/{b.get('forced', 0)}/{b.get('both', 0):<5} "
+              f"{m['n_solver_fallback']:>8}  {m['n_post_up']}/{m['n_post_down']}")
 
 
 def main():
@@ -259,6 +267,7 @@ def main():
     ap.add_argument("--l1_ckpt", required=True)
     ap.add_argument("--l3_ckpt", required=True)
     ap.add_argument("--heads", default=None, help="count_heads.pt from finetune_count_heads.py")
+    ap.add_argument("--count_net", default=None, help="best.pt from train_count_net.py (count_net=1)")
     ap.add_argument("--eval_dir", required=True)
     ap.add_argument("--out_dir", required=True)
     ap.add_argument("--variants", nargs="+", default=["default:"])
@@ -269,6 +278,10 @@ def main():
 
     device = torch.device("cpu" if args.no_cuda or not torch.cuda.is_available() else "cuda")
     l1, l3 = load_models(args.l1_ckpt, args.l3_ckpt, device, args.heads)
+    count_net = None
+    if args.count_net:
+        from count_net import load_count_net
+        count_net = load_count_net(args.count_net, device)
     cases = attach_labels(load_cases(args.eval_dir, args.max_cases))
     n_bad = sum(not c["gt_consistent"] for c in cases)
     print(f"{len(cases)} cases, {n_bad} with visibly incomplete GT ({n_bad / max(len(cases), 1):.1%})")
@@ -277,7 +290,7 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     results = {}
     for spec in args.variants:
-        name, opts = parse_variant(spec)
+        name, opts = parse_variant(spec, count_net)
         print(f"\n== {name}: {opts}", flush=True)
         m, rows = evaluate(l1, l3, cases, opts, device, args.refine_steps, verbose_every=100)
         results[name] = m
