@@ -158,3 +158,24 @@ Changes:
 filled with distinct refined points. A slot that converges onto an earlier pick is replaced by the
 next-ranked one. Head-only lost fp_hd this way (90.3% on count-correct cases vs 95.3% with log
 dedup) without any change to the count. `cn_fill` is the candidate for >85% on all three metrics.
+
+## Round 4: leak-free verification (run_verify.slurm)
+
+- **Leak confirmed:** composition_eval_v3, _v4 and _v5 are the same 500 cases. Every "v5 test"
+  number from a model trained on v3/v4 (count_ft_v2, CountNet v1) was scored on training data.
+- **CountNet does not generalise:** trained only on train-split compositions (v2), it never beat
+  the original L1, and validation fell from epoch 1. Dropped.
+- **Strict test set** (1000 cases, Corpus A test-split topologies, `composition_test_strict`):
+
+| variant (L1 on every SCC, no solver fallback) | count_exact | fp_hd | stable_acc |
+|---|---|---|---|
+| legacy | 69.4% | 66.6% | 73.4% |
+| log dedup | **81.7%** | **85.4%** | **84.3%** |
+| head-only count (pure ML) | 74.1% | 74.8% | 79.3% |
+
+On count-correct cases fp_hd is 95.0% and stable_acc 96.5%: the count is the only remaining gap.
+The log row keeps the Newton-verified rescue (model proposes slots, Newton confirms them).
+
+`run_tune.slurm`: tunes Newton steps per slot (`refine`) and the log dedup tolerance
+(`dedup_tol`) on composition_train_strict_s2001, selects by the worst metric, and scores only the
+selected setting on the strict set.

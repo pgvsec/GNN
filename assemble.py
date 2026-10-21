@@ -84,7 +84,7 @@ class InferenceOptions:
     dedup
       "linear": merge refined slots closer than 2% of xmax in every gene (historical; it also
                 merges distinct low-expression points, e.g. 0.001 and 0.01 of xmax).
-      "log":    merge only slots within 0.01 decades in every gene.
+      "log":    merge only slots within dedup_tol decades (default 0.01) in every gene.
       "none":   keep every selected slot.
       "fill":   keep exactly the count head's k, filled with distinct refined points (the
                 next-ranked slot replaces one that duplicates an earlier pick). Ignores rescue
@@ -92,6 +92,8 @@ class InferenceOptions:
     parity_drop
       Drop the weakest slot when the kept set has an even size.
     With rescue=False, dedup="none", parity_drop=False the count is exactly the count head's.
+    refine_steps
+      Newton steps per slot inside _infer_scc; None keeps the predictor's refine_steps.
     count_model
       Optional network whose count_logit replaces the count head of every Layer I call
       (count_net.CountNet). Slots, positions and stability still come from Layer I.
@@ -104,6 +106,8 @@ class InferenceOptions:
     dedup: str = "linear"
     parity_drop: bool = True
     count_model: Any = field(default=None, repr=False)
+    dedup_tol: float = 0.01
+    refine_steps: Optional[int] = None
 
 
 # Counters for the last predictions (reset by the caller when needed).
@@ -575,6 +579,8 @@ def _infer_scc(
     from model import decode_position, decode_slots, newton_refine
 
     opts = opts or InferenceOptions()
+    if opts.refine_steps is not None:
+        refine_steps = opts.refine_steps
     is_root = np.all(np.abs(u - 1.0) < U_FORCED_TOL)
     use_l1 = is_root or opts.forced_model == "l1"
     # L1 always sees the SCC as autonomous (with P_eff when forced); L3 sees opts.l3_frame.
@@ -669,7 +675,7 @@ def _infer_scc(
                 is_dup = np.max(np.abs(xk_n - xj) / (xmax_n + 1e-30)) < _DUP_TOL
             elif opts.dedup == "log":
                 is_dup = np.max(np.abs(np.log10(np.clip(xk_n, 1e-30, None)) -
-                                       np.log10(np.clip(xj, 1e-30, None)))) < 0.01
+                                       np.log10(np.clip(xj, 1e-30, None)))) < opts.dedup_tol
             if is_dup:
                 break
         if not is_dup:
@@ -689,7 +695,7 @@ def _infer_scc(
         for k, lx in cand:
             if len(picked) == k_target:
                 break
-            if any(np.max(np.abs(lx - ly)) < 0.01 for _, ly in picked):
+            if any(np.max(np.abs(lx - ly)) < opts.dedup_tol for _, ly in picked):
                 dups.append((k, lx))
             else:
                 picked.append((k, lx))

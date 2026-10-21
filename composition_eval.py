@@ -15,7 +15,7 @@ the root SCC, to a forced SCC, or to both, using the exact per-branch labels.
 
 Variants are given as name:key=value,... with keys from assemble.InferenceOptions:
   l3_frame=forced|raw  forced_model=l3|l1  pass_tc=0|1  solver_fallback=0|1
-  rescue=0|1  dedup=linear|log|none|fill  parity_drop=0|1  count_net=0|1 (needs --count_net)
+  rescue=0|1  dedup=linear|log|none|fill  dedup_tol=<decades>  refine=<Newton steps>  parity_drop=0|1  count_net=0|1 (needs --count_net)
   head-only count (pure ML): rescue=0,dedup=none,parity_drop=0
 
 Usage (from REPO_ROOT, on the cluster):
@@ -125,6 +125,10 @@ def parse_variant(spec, count_net=None):
             setattr(opts, k, v.lower() in ("1", "true", "yes"))
         elif k in ("l3_frame", "forced_model", "dedup"):
             setattr(opts, k, v)
+        elif k == "dedup_tol":
+            opts.dedup_tol = float(v)
+        elif k == "refine":
+            opts.refine_steps = int(v)
         elif k == "count_net":
             if v.lower() in ("1", "true", "yes"):
                 if count_net is None:
