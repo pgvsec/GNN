@@ -179,3 +179,18 @@ The log row keeps the Newton-verified rescue (model proposes slots, Newton confi
 `run_tune.slurm`: tunes Newton steps per slot (`refine`) and the log dedup tolerance
 (`dedup_tol`) on composition_train_strict_s2001, selects by the worst metric, and scores only the
 selected setting on the strict set.
+
+## Round 5: pure-ML improvement of the per-SCC predictor (run_l1_forced.slurm)
+
+The decomposition is exact (block-triangular Jacobian over the acyclic SCC graph), so composite
+accuracy is set by how well Layer I predicts one SCC under constant input. A forced SCC is an
+autonomous SCC with production P * u, and composition inputs push P * u up to ~2 decades outside
+the Corpus A range P in [0.01, 100].
+
+- `gen_forced_scc.py`: Corpus A train-split SCCs (n = 2..6) under composition-like input, solved
+  with the Corpus A solver. Full labels in data.load_sample format; residuals are verified ~1e-7.
+- `finetune_l1_forced.py`: Layer I fine-tuned on Corpus A + forced samples with its full
+  SetCriterion loss. Selection uses the teacher-forced composition score on a tuning set.
+- `diag_forcing_range.py`: branch accuracy binned by decades outside the Corpus A P range.
+- Headline numbers are network-only: count from the count head, no rescue (`pure`, and
+  `pure_nopolish` with no Newton step at all). `hybrid_log` is reported for reference only.
