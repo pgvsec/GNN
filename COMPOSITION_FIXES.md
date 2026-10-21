@@ -201,3 +201,19 @@ assemble.load_l3_model, and the original eval_composition2.py). Every earlier pi
 used L3's backbone for root SCCs, not the `--l1_ckpt` given. L3 now gets its own backbone copy,
 and the eval prints how far the two differ. Rows in run_l1_forced.slurm are the first to use
 the given Layer I.
+
+## Round 6: tuned hybrid pipeline (run_tune.slurm), strict test set
+
+Selected on composition_train_strict_s2001 by the worst metric (r50_t0.01: 85.0 / 90.2 / 87.0
+there), then scored once on composition_test_strict:
+
+| strict test | count_exact | fp_hd | stable_acc |
+|---|---|---|---|
+| log dedup, 5 Newton steps | 81.7% | 85.5% | 84.3% |
+| **50 Newton steps, dedup 0.01 decades** | **85.6%** | **88.4%** | **86.7%** |
+
+- This is the hybrid result: the network proposes slots and the count head picks k; the ODE
+  then verifies and rescues converged slots. The network-only count is ~74%.
+- It ran before the loader fix, so the Layer I weights were the backbone stored in layer3_v12.
+  `extract_backbone.py` writes that backbone as a standalone L1 checkpoint for reproduction.
+- Weak spots: true counts of 5 (67%), 7 (31%) and >= 17 (0%). Errors: root 71, forced 55, both 10.
