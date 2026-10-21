@@ -352,7 +352,28 @@ def collate_c(batch):
     K_full = out["K"].float()
     out["xmax"] = ((1.0 + EPS_BOX) * P_full / K_full * bound).to(torch.float32)
 
+    # The physical system of the branch: the fixed points in fp_state belong to P * u.
+    P_phys = P_full * out["u"].float()
+    out["P_phys"] = P_phys.to(torch.float32)
+    out["xmax_phys"] = ((1.0 + EPS_BOX) * P_phys / K_full * bound).to(torch.float32)
+
     return out
+
+
+def apply_frame(batch, frame):
+    """Select what the network sees for a forced branch (see assemble.InferenceOptions).
+
+    "raw":    unforced P and its box; forcing only through u (the stored layout).
+    "forced": P * u and its box, as in Corpus B / Layer II and the forced assembly frame.
+    Losses always use P_phys for physics, so both frames are self-consistent."""
+    if frame == "raw":
+        return batch
+    if frame != "forced":
+        raise ValueError(f"unknown frame {frame!r}")
+    batch = dict(batch)
+    batch["P"] = batch["P_phys"]
+    batch["xmax"] = batch["xmax_phys"]
+    return batch
 
 
 def make_loader_c(cfg, train, only_solved=False, max_samples=None):

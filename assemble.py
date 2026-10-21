@@ -55,6 +55,79 @@ U_FORCED_TOL = 1e-5
 # Max Newton steps in the post-assembly refinement
 NEWTON_STEPS = 30
 
+
+@dataclass
+class InferenceOptions:
+    """How a forced SCC is presented to the networks.
+
+    l3_frame
+      "forced": the model sees P_eff = P * u and the invariant box of P_eff, plus the ports
+                built from u. This is the Corpus B / Layer II frame and the historical
+                behaviour of this module.
+      "raw":    the model sees the unforced P and its box; forcing enters only through the
+                ports. This is the frame Layer III was trained in (data_c.load_branch stores
+                scc_P unforced and branch_u separately).
+      Newton refinement and residuals always use the physical system P_eff, whatever the frame.
+    forced_model
+      "l3": Layer III on forced SCCs (default).
+      "l1": Layer I on the forced SCC read as an autonomous SCC with P_eff. Constant forcing
+            only rescales production, so this is the same fixed-point problem.
+    pass_tc
+      Give Layer III the Thomas class of the SCC. Without it ForcingAwareCountHead falls back
+      to tc = 1 (TC_NEG, "multistability impossible") for every forced SCC. False only
+      reproduces the old behaviour for ablations.
+    solver_fallback
+      Call the exact numerical solver when the network output is degenerate. This is a
+      non-ML path; INFER_STATS["solver_fallback"] counts how often it fires.
+    rescue
+      Add slots outside the predicted top-k whose Newton-refined residual is below 1e-6.
+    dedup
+      "linear": merge refined slots closer than 2% of xmax in every gene (historical; it also
+                merges distinct low-expression points, e.g. 0.001 and 0.01 of xmax).
+      "log":    merge only slots within dedup_tol decades (default 0.01) in every gene.
+      "none":   keep every selected slot.
+      "fill":   keep exactly the count head's k, filled with distinct refined points (the
+                next-ranked slot replaces one that duplicates an earlier pick). Ignores rescue
+                and parity_drop.
+    parity_drop
+      Drop the weakest slot when the kept set has an even size.
+    With rescue=False, dedup="none", parity_drop=False the count is exactly the count head's.
+    refine_steps
+      Newton steps per slot inside _infer_scc; None keeps the predictor's refine_steps.
+    count_model
+      Optional network whose count_logit replaces the count head of every Layer I call
+      (count_net.CountNet). Slots, positions and stability still come from Layer I.
+    """
+    l3_frame: str = "forced"
+    forced_model: str = "l3"
+    pass_tc: bool = True
+    solver_fallback: bool = True
+    rescue: bool = True
+    dedup: str = "linear"
+    parity_drop: bool = True
+    count_model: Any = field(default=None, repr=False)
+    dedup_tol: float = 0.01
+    refine_steps: Optional[int] = None
+
+
+# Counters for the last predictions (reset by the caller when needed).
+INFER_STATS: Dict[str, int] = {"solver_fallback": 0, "l1_calls": 0, "l3_calls": 0,
+                               "post_up": 0, "post_down": 0}
+
+
+def thomas_class(adj_intra: np.ndarray) -> Tuple[int, bool]:
+    """(tc, has_pos_fb) of an SCC from its signed adjacency, with the same conventions as
+    topology.loop_class (1 = TC_NEG, 2 = TC_POS, 3 = TC_BOTH). The cycle search is capped;
+    when the cap is hit the SCC is treated as TC_BOTH, the least restrictive class."""
+    from topology import feedback_loops, loop_class
+    try:
+        fb = feedback_loops(adj_intra)
+    except Exception:
+        fb = None
+    if fb is None:
+        return 3, True
+    return loop_class(fb[0], fb[1]), bool(fb[0])
+
 # ---------------------------------------------------------------------------
 # 1. decompose_grn — Tarjan SCC decomposition + condensation DAG
 # ---------------------------------------------------------------------------
@@ -312,17 +385,25 @@ class BranchNode:
     children: Dict[int, List["BranchNode"]] = field(default_factory=dict)
 
 
-def _make_scc_batch(scc: SccNode, u: np.ndarray, device: torch.device) -> Dict[str, torch.Tensor]:
+def _make_scc_batch(scc: SccNode, u: np.ndarray, device: torch.device,
+                    frame: str = "forced", pad_to: Optional[int] = None) -> Dict[str, torch.Tensor]:
     """Build a single-sample batch dict for one SCC under a forcing vector u.
 
     u : [n_scc] forcing multipliers (1.0 = unforced, from parent SCC).
+    frame : "forced" (model sees P * u) or "raw" (model sees unforced P); see InferenceOptions.
     The batch is shaped [1, n_scc, ...] to match the model's expected [B, N, ...] format.
-    Genes are already in SCC-local coordinates.
-    """
-    from data import N_MAX
-    n = scc.n
+    Genes are already in SCC-local coordinates. Besides the model inputs it carries
+    P_phys / xmax_phys (the forced system, for Newton refinement), tc and has_pos_fb.
 
-    # Pad all arrays to N_MAX along the gene dimension
+    pad_to : gene dimension of the batch. Default n, which is what the training collates
+    produce for a one-sample batch (they trim to the largest graph in the batch). Layer III
+    reads the backbone positions of every gene slot, padded ones included, so padding a lone
+    SCC to N_MAX feeds it inputs it never saw in training.
+    """
+    n = scc.n
+    N_MAX = n if pad_to is None else max(int(pad_to), n)
+
+    # Pad all arrays to the batch gene dimension
     def pad2d(arr, fill=0.0):
         """[n, n] -> [N_MAX, N_MAX]"""
         out = np.full((N_MAX, N_MAX), fill, dtype=np.float32)
@@ -338,19 +419,30 @@ def _make_scc_batch(scc: SccNode, u: np.ndarray, device: torch.device) -> Dict[s
     def t(arr):
         return torch.as_tensor(arr, dtype=torch.float32, device=device).unsqueeze(0)
 
+    if frame not in ("forced", "raw"):
+        raise ValueError(f"unknown frame {frame!r}")
     P_eff = scc.P * u[:n]  # Apply forcing by multiplying production rates
-    xmax = np.maximum(P_eff / np.maximum(scc.K, 1e-6), 1e-6)
     F_full = scc.F.copy()
-    gain = np.where(scc.adj_intra != 0, np.maximum(F_full, 1.0), 1.0)
-    xmax_full = (1.05 * P_eff / np.maximum(scc.K, 1e-6) * gain.prod(axis=0))
-    xmax_full = np.maximum(xmax_full, 1e-6)
+    gain = np.where(scc.adj_intra != 0, np.maximum(F_full, 1.0), 1.0).prod(axis=0)
+
+    def box(P_):
+        return np.maximum(1.05 * P_ / np.maximum(scc.K, 1e-6) * gain, 1e-6)
+
+    xmax_phys = box(P_eff)
+    P_in = P_eff if frame == "forced" else scc.P
+    xmax_in = xmax_phys if frame == "forced" else box(scc.P)
 
     adj_signed = scc.adj_intra.astype(np.float32)
+    tc, has_pos = thomas_class(scc.adj_intra)
 
     batch = {
-        "P":        t(pad1d(P_eff, fill=1.0)),    # data.py:228 np.ones(N_MAX)
+        "P":        t(pad1d(P_in, fill=1.0)),     # data.py:228 np.ones(N_MAX)
         "K":        t(pad1d(scc.K, fill=1.0)),    # data.py:229 np.ones(N_MAX)
-        "xmax":     t(pad1d(xmax_full, fill=1.0)),  # data.py:230 np.ones(N_MAX)
+        "xmax":     t(pad1d(xmax_in, fill=1.0)),  # data.py:230 np.ones(N_MAX)
+        "P_phys":   t(pad1d(P_eff, fill=1.0)),
+        "xmax_phys": t(pad1d(xmax_phys, fill=1.0)),
+        "tc":       torch.tensor([tc], dtype=torch.long, device=device),
+        "has_pos_fb": torch.tensor([has_pos], dtype=torch.bool, device=device),
         "adj":      t(pad2d(adj_signed)),
         "T":        t(pad2d(scc.T, fill=1.0)),    # data.py:238 np.ones(N_MAX,N_MAX)
         "nh":       t(pad2d(scc.nh, fill=1.0)),   # data.py:239 np.ones(N_MAX,N_MAX)
@@ -460,7 +552,7 @@ def _model_is_degenerate(out) -> bool:
     # Predicted count k (odd-only argmax, identical to decode_slots)
     even = torch.arange(logits.shape[0], device=logits.device) % 2 == 0
     k = int(logits.masked_fill(even, float("-inf")).argmax().item())
-    k = max(k, 1)
+    k = min(max(k, 1), el.shape[0])   # L3's count head can exceed the slot count
     # The top-k most-positive exist_logits are the slots decode_slots returns.
     # If even the most confident of those is near zero, the model has no signal.
     topk_logits = el.topk(k).values   # [k] most positive
@@ -474,6 +566,7 @@ def _infer_scc(
     l3_model,
     device: torch.device,
     refine_steps: int = 5,
+    opts: Optional[InferenceOptions] = None,
 ) -> List[Tuple[np.ndarray, int, float]]:
     """Run the appropriate model on one SCC and return predicted FPs.
 
@@ -485,28 +578,31 @@ def _infer_scc(
     """
     from model import decode_position, decode_slots, newton_refine
 
+    opts = opts or InferenceOptions()
+    if opts.refine_steps is not None:
+        refine_steps = opts.refine_steps
     is_root = np.all(np.abs(u - 1.0) < U_FORCED_TOL)
-    batch = _make_scc_batch(scc, u, device)
-
-    # Compute has_pos_fb from intra-SCC signed adjacency and add to batch
-    # so StructuralCountHead can use the TC_NEG → k≤1 constraint.
-    try:
-        from topology import feedback_loops
-        fb = feedback_loops(scc.adj_intra)
-        has_pos = bool(fb[0]) if fb is not None else True
-    except Exception:
-        has_pos = True
-    batch["has_pos_fb"] = torch.tensor([has_pos], dtype=torch.bool, device=device)
+    use_l1 = is_root or opts.forced_model == "l1"
+    # L1 always sees the SCC as autonomous (with P_eff when forced); L3 sees opts.l3_frame.
+    batch = _make_scc_batch(scc, u, device, frame="forced" if use_l1 else opts.l3_frame)
+    if not use_l1 and not opts.pass_tc:
+        batch.pop("tc")
 
     with torch.no_grad():
-        if is_root:
+        if use_l1:
             out = l1_model(batch)
+            if opts.count_model is not None:
+                out = dict(out)
+                out["count_logit"] = opts.count_model(batch).float()
+            INFER_STATS["l1_calls"] += 1
         else:
             out, _out0 = l3_model(batch, freeze_backbone=True)
+            INFER_STATS["l3_calls"] += 1
 
     # If the model output is degenerate (all logits ≈ 0), fall back to the exact solver.
     # This happens for very small SCCs (n=1,2) that are outside the training distribution.
-    if _model_is_degenerate(out):
+    if opts.solver_fallback and _model_is_degenerate(out):
+        INFER_STATS["solver_fallback"] += 1
         if getattr(_infer_scc, "_verbose", False):
             print(f"    [SCC {scc.scc_id} n={scc.n}] degenerate model output → Newton fallback")
         return _solver_fallback_scc(scc, u, device)
@@ -514,16 +610,19 @@ def _infer_scc(
     node_mask = batch["node_mask"]
     nm = node_mask.float()
     n = scc.n
-    P   = batch["P"].float()
+    # Positions are decoded in the model's frame; refinement, residuals and deduplication
+    # use the physical (forced) system.
+    xmax_in = batch["xmax"].float()
+    P   = batch["P_phys"].float()
     Kd  = batch["K"].float()
-    xmax = batch["xmax"].float()
+    xmax = batch["xmax_phys"].float()
     adj  = batch["adj"]
     T_t  = batch["T"].float()
     nh_t = batch["nh"].float()
     F_t  = batch["F"].float()
 
     exist = decode_slots(out)                              # [1, K] bool
-    x_pred = decode_position(out["pos"].float(), xmax.unsqueeze(1))  # [1, K, N_MAX]
+    x_pred = decode_position(out["pos"].float(), xmax_in.unsqueeze(1))  # [1, K, N]
     # Newton refinement on ALL slots (not just the ones decode_slots keeps)
     x_ref = newton_refine(x_pred, P, Kd, xmax, adj, T_t, nh_t, F_t, node_mask, refine_steps)
 
@@ -538,12 +637,12 @@ def _infer_scc(
     # the count head suppressed it.  This recovers missed FPs in multi-stable
     # systems without biasing the count head toward over-prediction.
     from model import hill_residual as _hill_res
-    res_all = _hill_res(x_ref, P, Kd, xmax, adj, T_t, nh_t, F_t)  # [1, K, N_MAX]
+    res_all = _hill_res(x_ref, P, Kd, xmax, adj, T_t, nh_t, F_t)  # [1, K, N]
     nm_res = node_mask.float().unsqueeze(1)
     max_res = (res_all.abs() * nm_res).max(dim=-1).values  # [1, K]
     _RESCUED_THRESH = 1e-6  # below this the slot is a genuine FP (tight: requires full Newton convergence)
     rescued = (max_res[0] < _RESCUED_THRESH)                         # [K] bool
-    exist_final = exist[0] | rescued                                  # [K] bool
+    exist_final = exist[0] | rescued if opts.rescue else exist[0].clone()   # [K] bool
 
     # Diagnostic: print count_logit distribution for this SCC
     if getattr(_infer_scc, "_verbose", False):
@@ -572,22 +671,51 @@ def _infer_scc(
         xk_n = np.where(np.isfinite(xk_n), xk_n, xmax_n * 0.5)
         is_dup = False
         for xj in kept_positions:
-            if np.max(np.abs(xk_n - xj) / (xmax_n + 1e-30)) < _DUP_TOL:
-                is_dup = True
+            if opts.dedup == "linear":
+                is_dup = np.max(np.abs(xk_n - xj) / (xmax_n + 1e-30)) < _DUP_TOL
+            elif opts.dedup == "log":
+                is_dup = np.max(np.abs(np.log10(np.clip(xk_n, 1e-30, None)) -
+                                       np.log10(np.clip(xj, 1e-30, None)))) < opts.dedup_tol
+            if is_dup:
                 break
         if not is_dup:
             kept_indices.append(k)
             kept_positions.append(xk_n)
 
+    if opts.dedup == "fill":
+        # Count stays exactly the count head's k; the k slots are filled with distinct
+        # refined points, taking the next-ranked slot when one duplicates an earlier pick.
+        k_target = int(exist[0].sum().item())
+        xmax_n = xmax.squeeze(0)[:n].cpu().numpy()
+        cand = []
+        for k in slot_order:
+            xk = x_ref[0, k, :n].cpu().numpy()
+            cand.append((k, np.log10(np.clip(np.where(np.isfinite(xk), xk, xmax_n * 0.5), 1e-30, None))))
+        picked, dups = [], []
+        for k, lx in cand:
+            if len(picked) == k_target:
+                break
+            if any(np.max(np.abs(lx - ly)) < opts.dedup_tol for _, ly in picked):
+                dups.append((k, lx))
+            else:
+                picked.append((k, lx))
+        picked += dups[:k_target - len(picked)]   # too few distinct points: keep the count
+        kept_indices = [k for k, _ in picked]
+        kept_positions = [10.0 ** lx for _, lx in picked]
+
     # Enforce Poincaré-Hopf: each SCC must have an odd number of fixed points.
     # decode_slots already selects an odd k, but the rescue step can add one extra
     # slot (even parity). Drop the weakest slot (lowest exist_prob) until odd count.
-    if len(kept_indices) % 2 == 0 and len(kept_indices) > 0:
+    if opts.parity_drop and opts.dedup != "fill" and len(kept_indices) % 2 == 0 and len(kept_indices) > 0:
         # Find the weakest slot among the kept ones and drop it
         weakest = min(kept_indices, key=lambda k: float(exist_prob[0, k].item()))
         wi = kept_indices.index(weakest)
         kept_indices.pop(wi)
         kept_positions.pop(wi)
+
+    k_head = int(exist[0].sum().item())
+    INFER_STATS["post_up"] += int(len(kept_indices) > k_head)
+    INFER_STATS["post_down"] += int(len(kept_indices) < k_head)
 
     results = []
     for i, k in enumerate(kept_indices):
@@ -609,6 +737,7 @@ def run_inference(
     l3_model,                # CorpusCNet (Layer III)
     device: torch.device,
     refine_steps: int = 5,
+    opts: Optional[InferenceOptions] = None,
 ) -> Dict[int, List[BranchNode]]:
     """Walk the SCC DAG and run inference on each SCC.
 
@@ -636,7 +765,7 @@ def run_inference(
         if len(scc.parents) == 0:
             # Root SCC: no forcing
             u = np.ones(scc.n, dtype=np.float32)
-            fps = _infer_scc(scc, u, l1_model, l3_model, device, refine_steps)
+            fps = _infer_scc(scc, u, l1_model, l3_model, device, refine_steps, opts)
             for fp_idx, (x_local, stab, exist_prob) in enumerate(fps):
                 node = BranchNode(
                     scc_id=scc_id,
@@ -670,7 +799,7 @@ def run_inference(
                     # Multiply contributions (multiple parents multiply their Hills)
                     u *= u_contribution
 
-                fps = _infer_scc(scc, u, l1_model, l3_model, device, refine_steps)
+                fps = _infer_scc(scc, u, l1_model, l3_model, device, refine_steps, opts)
                 for fp_idx, (x_local, stab, exist_prob) in enumerate(fps):
                     node = BranchNode(
                         scc_id=scc_id,
@@ -972,7 +1101,9 @@ class GRNPredictor:
 
     def __init__(self, l1_model, l3_model, device: Optional[torch.device] = None,
                  refine_steps: int = 20, newton_steps: int = NEWTON_STEPS,
-                 newton_restarts: int = 3, tol: float = 1e-8):
+                 newton_restarts: int = 3, tol: float = 1e-8,
+                 opts: Optional[InferenceOptions] = None):
+        self.opts = opts or InferenceOptions()
         self.l1_model = l1_model
         self.l3_model = l3_model
         self.device = device or torch.device("cpu")
@@ -1027,7 +1158,7 @@ class GRNPredictor:
         all_branches = run_inference(
             dag, adj, T, nh, F,
             self.l1_model, self.l3_model,
-            self.device, self.refine_steps,
+            self.device, self.refine_steps, self.opts,
         )
         for scc_id, branches in all_branches.items():
             if verbose:
@@ -1095,9 +1226,11 @@ def load_l3_model(checkpoint_path: str, l1_model, device: torch.device):
     """Load a Layer III (CorpusCNet) checkpoint, wrapping the given L1 backbone."""
     from model_c import CorpusCNet
     from types import SimpleNamespace
+    import copy
     ck = torch.load(checkpoint_path, map_location=device, weights_only=False)
     cfg = SimpleNamespace(**ck["cfg"])
-    model = CorpusCNet(l1_model, cfg)
+    # Own backbone copy: the checkpoint's backbone.* weights must not overwrite l1_model.
+    model = CorpusCNet(copy.deepcopy(l1_model), cfg)
     weights = ck.get("ema", ck.get("model"))
     model.load_state_dict(weights)
     model.to(device)

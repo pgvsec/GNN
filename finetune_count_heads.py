@@ -1,611 +1,408 @@
-"""End-to-end fine-tuning of count heads on composition-level data.
+"""Fine-tune the count heads on exact per-branch labels from composition data.
 
-Only three small MLPs are updated:
-  - l1_model.count_head          (StructuralCountHead — root SCC standalone)
-  - l1_model.stable_count_head   (StructuralCountHead — root SCC stable count)
-  - l3_model.forcing_count_head  (ForcingAwareCountHead — forced SCC)
+What is trained
+  l1.count_head          (StructuralCountHead)    — root SCCs (and forced SCCs if --forced_model l1)
+  l3.forcing_count_head  (ForcingAwareCountHead)  — forced SCCs
+Everything else stays frozen and in eval mode.
 
-All backbone parameters remain frozen.  Gradients flow from the per-SCC
-count cross-entropy loss back through only these heads.
+How
+  1. Every composition case is decomposed into its SCC DAG and its GT fixed points are turned
+     into exact per-branch labels (composition_labels.extract_branch_labels): one label per
+     root SCC and one per (forced SCC, forcing context), each with its own count. Branches
+     whose GT is visibly incomplete (even count, contradictory contexts) are dropped.
+  2. Each branch is presented to the networks exactly as assemble.py presents it at
+     inference (same batch builder, same frame, same Thomas class), with the forcing computed
+     from the GT parent state. Forward hooks record the inputs of the count heads.
+  3. Because the backbone is frozen and the heads read detached features, the heads are then
+     trained on the cached inputs with ordinary minibatches. That makes a sweep over loss
+     weightings and learning rates cheap; the configuration with the best validation score is
+     kept.
+  4. Selection score = fraction of validation cases whose every branch count is right under
+     teacher-forced contexts. When every branch count is right the assembled global count is
+     right, so this is the composition count_exact without parent-position error.
 
-Per-SCC GT counts are extracted directly from the composition GT fixed points:
-  - Root SCCs: count unique FP patterns in that SCC's gene columns.
-  - Forced SCCs: for each unique parent-FP pattern, count unique child patterns;
-    target is the modal child count across all parent branches.
+Optionally Corpus C branches are added to the L3 training set (--corpus_c_cache), and the
+final heads are scored with the real assembly pipeline on the validation and test
+directories (--eval_assemble).
 
-This addresses the cascade under-prediction: L1 was trained on standalone
-SCCs and never learned that multistable root SCCs need k=3 in composition
-contexts.  End-to-end gradient signal teaches it to predict higher k.
+Outputs in --out_dir
+  count_heads.pt  head weights + options (use with composition_eval.py --heads)
+  l1_best.pt, l3_best.pt  full checkpoints in the layout eval_composition2.py loads
+  sweep.csv       validation score of every configuration
 
 Usage (from REPO_ROOT):
   python finetune_count_heads.py \\
-    --l1_ckpt  /path/to/layer1_v10/best.pt \\
-    --l3_ckpt  /path/to/layer3_v12/best.pt \\
-    --train_dirs /path/to/composition_eval_v3 /path/to/composition_eval_v4 \\
-    --val_dir    /path/to/composition_eval_v5 \\
-    --out_dir    /path/to/count_ft_v1 \\
-    --epochs 30 --lr 3e-4 --batch_size 64
+    --l1_ckpt /scratch/gilbreth/gupt1042/runs/layer1_v10/best.pt \\
+    --l3_ckpt /scratch/gilbreth/gupt1042/runs/layer3_v12/best.pt \\
+    --train_dirs .../composition_eval .../composition_eval_v3 .../composition_eval_v4 \\
+    --val_frac 0.15 --test_dir .../composition_eval_v5 \\
+    --out_dir .../count_ft_v3 --eval_assemble
 """
-
 from __future__ import annotations
 
 import argparse
+import copy
 import csv
-import math
+import itertools
+import json
 import random
 from pathlib import Path
-from types import SimpleNamespace
 
 import numpy as np
 import torch
 import torch.nn.functional as F
 
-# ---------------------------------------------------------------------------
-# 1. Model loading
-# ---------------------------------------------------------------------------
-
-def load_l1(path, device):
-    from model import SccFixedPointNet
-    ck = torch.load(path, map_location=device, weights_only=False)
-    cfg = SimpleNamespace(**ck["cfg"])
-    model = SccFixedPointNet(cfg)
-    model.load_state_dict(ck.get("ema", ck.get("model")))
-    model.to(device)
-    return model, cfg, ck["cfg"]
-
-
-def load_l3(path, l1_model, device):
-    from model_c import CorpusCNet
-    ck = torch.load(path, map_location=device, weights_only=False)
-    cfg = SimpleNamespace(**ck["cfg"])
-    model = CorpusCNet(l1_model, cfg)
-    model.load_state_dict(ck.get("ema", ck.get("model")), strict=False)
-    model.to(device)
-    return model, cfg, ck["cfg"]
-
-
-def freeze_all(model):
-    for p in model.parameters():
-        p.requires_grad_(False)
-
-
-def unfreeze_count_heads(l1_model, l3_model):
-    """Unfreeze only the three count head MLPs."""
-    for p in l1_model.count_head.parameters():
-        p.requires_grad_(True)
-    for p in l1_model.stable_count_head.parameters():
-        p.requires_grad_(True)
-    for p in l3_model.forcing_count_head.parameters():
-        p.requires_grad_(True)
+from assemble import InferenceOptions, _make_scc_batch
+from composition_eval import (apply_heads, attach_labels, evaluate, load_cases, load_models,
+                              print_table)
 
 
 # ---------------------------------------------------------------------------
-# 2. Dataset loading
+# 1. Feature extraction
 # ---------------------------------------------------------------------------
+class HeadInputs:
+    """Records the positional inputs of a module's forward through a hook."""
 
-def load_corpus(dirpath: Path):
-    d = dirpath
-    return {
-        "adj":      np.load(d / "adj.npy"),
-        "P":        np.load(d / "P.npy"),
-        "K":        np.load(d / "K.npy"),
-        "T":        np.load(d / "T.npy"),
-        "nh":       np.load(d / "nh.npy"),
-        "F":        np.load(d / "F.npy"),
-        "fp_ptr":   np.load(d / "fp_ptr.npy"),
-        "n_fp":     np.load(d / "n_fp.npy"),
-        "fp_state": np.load(d / "fp_state.npy"),
-        "fp_stab":  np.load(d / "fp_stab.npy"),
-    }
+    def __init__(self, module):
+        self.rows = []
+        self.handle = module.register_forward_hook(self._hook)
 
+    def _hook(self, module, args, output):
+        self.rows.append(tuple(a.detach().float().cpu() for a in args))
 
-def gather_cases(corpus_dirs):
-    """Merge multiple corpus directories into a flat list of case dicts."""
-    cases = []
-    for d in corpus_dirs:
-        corp = load_corpus(Path(d))
-        N = len(corp["adj"])
-        for i in range(N):
-            fp0 = int(corp["fp_ptr"][i])
-            fp1 = fp0 + int(corp["n_fp"][i])
-            cases.append({
-                "adj":      corp["adj"][i],
-                "P":        corp["P"][i].astype(np.float32),
-                "K":        corp["K"][i].astype(np.float32),
-                "T":        corp["T"][i].astype(np.float32),
-                "nh":       corp["nh"][i].astype(np.float32),
-                "F":        corp["F"][i].astype(np.float32),
-                "fp_state": corp["fp_state"][fp0:fp1].astype(np.float32),
-                "fp_stab":  corp["fp_stab"][fp0:fp1],
-                "n_fp_gt":  int(corp["n_fp"][i]),
-            })
-    return cases
+    def pop(self):
+        rows, self.rows = self.rows, []
+        return rows
+
+    def close(self):
+        self.handle.remove()
 
 
-# ---------------------------------------------------------------------------
-# 3. Per-SCC GT count extraction
-# ---------------------------------------------------------------------------
+class FeatureSet:
+    """Cached head inputs with labels, for one head."""
 
-def _unique_rows(arr: np.ndarray, rtol: float = 0.02) -> int:
-    """Count unique rows in arr [n_fp, n_genes] using relative tolerance."""
-    if arr.shape[0] == 0:
-        return 0
-    rounded = np.round(arr / (np.abs(arr).max(axis=0, keepdims=True) + 1e-30) / rtol) * rtol
-    return len(np.unique(rounded, axis=0))
+    def __init__(self):
+        self.inputs = []      # list of tuples of [1, ...] tensors (or [B, ...] for Corpus C)
+        self.k = []
+        self.case = []        # case index (-1 for Corpus C samples)
+
+    def add(self, inputs, k, case):
+        self.inputs.append(inputs)
+        self.k.extend(k)
+        self.case.extend(case)
+
+    def tensors(self):
+        if not self.inputs:
+            return None
+        cols = [torch.cat([row[i].reshape(row[i].shape[0], -1) if row[i].dim() > 1
+                           else row[i].reshape(-1, 1) for row in self.inputs], 0)
+                for i in range(len(self.inputs[0]))]
+        return cols, torch.tensor(self.k, dtype=torch.long), torch.tensor(self.case, dtype=torch.long)
 
 
-def extract_scc_gt_counts(dag, fp_state: np.ndarray):
-    """
-    For each SCC, return the GT FP count as seen from composition GT data.
+def _head_args(cols, idx, kind):
+    """Reassemble head forward arguments from cached columns."""
+    if kind == "l1":
+        e, g, pf = (c[idx] for c in cols)
+        return e, g, pf.reshape(-1)
+    e, z, us, tc = (c[idx] for c in cols)
+    return e, z, us, tc
 
-    Root SCCs:
-      k = number of unique patterns in fp_state[:, scc.genes]
 
-    Forced SCCs:
-      Group GT FPs by which root-SCC pattern they belong to, then count
-      unique child patterns per group.  Target = modal count across groups.
+@torch.no_grad()
+def extract_composition(cases, l1, l3, opts, device, hooks, sets):
+    """Run every labelled branch of every case through the model inference would use."""
+    for ci, c in enumerate(cases):
+        for scc in c["dag"].sccs:
+            for br in c["labels"][scc.scc_id]:
+                if not br.consistent:
+                    continue
+                use_l1 = br.is_root or opts.forced_model == "l1"
+                frame = "forced" if use_l1 else opts.l3_frame
+                batch = _make_scc_batch(scc, br.u, device, frame=frame)
+                if not use_l1 and not opts.pass_tc:
+                    batch.pop("tc")
+                # An L3 forward also runs L1's heads, so clear both hooks around every call.
+                hooks["l1"].pop()
+                hooks["l3"].pop()
+                if use_l1:
+                    l1(batch)
+                    sets["l1"].add(hooks["l1"].pop()[0], [br.k], [ci])
+                else:
+                    l3(batch, freeze_backbone=True)
+                    sets["l3"].add(hooks["l3"].pop()[0], [br.k], [ci])
 
-    Returns dict: scc_id -> (gt_k: int, gt_fps_per_group: list[np.ndarray])
-    where gt_fps_per_group is a list of x_local arrays for each distinct
-    forcing context (used later to build GT forcing batches for L3).
-    """
-    result = {}
 
-    # Process in topological order (roots first)
-    for scc in dag.sccs:
-        genes = scc.genes
-        scc_vals = fp_state[:, genes]   # [n_fp_gt, n_scc_genes]
-
-        if len(scc.parents) == 0:
-            # Root: all GT FPs seen from same (autonomous) context
-            k = _unique_rows(scc_vals)
-            # Cluster GT FPs into k groups
-            fps = _cluster_unique(scc_vals)
-            result[scc.scc_id] = (k, [fp for fp in fps])
+@torch.no_grad()
+def extract_corpus_c(cache_dir, max_samples, l1, l3, opts, device, hooks, sets, batch_size=256):
+    """Forced Corpus C branches through the same frame as inference."""
+    from torch.utils.data import DataLoader
+    from data_c import CorpusCDataset, apply_frame, collate_c
+    ds = CorpusCDataset(cache_dir, l1.decoder.queries.num_embeddings, max_samples=max_samples)
+    loader = DataLoader(ds, batch_size=batch_size, shuffle=False, collate_fn=collate_c,
+                        num_workers=4)
+    n = 0
+    for batch in loader:
+        forced = ~batch["is_root"]
+        if not forced.any():
+            continue
+        batch = {k: v[forced] if torch.is_tensor(v) and v.shape[:1] == forced.shape else v
+                 for k, v in batch.items()}
+        batch = {k: v.to(device) for k, v in batch.items()}
+        k = batch["k"].tolist()
+        hooks["l1"].pop()
+        hooks["l3"].pop()
+        if opts.forced_model == "l1":
+            l1(apply_frame(batch, "forced"))
+            sets["l1"].add(hooks["l1"].pop()[0], k, [-1] * len(k))
         else:
-            # Forced: group by parent FP combination
-            # Collect parent gene indices
-            parent_genes_list = []
-            for pid in scc.parents:
-                parent_genes_list.extend(dag.sccs[pid].genes)
-            parent_genes = sorted(set(parent_genes_list))
+            b = apply_frame(batch, opts.l3_frame)
+            if not opts.pass_tc:
+                b = {kk: vv for kk, vv in b.items() if kk != "tc"}
+            l3(b, freeze_backbone=True)
+            sets["l3"].add(hooks["l3"].pop()[0], k, [-1] * len(k))
+        n += len(k)
+    return n
 
-            if len(parent_genes) == 0 or fp_state.shape[0] == 0:
-                result[scc.scc_id] = (1, [scc_vals[0]] if fp_state.shape[0] > 0 else [])
+
+# ---------------------------------------------------------------------------
+# 2. Head training on cached features
+# ---------------------------------------------------------------------------
+def odd_logits(logits):
+    even = torch.arange(logits.shape[-1], device=logits.device) % 2 == 0
+    return logits.masked_fill(even, float("-inf"))
+
+
+def clamp_odd(k, max_count):
+    k = k.clamp(1, max_count)
+    return torch.where(k % 2 == 0, (k - 1).clamp_min(1), k)
+
+
+def sample_weights(k, scheme, cap=10.0):
+    k = k.float()
+    if scheme == "none":
+        w = torch.ones_like(k)
+    elif scheme == "sqrt":
+        w = k.sqrt()
+    elif scheme == "linear":
+        w = k
+    elif scheme == "balanced":
+        vals, inv, cnt = torch.unique(k, return_inverse=True, return_counts=True)
+        w = (cnt.sum().float() / (cnt.float() * len(vals)))[inv]
+    else:
+        raise ValueError(scheme)
+    w = w.clamp(max=cap * w.min().clamp_min(1e-6))
+    return w / w.mean()
+
+
+def predict(head, kind, cols, device, bs=4096):
+    head.eval()
+    out = []
+    with torch.no_grad():
+        for s in range(0, cols[0].shape[0], bs):
+            idx = torch.arange(s, min(s + bs, cols[0].shape[0]))
+            args = [a.to(device) for a in _head_args(cols, idx, kind)]
+            out.append(odd_logits(head(*args).float()).argmax(-1).cpu())
+    return torch.cat(out) if out else torch.zeros(0, dtype=torch.long)
+
+
+def train_head(head, kind, cols, k, w, device, epochs, lr, wd, bs, seed):
+    torch.manual_seed(seed)
+    head = copy.deepcopy(head).to(device)
+    for p in head.parameters():
+        p.requires_grad_(True)
+    opt = torch.optim.AdamW(head.parameters(), lr=lr, weight_decay=wd)
+    n = k.shape[0]
+    steps = max(1, epochs * ((n + bs - 1) // bs))
+    sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=lr, total_steps=steps)
+    for _ in range(epochs):
+        head.train()
+        perm = torch.randperm(n)
+        for s in range(0, n, bs):
+            idx = perm[s:s + bs]
+            args = [a.to(device) for a in _head_args(cols, idx, kind)]
+            logits = odd_logits(head(*args).float())
+            tgt = clamp_odd(k[idx].to(device), logits.shape[-1] - 1)
+            loss = (F.cross_entropy(logits, tgt, reduction="none") * w[idx].to(device)).mean()
+            opt.zero_grad(set_to_none=True)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(head.parameters(), 1.0)
+            opt.step()
+            sched.step()
+    return head.eval()
+
+
+def case_score(preds, case_ids_eval):
+    """Fraction of cases whose every branch prediction is right, plus per-k branch accuracy."""
+    ok = {c: True for c in case_ids_eval}
+    by_k = {}
+    for kind in ("l1", "l3"):
+        if preds.get(kind) is None:
+            continue
+        p, k, case = preds[kind]
+        for pi, ki, ci in zip(p.tolist(), k.tolist(), case.tolist()):
+            if ci not in ok:
                 continue
-
-            # Cluster GT FPs by parent pattern
-            parent_vals = fp_state[:, parent_genes]  # [n_fp, n_parent_genes]
-            groups = _group_by_pattern(parent_vals, scc_vals)
-
-            # Count unique child patterns per group
-            child_counts = [_unique_rows(g) for g in groups if len(g) > 0]
-            if not child_counts:
-                result[scc.scc_id] = (1, [])
-                continue
-            # Modal count (most common) as the training target
-            from collections import Counter
-            modal_k = Counter(child_counts).most_common(1)[0][0]
-            # Collect one representative GT FP per group (first unique)
-            rep_fps = []
-            for g in groups:
-                if len(g) > 0:
-                    rep_fps.append(_cluster_unique(g)[0])
-            result[scc.scc_id] = (modal_k, rep_fps)
-
-    return result
-
-
-def _cluster_unique(arr: np.ndarray, rtol: float = 0.02) -> list:
-    """Return list of representative rows, one per unique cluster."""
-    if arr.shape[0] == 0:
-        return []
-    scale = np.abs(arr).max(axis=0, keepdims=True) + 1e-30
-    rounded = np.round(arr / scale / rtol) * rtol
-    seen = set()
-    reps = []
-    for i, row in enumerate(rounded):
-        key = tuple(row.tolist())
-        if key not in seen:
-            seen.add(key)
-            reps.append(arr[i])
-    return reps
-
-
-def _group_by_pattern(parent_vals: np.ndarray, child_vals: np.ndarray,
-                       rtol: float = 0.05) -> list:
-    """Group child_vals rows by their corresponding parent_vals pattern."""
-    scale = np.abs(parent_vals).max(axis=0, keepdims=True) + 1e-30
-    rounded = np.round(parent_vals / scale / rtol) * rtol
-    groups: dict = {}
-    for i, row in enumerate(rounded):
-        key = tuple(row.tolist())
-        if key not in groups:
-            groups[key] = []
-        groups[key].append(child_vals[i])
-    return [np.stack(v) for v in groups.values()]
+            hit = pi == ki
+            ok[ci] &= hit
+            a = by_k.setdefault(f"{kind}_k{ki}", [0, 0])
+            a[0] += hit
+            a[1] += 1
+    score = float(np.mean(list(ok.values()))) if ok else float("nan")
+    return score, {key: (v[0] / v[1], v[1]) for key, v in sorted(by_k.items())}
 
 
 # ---------------------------------------------------------------------------
-# 4. Batch construction helpers
+# 3. Main
 # ---------------------------------------------------------------------------
-
-def _make_l1_batch(scc, device):
-    """Build a single-sample batch for L1 (autonomous, u=ones), with has_pos_fb."""
-    from topology import feedback_loops
-    from assemble import _make_scc_batch
-    u = np.ones(scc.n, dtype=np.float32)
-    batch = _make_scc_batch(scc, u, device)
-    try:
-        fb = feedback_loops(scc.adj_intra)
-        has_pos = bool(fb[0]) if fb is not None else True
-    except Exception:
-        has_pos = True
-    batch["has_pos_fb"] = torch.tensor([has_pos], dtype=torch.bool, device=device)
-    return batch
-
-
-def _make_l3_batch(scc, parent_x_local: np.ndarray, parent_scc_id: int,
-                   dag, global_T: np.ndarray, global_nh: np.ndarray,
-                   global_F: np.ndarray, global_adj: np.ndarray, device):
-    """Build a single-sample batch for L3 with GT forcing from a parent FP."""
-    from assemble import _make_scc_batch, _compute_forcing
-    from topology import feedback_loops
-    u = _compute_forcing(dag, parent_scc_id, scc.scc_id,
-                         parent_x_local, global_adj, global_T, global_nh, global_F)
-    batch = _make_scc_batch(scc, u, device)
-    # tc for forced SCCs (needed by ForcingAwareCountHead)
-    try:
-        fb = feedback_loops(scc.adj_intra)
-        if fb is None:
-            tc = 3
-        elif fb[0] and fb[1]:
-            tc = 3
-        elif fb[0]:
-            tc = 2
-        else:
-            tc = 1
-    except Exception:
-        tc = 3
-    batch["tc"] = torch.tensor([tc], dtype=torch.long, device=device)
-    batch["has_pos_fb"] = torch.tensor([fb[0] if fb is not None else True],
-                                        dtype=torch.bool, device=device)
-    return batch
-
-
-# ---------------------------------------------------------------------------
-# 5. Per-case loss computation
-# ---------------------------------------------------------------------------
-
-def _odd_ce_loss(count_logit: torch.Tensor, k_gt: int, max_count: int) -> torch.Tensor:
-    """Cross-entropy over odd k values only. k_gt must be a positive integer."""
-    # Mask even indices to -inf so softmax ignores them
-    even = torch.arange(count_logit.shape[-1], device=count_logit.device) % 2 == 0
-    logit = count_logit.clone()
-    logit[..., even] = float("-inf")
-    # Clamp k_gt to valid range
-    k_clamped = min(k_gt, max_count)
-    if k_clamped % 2 == 0:
-        k_clamped = min(k_clamped + 1, max_count)
-    target = torch.tensor([k_clamped], dtype=torch.long, device=count_logit.device)
-    return F.cross_entropy(logit.unsqueeze(0) if logit.dim() == 1 else logit, target)
-
-
-def compute_case_loss(case, dag, l1_model, l3_model, device, scc_gt_counts,
-                      multistable_weight: float = 1.0):
-    """
-    Compute count head loss for one composition case.
-
-    multistable_weight: multiplier on loss for SCCs where k_gt >= 3 (the
-    primary failure mode — L1 predicts k=1 for multistable SCCs).
-
-    Returns scalar loss tensor and a dict of per-SCC predictions for metrics.
-    """
-    total_loss = torch.tensor(0.0, device=device)
-    n_terms = 0
-    pred_counts = {}
-
-    for scc in dag.sccs:
-        scc_id = scc.scc_id
-        if scc_id not in scc_gt_counts:
-            continue
-        gt_k, gt_fps = scc_gt_counts[scc_id]
-
-        if len(scc.parents) == 0:
-            # Root SCC: use L1
-            batch = _make_l1_batch(scc, device)
-            out = l1_model(batch)
-            count_logit = out["count_logit"][0]   # [max_fp+1]
-            max_count = count_logit.shape[0] - 1
-            loss = _odd_ce_loss(count_logit, gt_k, max_count)
-            # Weight proportional to k_gt: harder multistable cases get more
-            # gradient signal (k=1→1×, k=3→3×, k=5→5×, k=9→9×).
-            # multistable_weight scales the overall magnitude; set to 1.0 to
-            # use raw k_gt proportional weighting.
-            w = multistable_weight * max(1, gt_k) / 3.0
-            total_loss = total_loss + w * loss
-            n_terms += 1
-            # Predicted k for metrics
-            even = torch.arange(count_logit.shape[0]) % 2 == 0
-            cl = count_logit.detach().clone()
-            cl[even] = float("-inf")
-            pred_counts[scc_id] = int(cl.argmax().item())
-        else:
-            # Forced SCC: use L3 with GT forcing from each parent branch
-            # Use first parent in topological order
-            pid = scc.parents[0]
-            parent_fps = scc_gt_counts.get(pid, (1, []))
-            _, parent_gt_fps = parent_fps
-
-            if not parent_gt_fps:
-                continue
-
-            for parent_x in parent_gt_fps:
-                batch = _make_l3_batch(scc, parent_x, pid, dag,
-                                       case["T"], case["nh"], case["F"], case["adj"],
-                                       device)
-                out_cond, _ = l3_model(batch, freeze_backbone=True)
-                count_logit = out_cond["count_logit"][0]
-                max_count = count_logit.shape[0] - 1
-                loss = _odd_ce_loss(count_logit, gt_k, max_count)
-                total_loss = total_loss + loss
-                n_terms += 1
-
-            # Metrics: use first parent FP for prediction
-            if parent_gt_fps:
-                batch = _make_l3_batch(scc, parent_gt_fps[0], pid, dag,
-                                       case["T"], case["nh"], case["F"], case["adj"],
-                                       device)
-                with torch.no_grad():
-                    out_cond, _ = l3_model(batch, freeze_backbone=True)
-                count_logit = out_cond["count_logit"][0].detach()
-                even = torch.arange(count_logit.shape[0]) % 2 == 0
-                cl = count_logit.clone()
-                cl[even] = float("-inf")
-                pred_counts[scc_id] = int(cl.argmax().item())
-
-    if n_terms == 0:
-        return torch.tensor(0.0, device=device, requires_grad=False), pred_counts
-    return total_loss / n_terms, pred_counts
-
-
-# ---------------------------------------------------------------------------
-# 6. Epoch helpers
-# ---------------------------------------------------------------------------
-
-def run_epoch(cases, dag_cache, l1_model, l3_model, device,
-              optimizer=None, max_cases=None, multistable_weight=1.0):
-    """Run one training or validation epoch. Returns metrics dict."""
-    is_train = optimizer is not None
-
-    total_loss = 0.0
-    n_exact = 0
-    n_total = 0
-    errors = 0
-
-    indices = list(range(len(cases)))
-    if is_train:
-        random.shuffle(indices)
-    if max_cases is not None:
-        indices = indices[:max_cases]
-
-    for i in indices:
-        case = cases[i]
-        dag = dag_cache[i]
-        if dag is None:
-            continue
-
-        # Extract per-SCC GT counts
-        try:
-            scc_gt_counts = extract_scc_gt_counts(dag, case["fp_state"])
-        except Exception as e:
-            errors += 1
-            continue
-
-        try:
-            if is_train:
-                loss, pred_counts = compute_case_loss(
-                    case, dag, l1_model, l3_model, device, scc_gt_counts,
-                    multistable_weight=multistable_weight)
-                if loss.requires_grad:
-                    optimizer.zero_grad()
-                    loss.backward()
-                    torch.nn.utils.clip_grad_norm_(
-                        [p for p in list(l1_model.parameters()) +
-                         list(l3_model.forcing_count_head.parameters())
-                         if p.requires_grad], 1.0)
-                    optimizer.step()
-                total_loss += float(loss.item())
-            else:
-                with torch.no_grad():
-                    loss, pred_counts = compute_case_loss(
-                        case, dag, l1_model, l3_model, device, scc_gt_counts)
-                total_loss += float(loss.item())
-        except Exception as e:
-            errors += 1
-            continue
-
-        # Composition count_exact: predicted global count = product of SCC counts
-        pred_global = 1
-        for scc in dag.sccs:
-            pred_global *= pred_counts.get(scc.scc_id, 1)
-        n_exact += int(pred_global == case["n_fp_gt"])
-        n_total += 1
-
-    return {
-        "loss": total_loss / max(n_total, 1),
-        "count_exact": n_exact / max(n_total, 1),
-        "n": n_total,
-        "errors": errors,
-    }
-
-
-# ---------------------------------------------------------------------------
-# 7. DAG pre-computation (cache DAGs to avoid repeated decomposition)
-# ---------------------------------------------------------------------------
-
-def precompute_dags(cases):
-    from assemble import decompose_grn
-    dags = []
-    for c in cases:
-        try:
-            dag = decompose_grn(c["adj"], c["P"], c["K"], c["T"], c["nh"], c["F"])
-            dags.append(dag)
-        except Exception:
-            dags.append(None)
-    return dags
-
-
-# ---------------------------------------------------------------------------
-# 8. Checkpoint saving
-# ---------------------------------------------------------------------------
-
-def save_checkpoint(out_dir: Path, tag: str, l1_model, l3_model,
-                    l1_cfg_dict, l3_cfg_dict, metrics):
-    out_dir.mkdir(parents=True, exist_ok=True)
-    # Save L1 count heads
-    torch.save({
-        "cfg": l1_cfg_dict,
-        "model": l1_model.state_dict(),
-    }, out_dir / f"l1_{tag}.pt")
-    # Save L3 forcing_count_head only
-    torch.save({
-        "cfg": l3_cfg_dict,
-        "forcing_count_head": l3_model.forcing_count_head.state_dict(),
-        "metrics": metrics,
-    }, out_dir / f"l3_count_head_{tag}.pt")
-
-
-def save_best_full(out_dir: Path, l1_model, l3_model, l1_cfg_dict, l3_cfg_dict):
-    """Save full model state dicts for best checkpoint (to use in eval)."""
-    torch.save({"cfg": l1_cfg_dict, "model": l1_model.state_dict(),
-                "ema": l1_model.state_dict()},
-               out_dir / "l1_best.pt")
-    torch.save({"cfg": l3_cfg_dict, "model": l3_model.state_dict(),
-                "ema": l3_model.state_dict()},
-               out_dir / "l3_best.pt")
-
-
-# ---------------------------------------------------------------------------
-# 9. Main
-# ---------------------------------------------------------------------------
-
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--l1_ckpt",    required=True)
-    ap.add_argument("--l3_ckpt",    required=True)
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--l1_ckpt", required=True)
+    ap.add_argument("--l3_ckpt", required=True)
     ap.add_argument("--train_dirs", required=True, nargs="+")
-    ap.add_argument("--val_dir",    required=True)
-    ap.add_argument("--out_dir",    required=True)
-    ap.add_argument("--epochs",     type=int,   default=30)
-    ap.add_argument("--lr",         type=float, default=3e-4)
-    ap.add_argument("--wd",         type=float, default=1e-4)
-    ap.add_argument("--max_train",  type=int,   default=None,
-                    help="Cap training cases per epoch (for quick tests)")
-    ap.add_argument("--multistable_weight", type=float, default=3.0,
-                    help="Loss multiplier for SCCs with k_gt>=3 (multistable). "
-                         "Default 3.0 — these are 62%% of errors.")
-    ap.add_argument("--no_cuda",    action="store_true")
-    ap.add_argument("--seed",       type=int,   default=42)
+    ap.add_argument("--val_dir", default=None,
+                    help="validation set for selection; default: --val_frac of the train cases")
+    ap.add_argument("--val_frac", type=float, default=0.15)
+    ap.add_argument("--test_dir", default=None, help="held out; scored once at the end")
+    ap.add_argument("--out_dir", required=True)
+    ap.add_argument("--corpus_c_cache", default=None, help="add forced Corpus C branches to L3 training")
+    ap.add_argument("--corpus_c_max", type=int, default=100000)
+    # inference options, must match how the heads will be used
+    ap.add_argument("--l3_frame", default="forced", choices=["forced", "raw"])
+    ap.add_argument("--forced_model", default="l3", choices=["l3", "l1"])
+    ap.add_argument("--pass_tc", type=int, default=1)
+    # sweep
+    ap.add_argument("--k_weights", nargs="+", default=["none", "sqrt", "linear", "balanced"])
+    ap.add_argument("--lrs", nargs="+", type=float, default=[3e-4, 1e-3, 3e-3])
+    ap.add_argument("--epochs", type=int, default=60)
+    ap.add_argument("--batch_size", type=int, default=256)
+    ap.add_argument("--wd", type=float, default=1e-4)
+    ap.add_argument("--eval_assemble", action="store_true",
+                    help="score original and new heads with the full GRNPredictor at the end")
+    ap.add_argument("--no_cuda", action="store_true")
+    ap.add_argument("--seed", type=int, default=42)
     args = ap.parse_args()
 
     random.seed(args.seed)
-    torch.manual_seed(args.seed)
     np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    device = torch.device("cpu" if args.no_cuda or not torch.cuda.is_available() else "cuda")
+    opts = InferenceOptions(l3_frame=args.l3_frame, forced_model=args.forced_model,
+                            pass_tc=bool(args.pass_tc))
+    print(f"device {device}  options {opts}")
 
-    device = torch.device("cpu" if args.no_cuda or not torch.cuda.is_available()
-                          else "cuda")
-    print(f"Device: {device}")
+    l1, l3 = load_models(args.l1_ckpt, args.l3_ckpt, device)
+    for p in list(l1.parameters()) + list(l3.parameters()):
+        p.requires_grad_(False)
 
-    # Load models
-    print("Loading models...")
-    l1_model, l1_cfg, l1_cfg_dict = load_l1(args.l1_ckpt, device)
-    l3_model, l3_cfg, l3_cfg_dict = load_l3(args.l3_ckpt, l1_model, device)
+    # Data: train / val / test cases with exact branch labels
+    train_cases = []
+    for d in args.train_dirs:
+        train_cases += load_cases(d)
+    rng = np.random.default_rng(args.seed)
+    if args.val_dir:
+        val_cases = load_cases(args.val_dir)
+    else:
+        perm = rng.permutation(len(train_cases))
+        n_val = int(round(args.val_frac * len(train_cases)))
+        val_cases = [train_cases[i] for i in perm[:n_val]]
+        train_cases = [train_cases[i] for i in perm[n_val:]]
+    test_cases = load_cases(args.test_dir) if args.test_dir else []
+    for name, cs in (("train", train_cases), ("val", val_cases), ("test", test_cases)):
+        attach_labels(cs)
+        bad = sum(not c["gt_consistent"] for c in cs)
+        print(f"{name}: {len(cs)} cases ({bad} with incomplete GT)")
 
-    # Freeze everything, then unfreeze only count heads
-    freeze_all(l1_model)
-    freeze_all(l3_model)
-    unfreeze_count_heads(l1_model, l3_model)
+    # Features
+    hooks = {"l1": HeadInputs(l1.count_head), "l3": HeadInputs(l3.forcing_count_head)}
+    feats = {}
+    for name, cs in (("train", train_cases), ("val", val_cases), ("test", test_cases)):
+        sets = {"l1": FeatureSet(), "l3": FeatureSet()}
+        extract_composition(cs, l1, l3, opts, device, hooks, sets)
+        if name == "train" and args.corpus_c_cache:
+            n_c = extract_corpus_c(args.corpus_c_cache, args.corpus_c_max, l1, l3, opts,
+                                   device, hooks, sets)
+            print(f"  + {n_c} Corpus C forced branches")
+        feats[name] = {kind: s.tensors() for kind, s in sets.items()}
+        print(f"  {name} branches: " + ", ".join(
+            f"{kind}={0 if v is None else len(v[1])}" for kind, v in feats[name].items()))
+    for h in hooks.values():
+        h.close()
 
-    trainable = sum(p.numel() for p in list(l1_model.parameters()) +
-                    list(l3_model.parameters()) if p.requires_grad)
-    total     = sum(p.numel() for p in list(l1_model.parameters()) +
-                    list(l3_model.parameters()))
-    print(f"Trainable params: {trainable:,} / {total:,} ({100*trainable/total:.2f}%)")
+    def consistent_ids(cs):
+        return [i for i, c in enumerate(cs) if c["gt_consistent"]]
 
-    # Load data
-    print("Loading data...")
-    train_cases = gather_cases(args.train_dirs)
-    val_cases   = gather_cases([args.val_dir])
-    print(f"  Train: {len(train_cases)} cases | Val: {len(val_cases)} cases")
+    val_ids, test_ids = consistent_ids(val_cases), consistent_ids(test_cases)
+    heads0 = {"l1": l1.count_head, "l3": l3.forcing_count_head}
 
-    print("Pre-computing SCC DAGs...")
-    train_dags = precompute_dags(train_cases)
-    val_dags   = precompute_dags(val_cases)
+    def score(heads, split, ids):
+        preds = {}
+        for kind, v in feats[split].items():
+            if v is not None:
+                cols, k, case = v
+                preds[kind] = (predict(heads[kind], kind, cols, device), k, case)
+        return case_score(preds, ids)
 
-    # Optimizer: only trainable parameters
-    trainable_params = ([p for p in l1_model.parameters() if p.requires_grad] +
-                        [p for p in l3_model.forcing_count_head.parameters()])
-    optimizer = torch.optim.AdamW(trainable_params, lr=args.lr, weight_decay=args.wd)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=args.epochs, eta_min=args.lr * 0.01)
+    base_val, base_val_k = score(heads0, "val", val_ids)
+    print(f"\noriginal heads: val case score {base_val:.4f}")
+    print("  per-branch accuracy by k:", {k: f"{a:.3f} (n={n})" for k, (a, n) in base_val_k.items()})
 
-    out_dir = Path(args.out_dir)
-    log_path = out_dir / "log.csv"
-    out_dir.mkdir(parents=True, exist_ok=True)
+    # Sweep
+    out = Path(args.out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    rows, best = [], (base_val, "original", heads0)
+    for scheme, lr in itertools.product(args.k_weights, args.lrs):
+        heads = {}
+        for kind, v in feats["train"].items():
+            if v is None:
+                heads[kind] = heads0[kind]
+                continue
+            cols, k, _ = v
+            heads[kind] = train_head(heads0[kind], kind, cols, k, sample_weights(k, scheme),
+                                     device, args.epochs, lr, args.wd, args.batch_size, args.seed)
+        s, by_k = score(heads, "val", val_ids)
+        rows.append({"k_weight": scheme, "lr": lr, "val_case_score": s,
+                     **{k: round(a, 4) for k, (a, _) in by_k.items()}})
+        print(f"  {scheme:>8}  lr={lr:.0e}  val case score {s:.4f}")
+        if s > best[0]:
+            best = (s, f"{scheme}/lr={lr:g}", heads)
+    with open(out / "sweep.csv", "w", newline="") as f:
+        keys = sorted({k for r in rows for k in r}, key=lambda x: (x not in ("k_weight", "lr", "val_case_score"), x))
+        w = csv.DictWriter(f, fieldnames=keys)
+        w.writeheader()
+        w.writerows(rows)
 
-    best_val_ce = -1.0
-    log_rows = []
+    best_score, best_name, best_heads = best
+    print(f"\nbest: {best_name}  val case score {best_score:.4f} (original {base_val:.4f})")
+    if test_cases:
+        t0, _ = score(heads0, "test", test_ids)
+        t1, t1k = score(best_heads, "test", test_ids)
+        print(f"test case score: original {t0:.4f} -> {t1:.4f}")
+        print("  per-branch accuracy by k:", {k: f"{a:.3f} (n={n})" for k, (a, n) in t1k.items()})
 
-    print(f"\n{'Epoch':>6}  {'Train Loss':>10}  {'Train CE':>9}  "
-          f"{'Val Loss':>9}  {'Val CE':>8}  {'LR':>8}")
-    print("-" * 60)
+    # Save
+    state = {"l1_count_head": best_heads["l1"].state_dict(),
+             "l3_count_head": best_heads["l3"].state_dict(),
+             "opts": vars(opts), "selected": best_name, "val_case_score": best_score}
+    torch.save(state, out / "count_heads.pt")
+    l1_ck = torch.load(args.l1_ckpt, map_location="cpu", weights_only=False)
+    l3_ck = torch.load(args.l3_ckpt, map_location="cpu", weights_only=False)
+    apply_heads(l1, l3, state)
+    torch.save({"cfg": l1_ck["cfg"], "model": l1.state_dict(), "ema": l1.state_dict()}, out / "l1_best.pt")
+    torch.save({"cfg": l3_ck["cfg"], "model": l3.state_dict(), "ema": l3.state_dict()}, out / "l3_best.pt")
+    print(f"saved to {out}")
 
-    for epoch in range(1, args.epochs + 1):
-        l1_model.train()
-        l3_model.forcing_count_head.train()
-        train_m = run_epoch(train_cases, train_dags, l1_model, l3_model, device,
-                            optimizer=optimizer, max_cases=args.max_train,
-                            multistable_weight=args.multistable_weight)
-
-        l1_model.eval()
-        l3_model.forcing_count_head.eval()
-        val_m = run_epoch(val_cases, val_dags, l1_model, l3_model, device)
-
-        lr_now = scheduler.get_last_lr()[0] if hasattr(scheduler, "get_last_lr") else args.lr
-        scheduler.step()
-
-        print(f"{epoch:>6}  {train_m['loss']:>10.4f}  "
-              f"{train_m['count_exact']:>9.4f}  "
-              f"{val_m['loss']:>9.4f}  "
-              f"{val_m['count_exact']:>8.4f}  "
-              f"{lr_now:>8.2e}")
-
-        log_rows.append({
-            "epoch": epoch,
-            "train_loss": train_m["loss"],
-            "train_ce": train_m["count_exact"],
-            "val_loss": val_m["loss"],
-            "val_ce": val_m["count_exact"],
-            "lr": lr_now,
-        })
-        with open(log_path, "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=list(log_rows[0].keys()))
-            writer.writeheader()
-            writer.writerows(log_rows)
-
-        if val_m["count_exact"] > best_val_ce:
-            best_val_ce = val_m["count_exact"]
-            save_best_full(out_dir, l1_model, l3_model, l1_cfg_dict, l3_cfg_dict)
-            print(f"         ↑ new best val count_exact = {best_val_ce:.4f}  (saved)")
-
-        # Save periodic checkpoint every 5 epochs
-        if epoch % 5 == 0:
-            save_checkpoint(out_dir, f"ep{epoch:03d}", l1_model, l3_model,
-                            l1_cfg_dict, l3_cfg_dict, val_m)
-
-    print(f"\nBest val count_exact: {best_val_ce:.4f}")
-    print(f"Checkpoints saved to: {out_dir}")
+    if args.eval_assemble:
+        results = {}
+        l1o, l3o = load_models(args.l1_ckpt, args.l3_ckpt, device)
+        for split, cs in (("val", val_cases), ("test", test_cases)):
+            if not cs:
+                continue
+            results[f"{split}_original"], _ = evaluate(l1o, l3o, cs, opts, device)
+            results[f"{split}_finetuned"], _ = evaluate(l1, l3, cs, opts, device)
+        print_table(results)
+        with open(out / "assemble_eval.json", "w") as f:
+            json.dump(results, f, indent=1, default=str)
 
 
 if __name__ == "__main__":
