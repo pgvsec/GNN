@@ -44,8 +44,19 @@ cd "$SLURM_SUBMIT_DIR"
 mkdir -p "$OUT" "$FORCED_DIR"
 export OMP_NUM_THREADS=8
 
-# 0. Diagnostic on the original Layer I
+# 0. Diagnostics on the original Layer I: forcing range, and Corpus A SCCs beyond the slot cap
 python diag_forcing_range.py --l1_ckpt "$L1_CKPT" --eval_dir "$STRICT"
+python - "$CORPUS_A_CACHE" <<'EOF'
+import sys, numpy as np
+from data import open_cache
+a = open_cache(sys.argv[1])
+n = np.asarray(a["g_n"])[np.asarray(a["s_graph"])]
+k = np.asarray(a["s_n_fp"])
+print("Corpus A fixed-point counts by n (samples with k > 16 are dropped by SccDataset):")
+for nn in sorted(set(n.tolist())):
+    kk = k[n == nn]
+    print(f"  n={nn}: {kk.size} samples  max k {kk.max()}  k>=7 {np.mean(kk >= 7):.3%}  k>16 {np.sum(kk > 16)}")
+EOF
 
 # 1. Forced-SCC samples
 for s in 1 2; do
@@ -57,7 +68,7 @@ done
 # 2. Fine-tune Layer I (full loss)
 python finetune_l1_forced.py --l1_ckpt "$L1_CKPT" --corpus_a_cache "$CORPUS_A_CACHE" \
     --forced "$FORCED_DIR/forced_s1.npz" "$FORCED_DIR/forced_s2.npz" \
-    --tune_dir "$TUNE" --out_dir "$NEW_L1"
+    --tune_dir "$TUNE" --out_dir "$NEW_L1" --kpower "${KPOWER:-1.0}"
 
 # 3. Evaluation on the strict test set
 python diag_forcing_range.py --l1_ckpt "$L1_CKPT" "$NEW_L1/best.pt" --eval_dir "$STRICT"

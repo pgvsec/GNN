@@ -78,6 +78,8 @@ def main():
     ap.add_argument("--tune_cases", type=int, default=1000)
     ap.add_argument("--out_dir", required=True)
     ap.add_argument("--mix", type=float, default=0.5, help="fraction of forced samples per batch")
+    ap.add_argument("--kpower", type=float, default=0.0,
+                    help="sample weight ~ n_fp ** kpower within each source (more high-count SCCs)")
     ap.add_argument("--epochs", type=int, default=15)
     ap.add_argument("--steps_per_epoch", type=int, default=2000)
     ap.add_argument("--batch_size", type=int, default=256)
@@ -105,8 +107,11 @@ def main():
     a_train = SccDataset(args.corpus_a_cache, SPLIT_TRAIN, cfg.max_fp)
     forced = ForcedSCC(args.forced)
     train_ds = ConcatDataset([forced, a_train])
-    w = np.concatenate([np.full(len(forced), args.mix / len(forced)),
-                        np.full(len(a_train), (1 - args.mix) / len(a_train))])
+    def by_k(k, total):
+        w = np.asarray(k, np.float64) ** args.kpower
+        return total * w / w.sum()
+
+    w = np.concatenate([by_k(forced.d["k"], args.mix), by_k(a_train.sample_nfp, 1 - args.mix)])
     loader = DataLoader(train_ds, batch_size=args.batch_size, drop_last=True, collate_fn=collate,
                         sampler=WeightedRandomSampler(torch.from_numpy(w),
                                                       args.steps_per_epoch * args.batch_size),
