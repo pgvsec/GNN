@@ -1226,9 +1226,11 @@ def load_l3_model(checkpoint_path: str, l1_model, device: torch.device):
     """Load a Layer III (CorpusCNet) checkpoint, wrapping the given L1 backbone."""
     from model_c import CorpusCNet
     from types import SimpleNamespace
+    import copy
     ck = torch.load(checkpoint_path, map_location=device, weights_only=False)
     cfg = SimpleNamespace(**ck["cfg"])
-    model = CorpusCNet(l1_model, cfg)
+    # Own backbone copy: the checkpoint's backbone.* weights must not overwrite l1_model.
+    model = CorpusCNet(copy.deepcopy(l1_model), cfg)
     weights = ck.get("ema", ck.get("model"))
     model.load_state_dict(weights)
     model.to(device)

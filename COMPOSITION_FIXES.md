@@ -194,3 +194,10 @@ the Corpus A range P in [0.01, 100].
 - `diag_forcing_range.py`: branch accuracy binned by decades outside the Corpus A P range.
 - Headline numbers are network-only: count from the count head, no rescue (`pure`, and
   `pure_nopolish` with no Newton step at all). `hybrid_log` is reported for reference only.
+
+**Loader bug (fixed):** building L3 around the L1 model and then loading the L3 checkpoint
+overwrote the L1 weights with L3's stored `backbone.*` copy (composition_eval.load_models,
+assemble.load_l3_model, and the original eval_composition2.py). Every earlier pipeline number
+used L3's backbone for root SCCs, not the `--l1_ckpt` given. L3 now gets its own backbone copy,
+and the eval prints how far the two differ. Rows in run_l1_forced.slurm are the first to use
+the given Layer I.

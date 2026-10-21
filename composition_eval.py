@@ -72,8 +72,19 @@ def load_models(l1_ckpt, l3_ckpt, device, heads=None):
     l1 = SccFixedPointNet(SimpleNamespace(**ck1["cfg"]))
     l1.load_state_dict(ck1.get("ema", ck1.get("model")))
     ck3 = torch.load(l3_ckpt, map_location=device, weights_only=False)
-    l3 = CorpusCNet(l1, SimpleNamespace(**ck3["cfg"]))
-    l3.load_state_dict(ck3.get("ema", ck3.get("model")), strict=False)
+    sd3 = ck3.get("ema", ck3.get("model"))
+    # L3 gets its own backbone. Its checkpoint stores the backbone it was trained with
+    # (backbone.*); built around l1, loading it would silently overwrite the given L1 weights.
+    backbone = SccFixedPointNet(SimpleNamespace(**ck1["cfg"]))
+    backbone.load_state_dict(l1.state_dict())
+    l3 = CorpusCNet(backbone, SimpleNamespace(**ck3["cfg"]))
+    l3.load_state_dict(sd3, strict=False)
+    l1_sd = l1.state_dict()
+    diff = max((float((sd3["backbone." + k].float().cpu() - v.float().cpu()).abs().max())
+                for k, v in l1_sd.items() if "backbone." + k in sd3
+                and sd3["backbone." + k].shape == v.shape), default=float("nan"))
+    print(f"L1 vs L3's stored backbone: max |weight diff| = {diff:.3g}"
+          + ("  (L1 checkpoint differs from L3's backbone)" if diff > 1e-6 else ""))
     if heads:
         apply_heads(l1, l3, torch.load(heads, map_location=device, weights_only=False))
     return l1.to(device).eval(), l3.to(device).eval()
