@@ -80,5 +80,5 @@ for tag in orig:$L1_CKPT forced:$NEW_L1/best.pt; do
     python composition_eval.py --l1_ckpt "$ckpt" --l3_ckpt "$L3_CKPT" \
         --eval_dir "$STRICT" --out_dir "$OUT/l1_forced_eval_$name" \
         --variants pure_nopolish:$PURE,refine=0 pure:$PURE pure_fill:$L1F,dedup=fill \
-                   hybrid_log:$L1F,dedup=log
+                   hybrid_log:$L1F,dedup=log hybrid_tuned:$L1F,dedup=log,refine=50,dedup_tol=0.01
 done
