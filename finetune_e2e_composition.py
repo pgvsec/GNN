@@ -54,12 +54,32 @@ import torch.nn.functional as F
 # 1. Model loading  (identical to finetune_count_heads.py)
 # ---------------------------------------------------------------------------
 
+def _remap_count_head_keys(sd: dict) -> dict:
+    """
+    Remap old-format count head keys (count_head.net.*) to the current
+    format (count_head.mlp.net.*).  No-op if keys are already current.
+    """
+    mapping = {}
+    for k in list(sd.keys()):
+        for head in ("count_head", "stable_count_head", "forcing_count_head"):
+            prefix = head + ".net."
+            if k.startswith(prefix):
+                new_k = head + ".mlp." + k[len(head) + 1:]
+                mapping[k] = new_k
+                break
+    if not mapping:
+        return sd
+    new_sd = {mapping.get(k, k): v for k, v in sd.items()}
+    return new_sd
+
+
 def load_l1(path, device):
     from model import SccFixedPointNet
     ck = torch.load(path, map_location=device, weights_only=False)
     cfg = SimpleNamespace(**ck["cfg"])
     model = SccFixedPointNet(cfg)
-    model.load_state_dict(ck.get("ema", ck.get("model")))
+    sd = _remap_count_head_keys(ck.get("ema", ck.get("model")))
+    model.load_state_dict(sd)
     model.to(device)
     return model, cfg, ck["cfg"]
 
@@ -69,7 +89,8 @@ def load_l3(path, l1_model, device):
     ck = torch.load(path, map_location=device, weights_only=False)
     cfg = SimpleNamespace(**ck["cfg"])
     model = CorpusCNet(l1_model, cfg)
-    model.load_state_dict(ck.get("ema", ck.get("model")), strict=False)
+    sd = _remap_count_head_keys(ck.get("ema", ck.get("model")))
+    model.load_state_dict(sd, strict=False)
     model.to(device)
     return model, cfg, ck["cfg"]
 
