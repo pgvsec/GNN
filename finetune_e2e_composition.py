@@ -79,11 +79,18 @@ def load_l1(path, device):
     cfg = SimpleNamespace(**ck["cfg"])
     model = SccFixedPointNet(cfg)
     sd = _remap_count_head_keys(ck.get("ema", ck.get("model")))
-    missing, unexpected = model.load_state_dict(sd, strict=False)
-    head_keys = {"count_head", "stable_count_head"}
-    non_head_missing = [k for k in missing if not any(k.startswith(h) for h in head_keys)]
+    # Drop count head keys that don't match current architecture shape so that
+    # strict=False can load the backbone cleanly; heads are trained from scratch.
+    head_prefixes = ("count_head.", "stable_count_head.")
+    model_sd = model.state_dict()
+    filtered = {k: v for k, v in sd.items()
+                if not any(k.startswith(p) for p in head_prefixes)
+                or (k in model_sd and model_sd[k].shape == v.shape)}
+    missing, unexpected = model.load_state_dict(filtered, strict=False)
+    non_head_missing = [k for k in missing
+                        if not any(k.startswith(p) for p in head_prefixes)]
     if non_head_missing:
-        raise RuntimeError(f"Unexpected missing backbone keys in L1 checkpoint: {non_head_missing}")
+        raise RuntimeError(f"Missing backbone keys in L1 checkpoint: {non_head_missing}")
     model.to(device)
     return model, cfg, ck["cfg"]
 
