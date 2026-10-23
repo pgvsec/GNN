@@ -35,7 +35,9 @@ def group_totals(a):
         # or fall back to the length of a non-ptr array from the group.
         ptr_for_g = [k for k, src in SENTINEL_PTRS_C.items() if src == g]
         if ptr_for_g:
-            totals[g] = int(a[ptr_for_g[0]][-1])
+            # Sentinel ptr shape is (source_group + 1,): len - 1 = source group size.
+            # Using [-1] would give the TARGET group total instead.
+            totals[g] = len(a[ptr_for_g[0]]) - 1
         else:
             # find any array from this group
             candidates = [k for k in DATASET_KEYS_C
