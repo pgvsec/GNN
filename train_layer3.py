@@ -105,6 +105,7 @@ class Config:
     m_dim:         int   = 128
     n_u_layers:    int   = 2
     freeze_backbone: bool = True
+    backbone_lr:   float = 0.0   # >0 → separate lr for backbone when freeze_backbone=False
     max_ports_c:   int   = 8                 # port slots for Corpus C
     frame:         str   = "raw"             # input frame of forced branches: raw | forced
                                              # (data_c.apply_frame; must match assembly)
@@ -235,18 +236,33 @@ def load_layer2_checkpoint(cfg, device):
 
 
 def build_optimizer(model, cfg):
-    decay, no_decay = [], []
+    bk_lr = cfg.backbone_lr if cfg.backbone_lr > 0.0 else cfg.lr
+    bk_ids = {id(p) for p in model.backbone.parameters()} if hasattr(model, "backbone") else set()
+    head_decay, head_nodecay, bk_decay, bk_nodecay = [], [], [], []
     for p in model.parameters():
-        if p.requires_grad:
-            (no_decay if p.ndim < 2 else decay).append(p)
-    if not decay and not no_decay:
+        if not p.requires_grad:
+            continue
+        is_bk = id(p) in bk_ids
+        (bk_decay if is_bk else head_decay).append(p) if p.ndim >= 2 \
+            else (bk_nodecay if is_bk else head_nodecay).append(p)
+
+    groups = []
+    if head_decay:
+        groups.append({"params": head_decay,   "lr": cfg.lr, "weight_decay": cfg.weight_decay})
+    if head_nodecay:
+        groups.append({"params": head_nodecay, "lr": cfg.lr, "weight_decay": 0.0})
+    if bk_decay:
+        groups.append({"params": bk_decay,   "lr": bk_lr, "weight_decay": cfg.weight_decay})
+    if bk_nodecay:
+        groups.append({"params": bk_nodecay, "lr": bk_lr, "weight_decay": 0.0})
+
+    if not groups:
         raise RuntimeError("No trainable parameters. Check freeze_backbone and model.")
-    groups = [
-        {"params": decay,    "weight_decay": cfg.weight_decay},
-        {"params": no_decay, "weight_decay": 0.0},
-    ]
-    n_params = sum(p.numel() for p in decay + no_decay)
-    print(f"trainable parameters: {n_params / 1e6:.3f}M", flush=True)
+    n_params = sum(p.numel() for g in groups for p in g["params"])
+    n_bk = sum(p.numel() for p in bk_decay + bk_nodecay)
+    print(f"trainable parameters: {n_params / 1e6:.3f}M  "
+          f"(backbone {n_bk / 1e6:.3f}M @ lr={bk_lr:.1e}, "
+          f"heads {(n_params - n_bk) / 1e6:.3f}M @ lr={cfg.lr:.1e})", flush=True)
     return torch.optim.AdamW(groups, lr=cfg.lr, betas=(0.9, 0.95))
 
 
