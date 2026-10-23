@@ -36,10 +36,14 @@ def load_l1(path, device):
 
 
 def load_l3(path, l1_model, device):
+    from model import SccFixedPointNet
     from model_c import CorpusCNet
     ck = torch.load(path, map_location=device, weights_only=False)
     cfg = SimpleNamespace(**ck["cfg"])
-    model = CorpusCNet(l1_model, cfg)
+    # Use a fresh backbone — do NOT pass l1_model directly, because load_state_dict
+    # updates the backbone in-place and would overwrite l1_model's trained count_head.
+    backbone = SccFixedPointNet(cfg)
+    model = CorpusCNet(backbone, cfg)
     model.load_state_dict(ck.get("ema", ck.get("model")))
     model.to(device).eval()
     return model, cfg
