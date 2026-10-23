@@ -102,6 +102,19 @@ def main():
     print("Loading models...")
     l1_model, _ = load_l1(args.l1_ckpt, device)
     l3_model, _ = load_l3(args.l3_ckpt, l1_model, device)
+    # L3's backbone count_head may be poorly trained (e.g. initialized from a
+    # checkpoint with a different count_head architecture and then fine-tuned at
+    # a tiny backbone_lr that gave it almost no gradient).  Copy L1's properly-
+    # trained count_head into the L3 backbone so count prediction is reliable.
+    # The inputs to StructuralCountHead (slot exist logits, graph emb) are the
+    # same structure for both root and forced SCCs, so the transfer is valid.
+    if args.l1_ckpt != args.l3_ckpt:
+        with torch.no_grad():
+            l3_model.backbone.count_head.load_state_dict(
+                l1_model.count_head.state_dict())
+            l3_model.backbone.stable_count_head.load_state_dict(
+                l1_model.stable_count_head.state_dict())
+        print("Patched L3 backbone count_head from L1.")
 
     from assemble import GRNPredictor, InferenceOptions
     opts = InferenceOptions(
