@@ -24,7 +24,13 @@ def load_l1(path, device):
     ck = torch.load(path, map_location=device, weights_only=False)
     cfg = SimpleNamespace(**ck["cfg"])
     model = SccFixedPointNet(cfg)
-    model.load_state_dict(ck.get("ema", ck.get("model")))
+    weights = ck.get("ema", ck.get("model"))
+    # CorpusBNet/CorpusCNet checkpoints nest the backbone under "backbone.*";
+    # strip that prefix so we can load it directly into SccFixedPointNet.
+    if any(k.startswith("backbone.") for k in weights):
+        weights = {k[len("backbone."):]: v
+                   for k, v in weights.items() if k.startswith("backbone.")}
+    model.load_state_dict(weights)
     model.to(device).eval()
     return model, cfg
 
