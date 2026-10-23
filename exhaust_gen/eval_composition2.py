@@ -74,17 +74,32 @@ def main():
     ap.add_argument("--out_csv",  default="eval_composition2.csv")
     ap.add_argument("--max_cases", type=int, default=None)
     ap.add_argument("--no_cuda",  action="store_true")
+    ap.add_argument("--dedup", default="linear",
+                    choices=["linear", "log", "none", "fill"],
+                    help="Slot deduplication mode. 'fill' trusts the ML count head exactly "
+                         "(disables rescue and parity_drop). Default: linear.")
+    ap.add_argument("--no_rescue",      action="store_true",
+                    help="Disable Newton-rescue of extra slots outside the count head's k.")
+    ap.add_argument("--no_parity_drop", action="store_true",
+                    help="Disable Poincaré-Hopf parity enforcement.")
     args = ap.parse_args()
 
     device = torch.device("cpu" if args.no_cuda or not torch.cuda.is_available() else "cuda")
     print(f"Device: {device}")
+    print(f"Inference opts: dedup={args.dedup}  rescue={not args.no_rescue}  "
+          f"parity_drop={not args.no_parity_drop}")
 
     print("Loading models...")
     l1_model, _ = load_l1(args.l1_ckpt, device)
     l3_model, _ = load_l3(args.l3_ckpt, l1_model, device)
 
-    from assemble import GRNPredictor
-    predictor = GRNPredictor(l1_model, l3_model, device=device, refine_steps=5)
+    from assemble import GRNPredictor, InferenceOptions
+    opts = InferenceOptions(
+        dedup=args.dedup,
+        rescue=not args.no_rescue,
+        parity_drop=not args.no_parity_drop,
+    )
+    predictor = GRNPredictor(l1_model, l3_model, device=device, refine_steps=5, opts=opts)
 
     d = Path(args.eval_dir)
     adj_all   = np.load(d / "adj.npy")       # [N, 6, 6]
@@ -106,6 +121,7 @@ def main():
 
     rows = []
     n_total = n_count_exact = n_fp_hit = n_fp_total_w = 0
+    n_stab_hit = n_stab_total = 0
     errors = 0
 
     for i in range(N_cases):
@@ -151,13 +167,18 @@ def main():
         if not np.isnan(hd):
             n_fp_hit     += hd * n_fp_gt
             n_fp_total_w += n_fp_gt
+        if not np.isnan(sa):
+            n_stab_hit   += sa
+            n_stab_total += 1
 
     print(f"\n{'='*60}")
     print(f"Evaluated {n_total} cases ({errors} errors)")
     if n_total > 0:
         print(f"count_exact: {n_count_exact/n_total:.4f}  ({n_count_exact}/{n_total})")
     if n_fp_total_w > 0:
-        print(f"fp_hd      : {n_fp_hit/n_fp_total_w:.4f}")
+        print(f"fp_hd      : {n_fp_hit/n_fp_total_w:.4f}  (GT-FP-count weighted)")
+    if n_stab_total > 0:
+        print(f"stable_acc : {n_stab_hit/n_stab_total:.4f}  (mean per case)")
     print(f"{'='*60}")
 
     out = Path(args.out_csv)
