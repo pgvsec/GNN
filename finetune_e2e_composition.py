@@ -134,7 +134,14 @@ def _make_trainable_groups(l1_model, l3_model, lr_head, lr_backbone):
                                   ("count_head", "stable_count_head"))]
         backbone_l3 = [p for n, p in l3_model.named_parameters()
                        if not n.startswith("forcing_count_head")]
-        backbone_params = backbone_l1 + backbone_l3
+        # Deduplicate by tensor id: CorpusCNet shares the L1 backbone by reference,
+        # so backbone_l3 contains the same parameter objects as backbone_l1.
+        seen = {id(p) for p in head_params}
+        backbone_params = []
+        for p in backbone_l1 + backbone_l3:
+            if id(p) not in seen:
+                seen.add(id(p))
+                backbone_params.append(p)
         for p in backbone_params:
             p.requires_grad_(True)
         groups.append({"params": backbone_params, "lr": lr_backbone})
