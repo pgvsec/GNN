@@ -3,7 +3,7 @@
 #SBATCH --output=e2e_v3_%j.out
 #SBATCH --error=e2e_v3_%j.err
 #SBATCH -A ayg
-#SBATCH -p a100-80gb
+#SBATCH -p a10
 #SBATCH --qos=normal
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
