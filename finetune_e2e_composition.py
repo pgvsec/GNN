@@ -48,6 +48,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import math
 import random
 from pathlib import Path
 from types import SimpleNamespace
@@ -319,6 +320,45 @@ def _make_l3_batch(scc, parent_x_local: np.ndarray, parent_scc_id: int,
     return batch
 
 
+def _pos_chamfer_loss(out: dict, batch: dict, gt_fps: list, scc_n: int):
+    """
+    Log-space Chamfer loss: for each GT FP, the nearest predicted slot must be close.
+
+    For each GT fixed point, finds the minimum L∞ distance (max over genes, in
+    log10 space) to any predicted slot.  Averaging those minima gives a loss that
+    encourages at least one slot to land near every GT FP — direct gradient to the
+    pos decoder without requiring any count-specific structure.
+
+    Only called for root SCCs (L1 forward, backbone not frozen) so gradients reach
+    the pos decoder.
+
+    Returns a scalar tensor, or None if gt_fps is empty or an error occurs.
+    """
+    if not gt_fps:
+        return None
+    try:
+        from model import decode_position
+        pos   = out["pos"].float()        # [1, K, N_MAX]
+        xmax  = batch["xmax"].float()     # [1, N_MAX]
+        x_pred = decode_position(pos, xmax.unsqueeze(1))  # [1, K, N_MAX]
+        x_pred_scc = x_pred[0, :, :scc_n]                # [K, scc_n]
+
+        gt_arr = np.stack(gt_fps)         # [n_gt, scc_n]
+        gt_t   = torch.tensor(gt_arr, dtype=torch.float32, device=pos.device)  # [n_gt, scc_n]
+
+        # L∞ in log10 space: for each (gt_i, slot_j), max over genes of |log10(pred_j) - log10(gt_i)|
+        x_log  = x_pred_scc.clamp_min(1e-12).log() / math.log(10)     # [K, scc_n]  log10
+        gt_log = gt_t.clamp_min(1e-12).log()        / math.log(10)     # [n_gt, scc_n]
+
+        diff           = (x_log.unsqueeze(0) - gt_log.unsqueeze(1)).abs()  # [n_gt, K, scc_n]
+        max_gene_dist  = diff.max(dim=-1).values                           # [n_gt, K]
+        min_slot_dist  = max_gene_dist.min(dim=-1).values                  # [n_gt]
+
+        return min_slot_dist.mean()
+    except Exception:
+        return None
+
+
 def _predicted_fps_from_l1(out: dict, batch: dict, scc_n: int) -> list:
     """Decode L1's predicted FP positions for the parent SCC.
 
@@ -458,7 +498,8 @@ def _odd_ce_loss(count_logit: torch.Tensor, k_gt: int) -> torch.Tensor:
 def compute_e2e_loss(case, dag, l1_model, l3_model, device, scc_gt_counts,
                      scc_reg_weight: float = 0.0,
                      max_n: int = 128,
-                     p_predicted: float = 0.0) -> tuple[torch.Tensor, dict]:
+                     p_predicted: float = 0.0,
+                     pos_reg_weight: float = 0.0) -> tuple[torch.Tensor, dict]:
     """
     Compute end-to-end composition CE loss for one case.
 
@@ -468,6 +509,8 @@ def compute_e2e_loss(case, dag, l1_model, l3_model, device, scc_gt_counts,
     k_vals_list = []   # corresponding k value tensors
     scc_reg     = torch.tensor(0.0, device=device)
     n_reg_terms = 0
+    pos_loss    = torch.tensor(0.0, device=device)
+    n_pos_terms = 0
     pred_counts = {}
     pred_fps    = {}   # scc_id -> list[np.ndarray] of predicted FP coords
 
@@ -491,6 +534,12 @@ def compute_e2e_loss(case, dag, l1_model, l3_model, device, scc_gt_counts,
                 w = max(1, gt_k) / 3.0
                 scc_reg = scc_reg + w * _odd_ce_loss(count_logit, gt_k)
                 n_reg_terms += 1
+
+            if pos_reg_weight > 0.0 and gt_fps:
+                pl = _pos_chamfer_loss(out, batch, gt_fps, scc.n)
+                if pl is not None:
+                    pos_loss = pos_loss + pl
+                    n_pos_terms += 1
 
             with torch.no_grad():
                 pred_counts[scc_id] = int(k_vals[probs.argmax()].item())
@@ -558,6 +607,10 @@ def compute_e2e_loss(case, dag, l1_model, l3_model, device, scc_gt_counts,
     if scc_reg_weight > 0.0 and n_reg_terms > 0:
         comp_loss = comp_loss + scc_reg_weight * (scc_reg / n_reg_terms)
 
+    # Position supervision: Chamfer loss on root-SCC slot positions vs GT FPs
+    if pos_reg_weight > 0.0 and n_pos_terms > 0:
+        comp_loss = comp_loss + pos_reg_weight * (pos_loss / n_pos_terms)
+
     return comp_loss, pred_counts
 
 
@@ -583,7 +636,8 @@ def precompute_dags(cases):
 
 def run_epoch(cases, dag_cache, l1_model, l3_model, device,
               optimizer=None, max_cases=None,
-              scc_reg_weight=0.0, max_n=128, p_predicted=0.0):
+              scc_reg_weight=0.0, max_n=128, p_predicted=0.0,
+              pos_reg_weight=0.0):
     is_train = optimizer is not None
 
     total_loss = 0.0
@@ -614,7 +668,7 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
                 loss, pred_counts = compute_e2e_loss(
                     case, dag, l1_model, l3_model, device, scc_gt_counts,
                     scc_reg_weight=scc_reg_weight, max_n=max_n,
-                    p_predicted=p_predicted)
+                    p_predicted=p_predicted, pos_reg_weight=pos_reg_weight)
                 if loss.requires_grad:
                     optimizer.zero_grad()
                     loss.backward()
@@ -705,6 +759,10 @@ def main():
                          "0 = always GT (original teacher forcing), "
                          "1 = always predicted (no teacher forcing). "
                          "Default 0.5 (scheduled sampling).")
+    ap.add_argument("--pos_reg_weight", type=float, default=0.0,
+                    help="Weight on log-space Chamfer position loss for root SCC slots. "
+                         "0 = disabled (default). Requires --lr_backbone > 0 to flow "
+                         "gradient to the pos decoder. Recommended: 0.1.")
     ap.add_argument("--max_train",      type=int,   default=None)
     ap.add_argument("--no_cuda",        action="store_true")
     ap.add_argument("--seed",           type=int,   default=42)
@@ -738,6 +796,7 @@ def main():
         print("  Backbone frozen — only count heads trained")
     print(f"  Composition CE max_n: {args.max_n}")
     print(f"  Per-SCC regularisation weight: {args.scc_reg_weight}")
+    print(f"  Position supervision weight: {args.pos_reg_weight}")
     print(f"  Teacher forcing p_predicted: {args.p_predicted:.2f}  "
           f"({'always GT' if args.p_predicted == 0.0 else 'always predicted' if args.p_predicted == 1.0 else 'scheduled sampling'})")
 
@@ -776,7 +835,8 @@ def main():
         train_m = run_epoch(train_cases, train_dags, l1_model, l3_model, device,
                             optimizer=optimizer, max_cases=args.max_train,
                             scc_reg_weight=args.scc_reg_weight, max_n=args.max_n,
-                            p_predicted=args.p_predicted)
+                            p_predicted=args.p_predicted,
+                            pos_reg_weight=args.pos_reg_weight)
 
         l1_model.eval()
         l3_model.eval()
