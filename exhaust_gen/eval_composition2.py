@@ -92,12 +92,14 @@ def main():
                     help="Disable Newton-rescue of extra slots outside the count head's k.")
     ap.add_argument("--no_parity_drop", action="store_true",
                     help="Disable Poincaré-Hopf parity enforcement.")
+    ap.add_argument("--refine_steps", type=int, default=5,
+                    help="Newton refinement steps per slot (default 5).")
     args = ap.parse_args()
 
     device = torch.device("cpu" if args.no_cuda or not torch.cuda.is_available() else "cuda")
     print(f"Device: {device}")
     print(f"Inference opts: dedup={args.dedup}  rescue={not args.no_rescue}  "
-          f"parity_drop={not args.no_parity_drop}")
+          f"parity_drop={not args.no_parity_drop}  refine_steps={args.refine_steps}")
 
     print("Loading models...")
     l1_model, _ = load_l1(args.l1_ckpt, device)
@@ -122,7 +124,7 @@ def main():
         rescue=not args.no_rescue,
         parity_drop=not args.no_parity_drop,
     )
-    predictor = GRNPredictor(l1_model, l3_model, device=device, refine_steps=5, opts=opts)
+    predictor = GRNPredictor(l1_model, l3_model, device=device, refine_steps=args.refine_steps, opts=opts)
 
     d = Path(args.eval_dir)
     adj_all   = np.load(d / "adj.npy")       # [N, 6, 6]
