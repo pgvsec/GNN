@@ -16,6 +16,7 @@ REPO_GNN=$SCRATCH/GNN
 REPO_GNN_TEMP=$SCRATCH/GNN_temp
 OUT_DIR=$SCRATCH/runs/e2e_v3
 PYTHON=/home/gupt1042/.conda/envs/2025.06-py313/gnn/bin/python
+export PYTHONUNBUFFERED=1
 
 mkdir -p $OUT_DIR
 
