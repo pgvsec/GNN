@@ -35,4 +35,4 @@ cd $REPO_GNN
 
 PYTHONPATH=$REPO_GNN_TEMP:$REPO_GNN $PYTHON finetune_e2e_composition.py --l1_ckpt $L1_CKPT --l3_ckpt $L3_CKPT --train_dirs $TRAIN_DIRS --val_dir $VAL_DIR --out_dir $OUT_DIR --epochs 60 --lr 5e-5 --lr_backbone 0.0 --scc_reg_weight 0.3 --p_predicted 0.5 --seed 42
 
-PYTHONPATH=$REPO_GNN_TEMP:$REPO_GNN $PYTHON exhaust_gen/eval_composition2.py --l1_ckpt $OUT_DIR/l1_best.pt --l3_ckpt $OUT_DIR/l3_best.pt --eval_dir $VAL_DIR --out_csv $SCRATCH/runs/eval_e2e_v3_fill.csv --dedup fill
+PYTHONPATH=$REPO_GNN:$REPO_GNN_TEMP $PYTHON exhaust_gen/eval_composition2.py --l1_ckpt $OUT_DIR/l1_best.pt --l3_ckpt $OUT_DIR/l3_best.pt --eval_dir $VAL_DIR --out_csv $SCRATCH/runs/eval_e2e_v3_fill.csv --dedup fill
