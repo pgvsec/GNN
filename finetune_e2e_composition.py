@@ -630,6 +630,20 @@ def precompute_dags(cases):
     return dags
 
 
+def precompute_gt_counts(cases, dag_cache):
+    """Pre-extract scc_gt_counts for every case so run_epoch avoids per-step numpy work."""
+    result = []
+    for case, dag in zip(cases, dag_cache):
+        if dag is None:
+            result.append(None)
+            continue
+        try:
+            result.append(extract_scc_gt_counts(dag, case["fp_state"]))
+        except Exception:
+            result.append(None)
+    return result
+
+
 # ---------------------------------------------------------------------------
 # 8. Epoch helpers
 # ---------------------------------------------------------------------------
@@ -637,7 +651,10 @@ def precompute_dags(cases):
 def run_epoch(cases, dag_cache, l1_model, l3_model, device,
               optimizer=None, max_cases=None,
               scc_reg_weight=0.0, max_n=128, p_predicted=0.0,
-              pos_reg_weight=0.0):
+              pos_reg_weight=0.0,
+              gt_counts_cache=None,
+              accumulate=32,
+              scaler=None):
     is_train = optimizer is not None
 
     total_loss = 0.0
@@ -645,46 +662,89 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
     n_total    = 0
     errors     = 0
 
+    # Pre-build trainable param list once (not per step)
+    if is_train:
+        all_params = [p for p in
+                      list(l1_model.parameters()) + list(l3_model.parameters())
+                      if p.requires_grad]
+
+    use_amp = (scaler is not None) and (device.type == "cuda")
+
     indices = list(range(len(cases)))
     if is_train:
         random.shuffle(indices)
     if max_cases is not None:
         indices = indices[:max_cases]
 
-    for i in indices:
+    n_indices   = len(indices)
+    accumulated = 0
+
+    if is_train:
+        optimizer.zero_grad()
+
+    for step_i, i in enumerate(indices):
         case = cases[i]
         dag  = dag_cache[i]
         if dag is None:
             continue
 
-        try:
-            scc_gt_counts = extract_scc_gt_counts(dag, case["fp_state"])
-        except Exception:
+        if gt_counts_cache is not None:
+            scc_gt_counts = gt_counts_cache[i]
+        else:
+            try:
+                scc_gt_counts = extract_scc_gt_counts(dag, case["fp_state"])
+            except Exception:
+                errors += 1
+                continue
+        if scc_gt_counts is None:
             errors += 1
             continue
 
+        is_last = (step_i == n_indices - 1)
+
         try:
             if is_train:
-                loss, pred_counts = compute_e2e_loss(
-                    case, dag, l1_model, l3_model, device, scc_gt_counts,
-                    scc_reg_weight=scc_reg_weight, max_n=max_n,
-                    p_predicted=p_predicted, pos_reg_weight=pos_reg_weight)
+                if use_amp:
+                    with torch.autocast("cuda", dtype=torch.float16):
+                        loss, pred_counts = compute_e2e_loss(
+                            case, dag, l1_model, l3_model, device, scc_gt_counts,
+                            scc_reg_weight=scc_reg_weight, max_n=max_n,
+                            p_predicted=p_predicted, pos_reg_weight=pos_reg_weight)
+                else:
+                    loss, pred_counts = compute_e2e_loss(
+                        case, dag, l1_model, l3_model, device, scc_gt_counts,
+                        scc_reg_weight=scc_reg_weight, max_n=max_n,
+                        p_predicted=p_predicted, pos_reg_weight=pos_reg_weight)
+
                 if loss.requires_grad:
-                    optimizer.zero_grad()
-                    loss.backward()
-                    all_params = [p for p in
-                                  list(l1_model.parameters()) +
-                                  list(l3_model.parameters())
-                                  if p.requires_grad]
-                    torch.nn.utils.clip_grad_norm_(all_params, 1.0)
-                    optimizer.step()
+                    scaled = loss / accumulate
+                    if scaler is not None:
+                        scaler.scale(scaled).backward()
+                    else:
+                        scaled.backward()
+                    accumulated += 1
+
                 total_loss += float(loss.item())
+
+                if accumulated >= accumulate or (is_last and accumulated > 0):
+                    if scaler is not None:
+                        scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(all_params, 1.0)
+                    if scaler is not None:
+                        scaler.step(optimizer)
+                        scaler.update()
+                    else:
+                        optimizer.step()
+                    optimizer.zero_grad()
+                    accumulated = 0
+
             else:
                 with torch.no_grad():
                     loss, pred_counts = compute_e2e_loss(
                         case, dag, l1_model, l3_model, device, scc_gt_counts,
-                        max_n=max_n, p_predicted=0.0)  # val always uses GT
+                        max_n=max_n, p_predicted=0.0)
                 total_loss += float(loss.item())
+
         except Exception:
             errors += 1
             continue
@@ -763,6 +823,12 @@ def main():
                     help="Weight on log-space Chamfer position loss for root SCC slots. "
                          "0 = disabled (default). Requires --lr_backbone > 0 to flow "
                          "gradient to the pos decoder. Recommended: 0.1.")
+    ap.add_argument("--accumulate",     type=int,   default=32,
+                    help="Gradient accumulation steps before each optimizer.step(). "
+                         "Higher = fewer optimizer steps per epoch = faster. Default 32.")
+    ap.add_argument("--no_amp",        action="store_true",
+                    help="Disable automatic mixed precision (float16 forward). "
+                         "AMP is enabled by default on CUDA and gives ~2x speedup.")
     ap.add_argument("--max_train",      type=int,   default=None)
     ap.add_argument("--no_cuda",        action="store_true")
     ap.add_argument("--seed",           type=int,   default=42)
@@ -809,6 +875,15 @@ def main():
     train_dags = precompute_dags(train_cases)
     val_dags   = precompute_dags(val_cases)
 
+    print("Pre-computing GT counts (avoids per-epoch numpy work)...")
+    train_gt_counts = precompute_gt_counts(train_cases, train_dags)
+    val_gt_counts   = precompute_gt_counts(val_cases,   val_dags)
+
+    use_amp = (not args.no_amp) and (device.type == "cuda")
+    scaler  = torch.amp.GradScaler("cuda") if use_amp else None
+    print(f"  Gradient accumulation: {args.accumulate} steps")
+    print(f"  Mixed precision (AMP): {'enabled' if use_amp else 'disabled'}")
+
     optimizer = torch.optim.AdamW(param_groups, weight_decay=args.wd)
     # Cosine annealing over count-head LR group
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
@@ -836,12 +911,16 @@ def main():
                             optimizer=optimizer, max_cases=args.max_train,
                             scc_reg_weight=args.scc_reg_weight, max_n=args.max_n,
                             p_predicted=args.p_predicted,
-                            pos_reg_weight=args.pos_reg_weight)
+                            pos_reg_weight=args.pos_reg_weight,
+                            gt_counts_cache=train_gt_counts,
+                            accumulate=args.accumulate,
+                            scaler=scaler)
 
         l1_model.eval()
         l3_model.eval()
         val_m = run_epoch(val_cases, val_dags, l1_model, l3_model, device,
-                          max_n=args.max_n)
+                          max_n=args.max_n,
+                          gt_counts_cache=val_gt_counts)
 
         lr_now = optimizer.param_groups[0]["lr"]
         scheduler.step()
