@@ -89,10 +89,15 @@ class Config:
     w_pos: float = 5.0
     w_cp: float = 2.0
     w_stab: float = 1.0
-    w_count: float = 0.5
+    w_count: float = 3.0
+    w_count_kscale: float = 0.0   # instance weight = k_true * kscale + 1; 0 = flat (physically honest)
+    w_exist_cnt: float = 0.5      # soft-count consistency: MSE(sigmoid(exist).sum, k_true) on consistent
+    count_focal_gamma: float = 2.0  # focal reweighting of count CE: (1-pt)^gamma; 0 = plain CE
+    count_head_layers: int = 3    # MLP depth for count/stable_count heads (was 2)
+    sampler_kpower: float = 0.0   # upsample high-k branches; 0 = off
     w_phys: float = 1.0
     w_thomas: float = 0.5
-    eos_coef: float = 0.3                # weight of no-object slots in the existence loss
+    eos_coef: float = 0.5                # weight of no-object slots in the existence loss
     huber_beta: float = 0.05
     gate_tau: float = 0.02               # residual above which an unmatched slot is a true negative
     dup_tol: float = 0.02                # position distance below which an unmatched slot is a duplicate

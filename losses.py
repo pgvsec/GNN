@@ -137,8 +137,11 @@ class SetCriterion(nn.Module):
         a_stab = torch.gather(tgt_stab, 1, idx).clamp_min(0)
 
         # physics: ODE residual at the decoded position of every slot
+        # Forced samples (Corpus C) carry P_phys = P * u: the stored fixed points belong to
+        # the forced system, so the residual must be taken there, not at the unforced P.
         x_hat = decode_position(pos, xmax.unsqueeze(1))
-        res = hill_residual(x_hat, P, Kd, xmax, adj, T, nh, fold)
+        P_res = batch["P_phys"].float() if "P_phys" in batch else P
+        res = hill_residual(x_hat, P_res, Kd, xmax, adj, T, nh, fold)
         res_slot = (res.abs() * nm.unsqueeze(1)).sum(-1) / n_valid.unsqueeze(1)
 
         def slot_mean(per_node):
@@ -163,11 +166,40 @@ class SetCriterion(nn.Module):
 
         # counts, trusted only where the Brouwer sum is 1
         cons1 = batch["consistent"].float()
-        k_true = batch["k"].clamp(max=K)
+        # Clamp to the count_logit output range (not to slot count K), so that
+        # models with an extended count head (e.g. PairwiseCountHead in L3) can
+        # supervise k values above K.  For L1/L2, count_logit has K+1 outputs so
+        # this equals the old behaviour.
+        k_true = batch["k"].clamp(max=out["count_logit"].shape[-1] - 1)
         stable_true = ((tgt_stab == 0) | (tgt_stab == 1)).sum(1).clamp(max=K)
         ce_k = Fnn.cross_entropy(out["count_logit"], k_true, reduction="none")
         ce_s = Fnn.cross_entropy(out["stable_count_logit"], stable_true, reduction="none")
-        l_count = ((ce_k + ce_s) * cons1).sum() / cons1.sum().clamp_min(1.0)
+
+        # Focal reweighting of count CE: (1 - p_correct)^gamma up-weights hard examples.
+        # gamma=0 recovers plain CE. Useful when many Brouwer-consistent samples are
+        # "easy" (k=1) and the model already gets them right, leaving the hard multi-basin
+        # cases under-represented in the gradient.
+        focal_gamma = getattr(cfg, "count_focal_gamma", 0.0)
+        if focal_gamma > 0.0:
+            with torch.no_grad():
+                pt_k = torch.softmax(out["count_logit"].detach(), dim=-1).gather(
+                    1, k_true.unsqueeze(1)).squeeze(1).clamp(1e-6, 1.0)
+                focal_w = (1.0 - pt_k).pow(focal_gamma)
+            ce_k = focal_w * ce_k
+
+        kscale = getattr(cfg, "w_count_kscale", 0.0)
+        k_wt = k_true.float() * kscale + 1.0  # 1.0 when kscale=0 (flat); k*s+1 otherwise
+        denom = (cons1 * k_wt).sum().clamp_min(1.0)
+        l_count = ((ce_k + ce_s) * cons1 * k_wt).sum() / denom
+
+        # Existence soft-count consistency: force sigmoid(exist_logit).sum() ≈ k_true.
+        # Unlike the slot-by-slot BCE, this is a global constraint that simultaneously
+        # penalises over-activating empty slots AND suppresses the mean activation when
+        # the model is counting too high.  Applied only to Brouwer-consistent samples
+        # where k_true is reliable.
+        soft_cnt = torch.sigmoid(exist_logit).sum(1)   # [B]
+        n_cons = cons1.sum().clamp_min(1.0)
+        l_exist_cnt = ((soft_cnt - k_true.float()).pow(2) * cons1).sum() / n_cons
 
         # Thomas: no positive feedback loop => at most one stable fixed point
         p_stable = torch.softmax(stab_logit, dim=-1)[..., :2].sum(-1)
@@ -175,14 +207,17 @@ class SetCriterion(nn.Module):
         nopos = (~batch["has_pos_fb"]).float()
         l_thomas = (torch.relu(exp_stable - 1.0) * nopos).sum() / nopos.sum().clamp_min(1.0)
 
+        w_exist_cnt = getattr(cfg, "w_exist_cnt", 0.0)
         total = (cfg.w_exist * l_exist + cfg.w_pos * l_pos + cfg.w_cp * l_cp
                  + cfg.w_stab * l_stab + cfg.w_count * l_count
-                 + cfg.w_phys * l_phys + cfg.w_thomas * l_thomas)
+                 + cfg.w_phys * l_phys + cfg.w_thomas * l_thomas
+                 + w_exist_cnt * l_exist_cnt)
 
         logs = {
             "total": total.detach(), "exist": l_exist.detach(), "pos": l_pos.detach(),
             "cp": l_cp.detach(), "stab": l_stab.detach(), "count": l_count.detach(),
             "phys": l_phys.detach(), "thomas": l_thomas.detach(),
+            "exist_cnt": l_exist_cnt.detach(),
         }
         aux = {
             "matched": matched, "a_pos": a_pos.detach(), "a_cp": a_cp.detach(),
@@ -299,6 +334,8 @@ def batch_metrics(out, batch, aux, refine_steps=0):
         adj, T = batch["adj"], batch["T"].float()
         nh, fold = batch["nh"].float(), batch["F"].float()
         x = decode_position(out["pos"], xmax.unsqueeze(1))
+        if "P_phys" in batch:
+            P, xmax = batch["P_phys"].float(), batch["xmax_phys"].float()
         x = newton_refine(x, P, Kd, xmax, adj, T, nh, fold, node_mask, refine_steps)
         res = hill_residual(x, P, Kd, xmax, adj, T, nh, fold).abs() * nm.unsqueeze(1)
         converged = res.max(dim=-1).values < 1e-6
@@ -402,7 +439,8 @@ def label_residual(batch):
     round-off mean the labels are true fixed points of the model being trained and that edge
     parameters are aligned with fixed points; large values flag corrupted parameters."""
     res = hill_residual(
-        batch["fp_state"].float().clamp_min(1e-30), batch["P"].float(), batch["K"].float(),
+        batch["fp_state"].float().clamp_min(1e-30), batch.get("P_phys", batch["P"]).float(),
+        batch["K"].float(),
         batch["xmax"].float(), batch["adj"], batch["T"].float(), batch["nh"].float(),
         batch["F"].float())
     valid = batch["fp_mask"].unsqueeze(-1) & batch["node_mask"].unsqueeze(1)

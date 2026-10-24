@@ -113,10 +113,13 @@ class Config:
     w_pos:    float = 5.0
     w_cp:     float = 2.0
     w_stab:   float = 1.0
-    w_count:  float = 0.5
+    w_count:  float = 3.0
+    w_exist_cnt: float = 0.5      # soft-count consistency loss weight
+    count_focal_gamma: float = 2.0  # focal reweighting of count CE; 0 = plain CE
+    count_head_layers: int = 3    # MLP depth for count/stable_count heads
     w_phys:   float = 1.0
     w_thomas: float = 0.5
-    eos_coef: float = 0.3
+    eos_coef: float = 0.5
     huber_beta:  float = 0.05
     gate_tau:    float = 0.02
     dup_tol:     float = 0.02
@@ -390,7 +393,7 @@ def run_train(cfg):
         print(f"resumed at epoch {start_epoch}", flush=True)
 
     log_path = os.path.join(cfg.out_dir, "log.csv")
-    scaler   = torch.cuda.amp.GradScaler(enabled=cfg.amp and device.type == "cuda")
+    scaler   = torch.amp.GradScaler("cuda", enabled=cfg.amp and device.type == "cuda")
 
     for epoch in range(start_epoch, cfg.epochs):
         if cfg.freeze_backbone:
