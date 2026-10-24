@@ -19,9 +19,15 @@ GRADIENT FLOW:
   (backbones frozen by default; --lr_backbone > 0 to unfreeze with reduced LR)
 
 FORCING:
-  Forced SCC still uses GT root FP patterns to build the forcing signal u
-  (Option A — cleaner than using predicted FPs for initial training).
-  P(k_child) is averaged over all GT parent branches.
+  Two modes, controlled by --p_predicted (default 0.5):
+    p_predicted=0.0 : GT parent FPs always (original "Option A" — teacher forcing)
+    p_predicted=1.0 : predicted parent FPs always (closes train-test gap)
+    0 < p < 1       : scheduled sampling — use GT with prob (1-p), predicted with prob p
+
+  Predicted FPs are obtained by decoding L1's slot positions (no Newton refinement).
+  This directly addresses the train-test discrepancy: at inference the forcing signal
+  is built from predicted (not GT) parent FPs, so training with p_predicted > 0
+  makes the child SCC robust to approximate forcing signals.
 
 OPTIONAL REGULARISATION (--scc_reg_weight > 0):
   Adds a per-SCC CE term alongside the composition CE.  This prevents the
@@ -313,6 +319,42 @@ def _make_l3_batch(scc, parent_x_local: np.ndarray, parent_scc_id: int,
     return batch
 
 
+def _predicted_fps_from_l1(out: dict, batch: dict, scc_n: int) -> list:
+    """Decode L1's predicted FP positions for the parent SCC.
+
+    Selects the top-k slots (k from count head argmax over odd indices) by
+    existence logit and returns their decoded coordinates as numpy arrays.
+    No Newton refinement — raw slot-decoder positions are sufficient to give
+    the child SCC a realistic (imperfect) forcing signal for robustness training.
+
+    Returns list of np.ndarray [scc_n], one per predicted FP, or [] on any failure.
+    """
+    try:
+        from model import decode_position
+        count_logit = out["count_logit"][0].float()   # [max_count+1]
+        even = torch.arange(count_logit.shape[-1],
+                            device=count_logit.device) % 2 == 0
+        k_hat = int(count_logit.masked_fill(even, float("-inf")).argmax().item())
+        if k_hat == 0:
+            return []
+
+        exist_logit = out["exist_logit"][0].float()   # [K]
+        top_idx = exist_logit.argsort(descending=True)[:k_hat]
+
+        # pos [1, K, N_MAX], xmax [1, N_MAX]
+        xmax = batch["xmax"]                          # [1, N_MAX]
+        pos  = out["pos"]                             # [1, K, N_MAX]
+        x    = decode_position(pos, xmax.unsqueeze(1))  # [1, K, N_MAX]
+
+        fps = []
+        for j in top_idx:
+            coords = x[0, int(j.item()), :scc_n].detach().cpu().numpy().astype(np.float32)
+            fps.append(coords)
+        return fps
+    except Exception:
+        return []
+
+
 # ---------------------------------------------------------------------------
 # 5. Composition CE loss (NEW)
 # ---------------------------------------------------------------------------
@@ -415,7 +457,8 @@ def _odd_ce_loss(count_logit: torch.Tensor, k_gt: int) -> torch.Tensor:
 
 def compute_e2e_loss(case, dag, l1_model, l3_model, device, scc_gt_counts,
                      scc_reg_weight: float = 0.0,
-                     max_n: int = 128) -> tuple[torch.Tensor, dict]:
+                     max_n: int = 128,
+                     p_predicted: float = 0.0) -> tuple[torch.Tensor, dict]:
     """
     Compute end-to-end composition CE loss for one case.
 
@@ -426,6 +469,7 @@ def compute_e2e_loss(case, dag, l1_model, l3_model, device, scc_gt_counts,
     scc_reg     = torch.tensor(0.0, device=device)
     n_reg_terms = 0
     pred_counts = {}
+    pred_fps    = {}   # scc_id -> list[np.ndarray] of predicted FP coords
 
     for scc in dag.sccs:
         scc_id = scc.scc_id
@@ -450,9 +494,12 @@ def compute_e2e_loss(case, dag, l1_model, l3_model, device, scc_gt_counts,
 
             with torch.no_grad():
                 pred_counts[scc_id] = int(k_vals[probs.argmax()].item())
+                # Store predicted FP positions for child SCC forcing
+                if p_predicted > 0.0:
+                    pred_fps[scc_id] = _predicted_fps_from_l1(out, batch, scc.n)
 
         else:
-            # Forced SCC → L3; average P(k_child) over all GT parent branches
+            # Forced SCC → L3
             pid = scc.parents[0]
             _, parent_gt_fps = scc_gt_counts.get(pid, (1, []))
             if not parent_gt_fps:
@@ -466,8 +513,18 @@ def compute_e2e_loss(case, dag, l1_model, l3_model, device, scc_gt_counts,
                 pred_counts[scc_id] = 1
                 continue
 
+            # Scheduled sampling: use predicted parent FPs with prob p_predicted.
+            # Predicted FPs close the train-test gap (inference uses predicted, not GT).
+            # Fall back to GT if no prediction was stored (topological order issue).
+            if p_predicted > 0.0 and random.random() < p_predicted:
+                parent_branch_fps = pred_fps.get(pid)
+                if not parent_branch_fps:
+                    parent_branch_fps = parent_gt_fps
+            else:
+                parent_branch_fps = parent_gt_fps
+
             branch_probs_list = []
-            for parent_x in parent_gt_fps:
+            for parent_x in parent_branch_fps:
                 batch = _make_l3_batch(scc, parent_x, pid, dag,
                                        case["T"], case["nh"], case["F"],
                                        case["adj"], device)
@@ -526,7 +583,7 @@ def precompute_dags(cases):
 
 def run_epoch(cases, dag_cache, l1_model, l3_model, device,
               optimizer=None, max_cases=None,
-              scc_reg_weight=0.0, max_n=128):
+              scc_reg_weight=0.0, max_n=128, p_predicted=0.0):
     is_train = optimizer is not None
 
     total_loss = 0.0
@@ -556,7 +613,8 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
             if is_train:
                 loss, pred_counts = compute_e2e_loss(
                     case, dag, l1_model, l3_model, device, scc_gt_counts,
-                    scc_reg_weight=scc_reg_weight, max_n=max_n)
+                    scc_reg_weight=scc_reg_weight, max_n=max_n,
+                    p_predicted=p_predicted)
                 if loss.requires_grad:
                     optimizer.zero_grad()
                     loss.backward()
@@ -571,7 +629,7 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
                 with torch.no_grad():
                     loss, pred_counts = compute_e2e_loss(
                         case, dag, l1_model, l3_model, device, scc_gt_counts,
-                        max_n=max_n)
+                        max_n=max_n, p_predicted=0.0)  # val always uses GT
                 total_loss += float(loss.item())
         except Exception:
             errors += 1
@@ -641,6 +699,12 @@ def main():
     ap.add_argument("--max_n",          type=int,   default=128,
                     help="Maximum N_FP to track in composition distribution. "
                          "128 covers all 2-SCC compositions (max 9*9=81).")
+    ap.add_argument("--p_predicted",     type=float, default=0.5,
+                    help="Fraction of forced-SCC training calls that use predicted "
+                         "(not GT) parent FPs to build the forcing signal. "
+                         "0 = always GT (original teacher forcing), "
+                         "1 = always predicted (no teacher forcing). "
+                         "Default 0.5 (scheduled sampling).")
     ap.add_argument("--max_train",      type=int,   default=None)
     ap.add_argument("--no_cuda",        action="store_true")
     ap.add_argument("--seed",           type=int,   default=42)
@@ -674,6 +738,8 @@ def main():
         print("  Backbone frozen — only count heads trained")
     print(f"  Composition CE max_n: {args.max_n}")
     print(f"  Per-SCC regularisation weight: {args.scc_reg_weight}")
+    print(f"  Teacher forcing p_predicted: {args.p_predicted:.2f}  "
+          f"({'always GT' if args.p_predicted == 0.0 else 'always predicted' if args.p_predicted == 1.0 else 'scheduled sampling'})")
 
     print("Loading data...")
     train_cases = gather_cases(args.train_dirs)
@@ -709,7 +775,8 @@ def main():
 
         train_m = run_epoch(train_cases, train_dags, l1_model, l3_model, device,
                             optimizer=optimizer, max_cases=args.max_train,
-                            scc_reg_weight=args.scc_reg_weight, max_n=args.max_n)
+                            scc_reg_weight=args.scc_reg_weight, max_n=args.max_n,
+                            p_predicted=args.p_predicted)
 
         l1_model.eval()
         l3_model.eval()
