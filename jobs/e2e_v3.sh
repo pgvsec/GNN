@@ -1,12 +1,16 @@
 #!/bin/bash
-#SBATCH -A gpu
+#SBATCH --job-name=e2e_v3
+#SBATCH --output=e2e_v3_%j.out
+#SBATCH --error=e2e_v3_%j.err
+#SBATCH -A ayg
+#SBATCH -p gpu
+#SBATCH --qos=normal
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=64G
 #SBATCH --time=08:00:00
-#SBATCH --job-name=e2e_v3
-#SBATCH --output=/scratch/gilbreth/gupt1042/runs/e2e_v3/slurm_%j.out
-#SBATCH --error=/scratch/gilbreth/gupt1042/runs/e2e_v3/slurm_%j.err
 
 # ---------------------------------------------------------------------------
 # e2e_v3: teacher forcing fix (p_predicted=0.5)
