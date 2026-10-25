@@ -118,22 +118,28 @@ def freeze_all(model):
         p.requires_grad_(False)
 
 
-def _make_trainable_groups(l1_model, l3_model, lr_head, lr_backbone):
+def _make_trainable_groups(l1_model, l3_model, lr_head, lr_backbone,
+                           lr_pos: float = 0.0):
     """
     Return optimizer param groups.
 
-    If lr_backbone == 0: only count heads are trainable (backbone frozen).
-    If lr_backbone > 0: backbone parameters also included at lr_backbone.
+    lr_head=0 + lr_backbone=0 + lr_pos>0 → pos_only mode:
+      only l1_model.pos_head is trainable; count heads and backbone stay frozen.
+      This keeps exist_logit unchanged so count head inputs never shift.
     """
-    head_params = (
-        list(l1_model.count_head.parameters()) +
-        list(l1_model.stable_count_head.parameters()) +
-        list(l3_model.forcing_count_head.parameters())
-    )
-    for p in head_params:
-        p.requires_grad_(True)
+    groups = []
+    seen   = set()
 
-    groups = [{"params": head_params, "lr": lr_head}]
+    if lr_head > 0.0:
+        head_params = (
+            list(l1_model.count_head.parameters()) +
+            list(l1_model.stable_count_head.parameters()) +
+            list(l3_model.forcing_count_head.parameters())
+        )
+        for p in head_params:
+            p.requires_grad_(True)
+            seen.add(id(p))
+        groups.append({"params": head_params, "lr": lr_head})
 
     if lr_backbone > 0.0:
         backbone_l1 = [p for n, p in l1_model.named_parameters()
@@ -143,7 +149,6 @@ def _make_trainable_groups(l1_model, l3_model, lr_head, lr_backbone):
                        if not n.startswith("forcing_count_head")]
         # Deduplicate by tensor id: CorpusCNet shares the L1 backbone by reference,
         # so backbone_l3 contains the same parameter objects as backbone_l1.
-        seen = {id(p) for p in head_params}
         backbone_params = []
         for p in backbone_l1 + backbone_l3:
             if id(p) not in seen:
@@ -152,6 +157,19 @@ def _make_trainable_groups(l1_model, l3_model, lr_head, lr_backbone):
         for p in backbone_params:
             p.requires_grad_(True)
         groups.append({"params": backbone_params, "lr": lr_backbone})
+
+    if lr_pos > 0.0:
+        # Only L1's pos_head: decoder/exist_head/backbone stay frozen so
+        # exist_logit values (count_head inputs) never change.
+        pos_params = [p for p in l1_model.pos_head.parameters()
+                      if id(p) not in seen]
+        for p in pos_params:
+            p.requires_grad_(True)
+            seen.add(id(p))
+        groups.append({"params": pos_params, "lr": lr_pos})
+
+    if not groups:
+        raise ValueError("No trainable params: lr, lr_backbone, and lr_pos are all 0")
 
     return groups
 
@@ -801,6 +819,10 @@ def main():
     ap.add_argument("--epochs",         type=int,   default=40)
     ap.add_argument("--lr",             type=float, default=1e-4,
                     help="Learning rate for count heads")
+    ap.add_argument("--lr_pos",         type=float, default=0.0,
+                        help="LR for l1 pos_head only (pos-only isolation mode). "
+                             "Set --lr 0 and --lr_backbone 0 to keep count heads and "
+                             "backbone frozen while training only the slot pos MLP.")
     ap.add_argument("--lr_backbone",    type=float, default=0.0,
                     help="LR for backbone parameters (0 = frozen). "
                          "Recommended: 1e-5 if needed.")
@@ -821,8 +843,8 @@ def main():
                          "Default 0.5 (scheduled sampling).")
     ap.add_argument("--pos_reg_weight", type=float, default=0.0,
                     help="Weight on log-space Chamfer position loss for root SCC slots. "
-                         "0 = disabled (default). Requires --lr_backbone > 0 to flow "
-                         "gradient to the pos decoder. Recommended: 0.1.")
+                         "0 = disabled (default). With --lr_pos > 0 (pos-only mode) "
+                         "set this to 1.0. With --lr_backbone > 0 set to 0.1.")
     ap.add_argument("--accumulate",     type=int,   default=32,
                     help="Gradient accumulation steps before each optimizer.step(). "
                          "Higher = fewer optimizer steps per epoch = faster. Default 32.")
@@ -848,15 +870,20 @@ def main():
 
     freeze_all(l1_model)
     freeze_all(l3_model)
+    pos_only_mode = (args.lr == 0.0 and args.lr_backbone == 0.0 and args.lr_pos > 0.0)
     param_groups = _make_trainable_groups(l1_model, l3_model,
                                           lr_head=args.lr,
-                                          lr_backbone=args.lr_backbone)
+                                          lr_backbone=args.lr_backbone,
+                                          lr_pos=args.lr_pos)
 
     trainable = sum(p.numel() for g in param_groups for p in g["params"])
     total     = sum(p.numel() for p in list(l1_model.parameters()) +
                     list(l3_model.parameters()))
     print(f"Trainable params: {trainable:,} / {total:,} ({100*trainable/total:.2f}%)")
-    if args.lr_backbone > 0.0:
+    if pos_only_mode:
+        print(f"  Mode: pos-only isolation — only l1_model.pos_head trained")
+        print(f"  pos_head LR: {args.lr_pos:.2e}")
+    elif args.lr_backbone > 0.0:
         print(f"  Backbone LR: {args.lr_backbone:.2e}  (backbone unfrozen)")
     else:
         print("  Backbone frozen — only count heads trained")
@@ -885,26 +912,34 @@ def main():
     print(f"  Mixed precision (AMP): {'enabled' if use_amp else 'disabled'}")
 
     optimizer = torch.optim.AdamW(param_groups, weight_decay=args.wd)
-    # Cosine annealing over count-head LR group
+    # Cosine annealing: anneal over the primary LR (pos_head LR in pos_only mode)
+    primary_lr = args.lr_pos if pos_only_mode else args.lr
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=args.epochs, eta_min=args.lr * 0.01)
+        optimizer, T_max=args.epochs, eta_min=primary_lr * 0.01)
 
     out_dir  = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     log_path = out_dir / "log.csv"
 
-    best_val_ce = -1.0
-    log_rows    = []
+    # pos_only: track lowest val pos_loss; otherwise highest val count_exact
+    best_val_metric = float("inf") if pos_only_mode else -1.0
+    log_rows = []
 
     print(f"\n{'Epoch':>6}  {'Train Loss':>10}  {'Train CE':>9}  "
           f"{'Val Loss':>9}  {'Val CE':>8}  {'LR':>8}")
     print("-" * 60)
 
     for epoch in range(1, args.epochs + 1):
-        l1_model.train()
-        if args.lr_backbone > 0.0:
+        if pos_only_mode:
+            l1_model.eval()   # backbone, count heads stay in eval
+            l1_model.pos_head.train()
+            l3_model.eval()
+        elif args.lr_backbone > 0.0:
+            l1_model.train()
             l3_model.train()
         else:
+            l1_model.count_head.train()
+            l1_model.stable_count_head.train()
             l3_model.forcing_count_head.train()
 
         train_m = run_epoch(train_cases, train_dags, l1_model, l3_model, device,
@@ -918,11 +953,14 @@ def main():
 
         l1_model.eval()
         l3_model.eval()
+        # In pos_only mode pass pos_reg_weight so val_loss reflects pos quality
+        val_pos_w = args.pos_reg_weight if pos_only_mode else 0.0
         val_m = run_epoch(val_cases, val_dags, l1_model, l3_model, device,
                           max_n=args.max_n,
+                          pos_reg_weight=val_pos_w,
                           gt_counts_cache=val_gt_counts)
 
-        lr_now = optimizer.param_groups[0]["lr"]
+        lr_now = optimizer.param_groups[-1]["lr"]
         scheduler.step()
 
         print(f"{epoch:>6}  {train_m['loss']:>10.4f}  "
@@ -944,16 +982,23 @@ def main():
             writer.writeheader()
             writer.writerows(log_rows)
 
-        if val_m["count_exact"] > best_val_ce:
-            best_val_ce = val_m["count_exact"]
+        if pos_only_mode:
+            is_better = val_m["loss"] < best_val_metric
+        else:
+            is_better = val_m["count_exact"] > best_val_metric
+
+        if is_better:
+            best_val_metric = val_m["loss"] if pos_only_mode else val_m["count_exact"]
             save_best_full(out_dir, l1_model, l3_model, l1_cfg_dict, l3_cfg_dict)
-            print(f"         ↑ new best val count_exact = {best_val_ce:.4f}  (saved)")
+            metric_label = "val pos_loss" if pos_only_mode else "val count_exact"
+            print(f"         ↑ new best {metric_label} = {best_val_metric:.4f}  (saved)")
 
         if epoch % 5 == 0:
             save_checkpoint(out_dir, f"ep{epoch:03d}", l1_model, l3_model,
                             l1_cfg_dict, l3_cfg_dict, val_m)
 
-    print(f"\nBest val count_exact: {best_val_ce:.4f}")
+    best_label = "val pos_loss" if pos_only_mode else "val count_exact"
+    print(f"\nBest {best_label}: {best_val_metric:.4f}")
     print(f"Checkpoints saved to: {out_dir}")
 
 
