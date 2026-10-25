@@ -1,4 +1,4 @@
-# GNN
+# GNN (git checkout archive/v2-best-baseline   # recover the good code)
 Non-linear Dynamics on Graphs
 # A Three-Layer Learning Framework for Compositional Prediction of Dynamics in Large Gene Regulatory Networks
 
