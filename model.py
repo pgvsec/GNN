@@ -319,6 +319,37 @@ class SlotNodeHead(nn.Module):
         return self.mlp(torch.cat([ss, hh, ss * hh], dim=-1)).squeeze(-1)
 
 
+class StructuralCountHead(nn.Module):
+    """Count head for Layer I that reads structural constraints alongside slot evidence.
+
+    Inputs (all detached — count gradients do not flow back through the backbone):
+      1. sorted sigmoid(exist_logit) [B, K]  — slot-level evidence; sums to k_true when
+         w_exist_cnt > 0 during training.
+      2. graph embedding g [B, d]            — full topology + kinetic context.
+      3. has_pos_fb [B, 1]                   — 0 = TC_NEG (multistability impossible),
+                                               1 = TC_POS/TC_BOTH.
+
+    TC_NEG is the strongest structural constraint: no positive feedback → k_stable ≤ 1.
+    Giving it directly to the count head lets the model learn this rule cleanly.
+    """
+
+    def __init__(self, d_model: int, K: int, max_count: int, dropout: float = 0.0):
+        super().__init__()
+        self.max_count = max_count
+        d_in = K + d_model + 1    # exist_probs + graph_emb + has_pos_fb
+        self.mlp = MLP(d_in, d_model, max_count + 1, n_layers=3, dropout=dropout)
+
+    def forward(self,
+                exist_logit:  torch.Tensor,   # [B, K]
+                g:            torch.Tensor,   # [B, d]
+                has_pos_fb:   torch.Tensor,   # [B] bool or float
+                ) -> torch.Tensor:            # [B, max_count+1]
+        probs_sorted = torch.sigmoid(exist_logit).sort(dim=1, descending=True).values
+        pos_fb = has_pos_fb.float().unsqueeze(-1)   # [B, 1]
+        feat = torch.cat([probs_sorted, g, pos_fb], dim=-1)
+        return self.mlp(feat)
+
+
 # ---------------------------------------------------------------------------
 # 5. Network
 # ---------------------------------------------------------------------------
@@ -346,8 +377,10 @@ class SccFixedPointNet(nn.Module):
         self.stab_head = MLP(d, d, NUM_STABILITY)
         self.pos_head = SlotNodeHead(d)
         self.charpoly_head = MLP(2 * d, d, N_MAX)
-        self.count_head = MLP(d, d, cfg.max_fp + 1)
-        self.stable_count_head = MLP(d, d, cfg.max_fp + 1)
+        self.count_head = StructuralCountHead(d, cfg.max_fp, cfg.max_fp, cfg.dropout)
+        self.stable_count_head = StructuralCountHead(d, cfg.max_fp, cfg.max_fp, cfg.dropout)
+        # False lets the count loss train the whole network (count_net.CountNet).
+        self.count_detach = True
 
     def forward(self, batch):
         node_mask = batch["node_mask"]
@@ -370,13 +403,19 @@ class SccFixedPointNet(nn.Module):
         with torch.autocast(device_type=h.device.type, enabled=False):
             s, h, g = s.float(), h.float(), g.float()
             gs = g.unsqueeze(1).expand_as(s)
+            exist_logit = self.exist_head(s).squeeze(-1)     # [B, K]
+            has_pos_fb  = batch.get("has_pos_fb",
+                              torch.ones(g.shape[0], dtype=torch.bool, device=g.device))
             return {
-                "exist_logit": self.exist_head(s).squeeze(-1),
+                "exist_logit": exist_logit,
                 "stab_logit": self.stab_head(s),
                 "pos": torch.sigmoid(self.pos_head(s, h)),
                 "charpoly": self.charpoly_head(torch.cat([s, gs], dim=-1)),
-                "count_logit": self.count_head(g),
-                "stable_count_logit": self.stable_count_head(g),
+                "count_logit": self.count_head(
+                    exist_logit.detach() if self.count_detach else exist_logit,
+                    g.detach() if self.count_detach else g, has_pos_fb),
+                "stable_count_logit": self.stable_count_head(
+                    exist_logit.detach(), g.detach(), has_pos_fb),
                 # Intermediate embeddings exposed for Layer II / III
                 "slot_emb": s,    # branch tokens q^(r)  [B, K, d]
                 "graph_emb": g,   # z_j^0               [B, d]
@@ -387,22 +426,29 @@ class SccFixedPointNet(nn.Module):
 # ---------------------------------------------------------------------------
 # 6. Inference
 # ---------------------------------------------------------------------------
-def decode_slots(out):
+def decode_slots(out, exist_thresh: float = 0.0):
     """Boolean [B, K] mask of the slots that form the predicted fixed-point set.
 
     The count head says how many fixed points there are and the existence head ranks the
     slots, so the kept set is the k most probable slots, with k the argmax of the count head
     over odd counts. A generic system has an odd number of hyperbolic fixed points (every
-    index is +1 or -1 and they sum to 1), so even counts are excluded. Thresholding the
-    existence probability is not used: it is overconfident in the middle range and keeps
-    duplicate slots, and on held-out graphs it gave 64% exact counts against 79% for the
-    count head."""
+    index is +1 or -1 and they sum to 1), so even counts are excluded.
+
+    exist_thresh (default 0.0 = disabled): if > 0, a slot is additionally suppressed when
+    sigmoid(exist_logit) < exist_thresh, even if it ranks in the top-k. This gate is useful
+    after retraining with w_exist_cnt > 0, when the existence head is well-calibrated; it
+    should be tuned on a held-out validation set rather than set a priori.
+    """
     logits = out["count_logit"].float()
     even = torch.arange(logits.shape[-1], device=logits.device) % 2 == 0
     k = logits.masked_fill(even, float("-inf")).argmax(dim=-1)
     order = out["exist_logit"].float().argsort(dim=1, descending=True)
     rank = order.argsort(dim=1)                               # position of every slot in the ranking
-    return rank < k.unsqueeze(1)
+    in_topk = rank < k.unsqueeze(1)
+    if exist_thresh > 0.0:
+        confident = torch.sigmoid(out["exist_logit"].float()) >= exist_thresh
+        return in_topk & confident
+    return in_topk
 
 
 @torch.no_grad()

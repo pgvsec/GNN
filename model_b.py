@@ -145,11 +145,12 @@ class FiLMInjection(nn.Module):
         for k_idx in range(port_gene.shape[1]):
             gene_k = port_gene[:, k_idx]    # [B]
             active = msk[:, k_idx]          # [B]
+            gene_k_safe = gene_k.clamp(min=0)
             # Per-gene modulation increment: (gamma - 1) * h[gene_k] + beta
-            h_k = h[torch.arange(B, device=h.device), gene_k]   # [B, d]
+            h_k = h[torch.arange(B, device=h.device), gene_k_safe]   # [B, d]
             inc = ((gamma - 1.0) * h_k + beta) * active.unsqueeze(-1)
             # Scatter-add
-            idx = gene_k.view(B, 1, 1).expand(B, 1, d)
+            idx = gene_k_safe.view(B, 1, 1).expand(B, 1, d)
             delta.scatter_add_(1, idx, inc.unsqueeze(1))
         return h + delta
 
@@ -213,6 +214,9 @@ class UOmega(nn.Module):
         # Pad pos to N_MAX along the gene dimension so portrait_raw_dim is constant
         from data import N_MAX as _N_MAX
         K_port = exist_logit.shape[1]
+        # Positions of padded genes are sigmoid outputs, not zeros; mask them so the portrait
+        # of an SCC does not depend on how far its batch is padded.
+        pos = pos * node_mask.unsqueeze(1).to(pos.dtype)
         if pos.shape[-1] < _N_MAX:
             pad = torch.zeros(B, K_port, _N_MAX - pos.shape[-1],
                               device=pos.device, dtype=pos.dtype)
@@ -315,13 +319,18 @@ class CorpusBNet(nn.Module):
             sf, hf, gf = s.float(), h.float(), g.float()
             ef = e.float()
             gsf = gf.unsqueeze(1).expand_as(sf)
+            exist_logit_0 = self.backbone.exist_head(sf).squeeze(-1)   # [B, K]
+            has_pos_fb = batch.get("has_pos_fb",
+                torch.ones(gf.shape[0], dtype=torch.bool, device=gf.device))
             out0 = {
-                "exist_logit":       self.backbone.exist_head(sf).squeeze(-1),
+                "exist_logit":       exist_logit_0,
                 "stab_logit":        self.backbone.stab_head(sf),
                 "pos":               torch.sigmoid(self.backbone.pos_head(sf, hf)),
                 "charpoly":          self.backbone.charpoly_head(torch.cat([sf, gsf], dim=-1)),
-                "count_logit":       self.backbone.count_head(gf),
-                "stable_count_logit":self.backbone.stable_count_head(gf),
+                "count_logit":       self.backbone.count_head(
+                    exist_logit_0.detach(), gf.detach(), has_pos_fb),
+                "stable_count_logit":self.backbone.stable_count_head(
+                    exist_logit_0.detach(), gf.detach(), has_pos_fb),
                 "slot_emb": sf,
                 "graph_emb": gf,
                 "node_emb":  hf,
@@ -383,17 +392,25 @@ class CorpusBNet(nn.Module):
             z_cf   = z_cond.float()
             gs_c   = z_cf.unsqueeze(1).expand_as(s_cond)
             nb     = N
+            exist_logit_cond = self.backbone.exist_head(s_cond).squeeze(-1)   # [B, K]
+            has_pos_fb_cond = batch.get("has_pos_fb",
+                torch.ones(z_cf.shape[0], dtype=torch.bool, device=z_cf.device))
             out_cond = {
-                "exist_logit":        self.backbone.exist_head(s_cond).squeeze(-1),
+                "exist_logit":        exist_logit_cond,
                 "stab_logit":         self.backbone.stab_head(s_cond),
                 "pos":                torch.sigmoid(self.backbone.pos_head(s_cond, h_cond.float())),
                 "charpoly":           self.backbone.charpoly_head(torch.cat([s_cond, gs_c], dim=-1)),
-                "count_logit":        self.backbone.count_head(z_cf),
-                "stable_count_logit": self.backbone.stable_count_head(z_cf),
+                "count_logit":        self.backbone.count_head(
+                    exist_logit_cond.detach(), z_cf.detach(), has_pos_fb_cond),
+                "stable_count_logit": self.backbone.stable_count_head(
+                    exist_logit_cond.detach(), z_cf.detach(), has_pos_fb_cond),
                 # Embeddings for downstream use
                 "slot_emb":  s_cond,
                 "graph_emb": z_cf,
                 "node_emb":  h_cond.float(),
+                # Exposed for subclasses (e.g. CorpusCNet pairwise head)
+                "_z_cond":   z_cf,
+                "_h_cond":   h_cond.float(),
             }
 
         return out_cond, out0

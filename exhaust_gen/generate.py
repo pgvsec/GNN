@@ -65,6 +65,27 @@ PRESETS = {
     "full": dict(topos=[6000, 10000, 7000, 5000, 4000, 3000, 2400],
                  draws=[120, 100, 80, 30, 25, 20, 16, 12, 10],
                  seeds=[96, 128, 160, 192, 224, 320, 448, 512, 576]),
+    # exhaust: n=2..6 only — quota for n=7-10 redirected into n=4-6 (~2x "full"),
+    #          draws doubled from "full" for dynamical breadth.
+    #          draws/seeds still have 9 entries for n=2..10 but n=7-10 are never
+    #          accessed because build_graphs stops at n_max=6.
+    "exhaust": dict(
+        topos=[10000, 15000, 12000, 0, 0, 0, 0],  # n=4,5,6 boosted; n=7-10 unused
+        draws=[240, 200, 160, 60, 50, 0, 0, 0, 0],
+        seeds=[96, 128, 160, 192, 224, 224, 224, 224, 224],  # n=7-10 dummy, never used
+        n_max=6,
+    ),
+    # exhaust_v2: same topology budget as exhaust, but with a heavier boundary-phase
+    #   fraction (0.40 vs 0.20) to produce more near-bifurcation samples at n=2,3
+    #   where L1 undercounts bistable / tristable SCCs.  Broad phase trimmed to
+    #   compensate so total draws per graph stay the same.
+    "exhaust_v2": dict(
+        topos=[10000, 15000, 12000, 0, 0, 0, 0],
+        draws=[240, 200, 160, 60, 50, 0, 0, 0, 0],
+        seeds=[96, 128, 160, 192, 224, 224, 224, 224, 224],
+        n_max=6,
+        phase_fracs=(0.20, 0.40, 0.40),  # 40 % boundary (vs 20 % in exhaust)
+    ),
 }
 PHASE_FRACS = (0.30, 0.50, 0.20)
 HILL_WEIGHTS = {0: [0.10, 0.20, 0.30, 0.25, 0.15],      # probability of n_Hill = 1 .. 5
@@ -113,9 +134,10 @@ def parse_config(argv=None):
     return cfg
 
 
-def phase_counts(total):
-    n0 = int(round(PHASE_FRACS[0] * total))
-    n1 = int(round(PHASE_FRACS[1] * total))
+def phase_counts(total, fracs=None):
+    f = fracs if fracs is not None else PHASE_FRACS
+    n0 = int(round(f[0] * total))
+    n1 = int(round(f[1] * total))
     return n0, n1, max(total - n0 - n1, 0)
 
 
@@ -388,13 +410,14 @@ def run_shard(shard_id, graph_ids, topo, cfg):
     ns = topo["t_n"][graph_ids].astype(np.int64)
     checked = False
     clock = np.zeros((N_MAX + 1, 3))        # seconds by (n, phase)
+    phase_fracs = preset.get("phase_fracs", None)
     for n in range(topology.N_MIN, N_MAX + 1):
         gn = graph_ids[ns == n]
         if gn.size == 0:
             continue
         adj_g = topology.dense_adjacency(topo, gn, n)
         bsz = batch_size(n, scfg, elements)
-        counts = phase_counts(preset["draws"][n - 2])
+        counts = phase_counts(preset["draws"][n - 2], fracs=phase_fracs)
         pool = []
         for phase in (0, 1):
             if counts[phase] == 0:
@@ -461,7 +484,9 @@ def generate(cfg):
     os.makedirs(shard_dir, exist_ok=True)
     topo_path = os.path.join(cfg.out_dir, "topologies.npz")
     if not os.path.exists(topo_path):
-        topology.build_and_save(preset["topos"], cfg.seed, topo_path)
+        exhaust_n = preset.get("exhaust_n", 3)
+        n_max = preset.get("n_max", topology.N_MAX)
+        topology.build_and_save(preset["topos"], cfg.seed, topo_path, exhaust_n=exhaust_n, n_max=n_max)
     topo = topology.load_topologies(topo_path)
     n_graphs = int(topo["t_n"].shape[0])
     order = np.random.default_rng(cfg.seed).permutation(n_graphs)
