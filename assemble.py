@@ -98,7 +98,7 @@ class InferenceOptions:
       Optional network whose count_logit replaces the count head of every Layer I call
       (count_net.CountNet). Slots, positions and stability still come from Layer I.
     """
-    l3_frame: str = "forced"
+    l3_frame: str = "raw"
     forced_model: str = "l3"
     pass_tc: bool = True
     solver_fallback: bool = True

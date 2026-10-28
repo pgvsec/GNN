@@ -2,7 +2,7 @@
 
 **Goal:** Prove compositional GRN dynamics are learnable by a pure ML model.  
 **Target:** All three metrics must reach ~85%: `count_exact ≥ 0.85`, `fp_hd ≥ 0.85`, `stable_acc ≥ 0.85`  
-**Eval command (canonical):** `eval_composition2.py --dedup fill --refine_steps 15`  
+**Eval command (canonical):** `eval_composition2.py --l3_frame raw --dedup fill --refine_steps 15`  
 **Eval set:** `composition_eval_v5` — 500 cases, 1502 total GT FPs  
 
 ---
@@ -158,6 +158,10 @@
 5. **refine_steps=15 > refine_steps=5 by +1.66pp fp_hd:** More Newton steps help. Further gains possible with refine_steps=30+.
 
 6. **The fundamental tension:** Decoder must change to improve FP seeds, but decoder change breaks exist_logit calibration for count head. These are coupled through the shared `s = decoder(g, h)` representation.
+
+7. **CRITICAL BUG (found in full arch audit):** `InferenceOptions.l3_frame` defaulted to `"forced"` since the module was written, but L3 was always trained in `"raw"` frame (batch has unforced `scc_P`; forcing enters only via ports). At inference in "forced" frame, the backbone sees `P * u` (never in its training distribution), and the forcing signal is double-counted: once via node features (P*u) and again through the port mechanism. **All v2–v6 eval numbers were computed in the wrong frame.** Fix: change default to `"raw"` in `InferenceOptions` (done on `prateek/ml-experiments`). Expected impact: 3–5pp across all metrics with zero retraining.
+
+8. **Position scale mismatch in "raw" frame (secondary):** L3 encodes target FP positions relative to `xmax_unforced = box(P)`. Under activation forcing the true FP can exceed `xmax_unforced`, so the model learns a clipped representation. Newton compensates at eval time, but longer refine_steps helps more than they should. True fix: retrain L3 encoding targets relative to `xmax_phys = box(P*u)`.
 
 ---
 

@@ -94,12 +94,17 @@ def main():
                     help="Disable Poincaré-Hopf parity enforcement.")
     ap.add_argument("--refine_steps", type=int, default=5,
                     help="Newton refinement steps per slot (default 5).")
+    ap.add_argument("--l3_frame", default="raw",
+                    choices=["raw", "forced"],
+                    help="Frame for L3 inference. 'raw'=unforced P (training frame, correct). "
+                         "'forced'=P*u (historical default, wrong). Default: raw.")
     args = ap.parse_args()
 
     device = torch.device("cpu" if args.no_cuda or not torch.cuda.is_available() else "cuda")
     print(f"Device: {device}")
-    print(f"Inference opts: dedup={args.dedup}  rescue={not args.no_rescue}  "
-          f"parity_drop={not args.no_parity_drop}  refine_steps={args.refine_steps}")
+    print(f"Inference opts: l3_frame={args.l3_frame}  dedup={args.dedup}  "
+          f"rescue={not args.no_rescue}  parity_drop={not args.no_parity_drop}  "
+          f"refine_steps={args.refine_steps}")
 
     print("Loading models...")
     l1_model, _ = load_l1(args.l1_ckpt, device)
@@ -120,6 +125,7 @@ def main():
 
     from assemble import GRNPredictor, InferenceOptions
     opts = InferenceOptions(
+        l3_frame=args.l3_frame,
         dedup=args.dedup,
         rescue=not args.no_rescue,
         parity_drop=not args.no_parity_drop,
