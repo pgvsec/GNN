@@ -76,15 +76,15 @@ See `PROGRESS.md` for checkpoint paths and hyperparameters for each experiment.
 ## Evaluation
 
 ```bash
-# Canonical eval (fill dedup, 15 Newton refinement steps)
+# Canonical eval (forced frame, fill dedup, 15 Newton refinement steps)
 PYTHONPATH=$REPO_GNN:$REPO_GNN_TEMP python exhaust_gen/eval_composition2.py \
     --l1_ckpt <l1_best.pt> --l3_ckpt <l3_best.pt> \
     --eval_dir <composition_eval_v5> \
     --out_csv eval_results.csv \
-    --dedup fill --refine_steps 15
+    --l3_frame forced --dedup fill --refine_steps 15
 ```
 
-`--dedup fill` trusts the ML count head exactly (N FPs), uses Newton-refined slot positions as seeds. `--refine_steps 15` gives +1.66pp fp_hd vs. 5 steps.
+`--l3_frame forced` matches the fine-tuning frame used by `finetune_e2e_composition.py` (v2–v6 checkpoints). `--dedup fill` trusts the ML count head exactly. `--refine_steps 15` gives +1.66pp fp_hd vs. 5 steps.
 
 ---
 
