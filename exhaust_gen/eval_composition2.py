@@ -94,10 +94,11 @@ def main():
                     help="Disable Poincaré-Hopf parity enforcement.")
     ap.add_argument("--refine_steps", type=int, default=5,
                     help="Newton refinement steps per slot (default 5).")
-    ap.add_argument("--l3_frame", default="raw",
+    ap.add_argument("--l3_frame", default="forced",
                     choices=["raw", "forced"],
-                    help="Frame for L3 inference. 'raw'=unforced P (training frame, correct). "
-                         "'forced'=P*u (historical default, wrong). Default: raw.")
+                    help="Frame for L3 inference. 'forced'=P*u, matches finetune_e2e_composition.py "
+                         "(v2-v6 checkpoints). 'raw'=unforced P, matches train_layer3.py default. "
+                         "Default: forced.")
     args = ap.parse_args()
 
     device = torch.device("cpu" if args.no_cuda or not torch.cuda.is_available() else "cuda")

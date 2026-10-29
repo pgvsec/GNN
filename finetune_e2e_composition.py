@@ -318,7 +318,7 @@ def _make_l3_batch(scc, parent_x_local: np.ndarray, parent_scc_id: int,
     from topology import feedback_loops
     u = _compute_forcing(dag, parent_scc_id, scc.scc_id,
                          parent_x_local, global_adj, global_T, global_nh, global_F)
-    batch = _make_scc_batch(scc, u, device)
+    batch = _make_scc_batch(scc, u, device, frame="forced")
     try:
         fb = feedback_loops(scc.adj_intra)
         if fb is None:

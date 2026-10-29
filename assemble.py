@@ -62,11 +62,12 @@ class InferenceOptions:
 
     l3_frame
       "forced": the model sees P_eff = P * u and the invariant box of P_eff, plus the ports
-                built from u. This is the Corpus B / Layer II frame and the historical
-                behaviour of this module.
+                built from u. This is the frame finetune_e2e_composition.py uses (default
+                _make_scc_batch frame), so v2–v6 checkpoints were trained in this frame.
       "raw":    the model sees the unforced P and its box; forcing enters only through the
-                ports. This is the frame Layer III was trained in (data_c.load_branch stores
-                scc_P unforced and branch_u separately).
+                ports. This is train_layer3.py's default (frame="raw" config field), but
+                finetune_e2e_composition.py did NOT use this — it called _make_scc_batch
+                with no frame argument, which defaults to "forced".
       Newton refinement and residuals always use the physical system P_eff, whatever the frame.
     forced_model
       "l3": Layer III on forced SCCs (default).
@@ -98,7 +99,7 @@ class InferenceOptions:
       Optional network whose count_logit replaces the count head of every Layer I call
       (count_net.CountNet). Slots, positions and stability still come from Layer I.
     """
-    l3_frame: str = "raw"
+    l3_frame: str = "forced"
     forced_model: str = "l3"
     pass_tc: bool = True
     solver_fallback: bool = True

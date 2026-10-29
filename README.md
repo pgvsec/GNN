@@ -2,8 +2,7 @@
 
 A three-layer GNN pipeline that predicts fixed-point dynamics of large Gene Regulatory Networks (GRNs) compositionally, via SCC decomposition. Target metrics: **count_exact ≥ 0.85 · fp_hd ≥ 0.85 · stable_acc ≥ 0.85**.
 
-Current best (v6, `dedup=fill`, `refine_steps=15`, **wrong frame**): **0.840 / 0.824 / 0.860**  
-Pending re-eval with `l3_frame=raw` (correct frame) — expected higher across all metrics.
+Current best (v6, `dedup=fill`, `refine_steps=15`): **0.840 / 0.824 / 0.860**
 
 ---
 
@@ -77,15 +76,15 @@ See `PROGRESS.md` for checkpoint paths and hyperparameters for each experiment.
 ## Evaluation
 
 ```bash
-# Canonical eval (raw frame, fill dedup, 15 Newton refinement steps)
+# Canonical eval (forced frame, fill dedup, 15 Newton refinement steps)
 PYTHONPATH=$REPO_GNN:$REPO_GNN_TEMP python exhaust_gen/eval_composition2.py \
     --l1_ckpt <l1_best.pt> --l3_ckpt <l3_best.pt> \
     --eval_dir <composition_eval_v5> \
     --out_csv eval_results.csv \
-    --l3_frame raw --dedup fill --refine_steps 15
+    --l3_frame forced --dedup fill --refine_steps 15
 ```
 
-`--dedup fill` trusts the ML count head exactly (N FPs), uses Newton-refined slot positions as seeds. `--refine_steps 15` gives +1.66pp fp_hd vs. 5 steps.
+`--l3_frame forced` matches the fine-tuning frame used by `finetune_e2e_composition.py` (v2–v6 checkpoints). `--dedup fill` trusts the ML count head exactly. `--refine_steps 15` gives +1.66pp fp_hd vs. 5 steps.
 
 ---
 

@@ -11,12 +11,14 @@
 #SBATCH --partition=a10
 #SBATCH --account=ayg
 
-# Eval sweep: compare l3_frame=raw (correct training frame) vs l3_frame=forced (historical bug).
-# Also sweeps refine_steps=15 and 30.
+# Eval sweep: compare l3_frame=raw vs l3_frame=forced, also sweeps refine_steps=15 and 30.
 # All four runs use the same v6 checkpoints — no retraining.
 #
-# Expected: raw frame gives higher metrics across the board because
-# the frozen backbone never saw P*u during L3 training.
+# Result (2026-10-29): forced frame is correct for v2-v6 checkpoints.
+# finetune_e2e_composition.py calls _make_scc_batch without explicit frame,
+# which defaults to "forced". Switching to "raw" drops count_exact 0.840->0.594.
+# Summary: forced_rs15=0.840/0.822/0.860, forced_rs30=0.840/0.826/0.860
+#          raw_rs15=0.594/0.750/0.681,    raw_rs30=0.594/0.758/0.678
 
 SCRATCH=/scratch/gilbreth/gupt1042
 REPO_GNN=$SCRATCH/GNN
@@ -33,7 +35,7 @@ VAL_DIR=$SCRATCH/runs/composition_eval_v5
 
 cd $REPO_GNN
 
-echo "=== 1/4: raw frame, rs=15 (expected best, fixes training/inference mismatch) ==="
+echo "=== 1/4: raw frame, rs=15 (WRONG for v2-v6 checkpoints; drops count_exact to 0.594) ==="
 PYTHONPATH=$REPO_GNN:$REPO_GNN_TEMP $PYTHON exhaust_gen/eval_composition2.py \
     --l1_ckpt $L1_CKPT --l3_ckpt $L3_CKPT \
     --eval_dir $VAL_DIR \
@@ -47,7 +49,7 @@ PYTHONPATH=$REPO_GNN:$REPO_GNN_TEMP $PYTHON exhaust_gen/eval_composition2.py \
     --out_csv $OUT_DIR/raw_rs30.csv \
     --l3_frame raw --dedup fill --refine_steps 30
 
-echo "=== 3/4: forced frame, rs=15 (historical baseline — current published results) ==="
+echo "=== 3/4: forced frame, rs=15 (correct for v2-v6 — matches finetune training frame) ==="
 PYTHONPATH=$REPO_GNN:$REPO_GNN_TEMP $PYTHON exhaust_gen/eval_composition2.py \
     --l1_ckpt $L1_CKPT --l3_ckpt $L3_CKPT \
     --eval_dir $VAL_DIR \
