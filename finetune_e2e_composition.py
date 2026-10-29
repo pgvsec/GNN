@@ -544,7 +544,8 @@ def compute_e2e_loss(case, dag, l1_model, l3_model, device, scc_gt_counts,
                      scc_reg_weight: float = 0.0,
                      max_n: int = 128,
                      p_predicted: float = 0.0,
-                     pos_reg_weight: float = 0.0) -> tuple[torch.Tensor, dict]:
+                     pos_reg_weight: float = 0.0,
+                     freeze_l3_backbone: bool = True) -> tuple[torch.Tensor, dict]:
     """
     Compute end-to-end composition CE loss for one case.
 
@@ -622,7 +623,7 @@ def compute_e2e_loss(case, dag, l1_model, l3_model, device, scc_gt_counts,
                 batch = _make_l3_batch(scc, parent_x, pid, dag,
                                        case["T"], case["nh"], case["F"],
                                        case["adj"], device)
-                out_cond, _ = l3_model(batch, freeze_backbone=True)
+                out_cond, _ = l3_model(batch, freeze_backbone=freeze_l3_backbone)
                 count_logit = out_cond["count_logit"][0]
                 probs_branch, k_vals = odd_probs(count_logit)
                 branch_probs_list.append(probs_branch)
@@ -630,6 +631,14 @@ def compute_e2e_loss(case, dag, l1_model, l3_model, device, scc_gt_counts,
                 if scc_reg_weight > 0.0:
                     scc_reg = scc_reg + _odd_ce_loss(count_logit, gt_k)
                     n_reg_terms += 1
+
+                # L3 Chamfer: direct position gradient to forced-SCC decoder.
+                # Only useful when backbone is unfrozen (gradients can flow).
+                if pos_reg_weight > 0.0 and gt_fps and not freeze_l3_backbone:
+                    pl = _pos_chamfer_loss(out_cond, batch, gt_fps, scc.n)
+                    if pl is not None:
+                        pos_loss = pos_loss + pl
+                        n_pos_terms += 1
 
             # Average across branches (marginalise over parent FPs under uniform weight)
             probs_avg = torch.stack(branch_probs_list).mean(dim=0)  # [n_odd_k]
@@ -697,6 +706,7 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
               optimizer=None, max_cases=None,
               scc_reg_weight=0.0, max_n=128, p_predicted=0.0,
               pos_reg_weight=0.0,
+              freeze_l3_backbone=True,
               gt_counts_cache=None,
               accumulate=32,
               scaler=None):
@@ -754,12 +764,14 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
                         loss, pred_counts = compute_e2e_loss(
                             case, dag, l1_model, l3_model, device, scc_gt_counts,
                             scc_reg_weight=scc_reg_weight, max_n=max_n,
-                            p_predicted=p_predicted, pos_reg_weight=pos_reg_weight)
+                            p_predicted=p_predicted, pos_reg_weight=pos_reg_weight,
+                            freeze_l3_backbone=freeze_l3_backbone)
                 else:
                     loss, pred_counts = compute_e2e_loss(
                         case, dag, l1_model, l3_model, device, scc_gt_counts,
                         scc_reg_weight=scc_reg_weight, max_n=max_n,
-                        p_predicted=p_predicted, pos_reg_weight=pos_reg_weight)
+                        p_predicted=p_predicted, pos_reg_weight=pos_reg_weight,
+                        freeze_l3_backbone=freeze_l3_backbone)
 
                 if loss.requires_grad:
                     scaled = loss / accumulate
@@ -996,6 +1008,7 @@ def main():
                             scc_reg_weight=args.scc_reg_weight, max_n=args.max_n,
                             p_predicted=args.p_predicted,
                             pos_reg_weight=args.pos_reg_weight,
+                            freeze_l3_backbone=(args.lr_backbone == 0.0),
                             gt_counts_cache=train_gt_counts,
                             accumulate=args.accumulate,
                             scaler=scaler)

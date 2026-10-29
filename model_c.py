@@ -363,9 +363,11 @@ class CorpusCNet(CorpusBNet):
         tc_onehot = Fnn.one_hot((tc - 1).clamp(0, 2), num_classes=3).float()  # [B, 3]
 
         if isinstance(self.forcing_count_head, ForcingAwareCountHeadV2):
-            # V2: no exist_logit — decoder training cannot destabilise count head
+            # V2: z_cond is NOT detached — composition CE can flow to backbone.
+            # Safe because V2 does not read exist_logit, so backbone changes
+            # cannot destabilise count calibration via the decoder.
             out_cond["count_logit"] = self.forcing_count_head(
-                z_cond.detach(),
+                z_cond,
                 u_stats,
                 tc_onehot,
             )
