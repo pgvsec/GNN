@@ -200,29 +200,21 @@ def _forcing_stats(u, n, node_mask):
 # ---------------------------------------------------------------------------
 
 class ForcingAwareCountHead(nn.Module):
-    """Count head for Corpus C forced SCCs.
+    """Count head for Corpus C forced SCCs (v1 — uses exist_logit).
 
     Reads four groups of features (all detached — no gradients flow back
     through U_ω or the backbone):
 
       1. sorted sigmoid(exist_logit) [B, K]
-         The SlotDecoder's per-slot existence evidence.  With w_exist_cnt > 0,
-         these are supervised to sum to k_true, making them the most direct
-         count signal available.
-
       2. Conditioned graph embedding z_cond [B, d]
-         Output of U_ω after incorporating the forcing.  Encodes topology,
-         kinetic parameters, and the forcing signal all at once.
-
       3. Forcing statistics u_stats [B, 3]
-         (max|log u|, mean|log u|, n_forced/n) — explicit measure of how far
-         the SCC has been pushed from its autonomous bifurcation point.
-
       4. Thomas class one-hot [B, 3]
-         tc ∈ {1=TC_NEG, 2=TC_POS, 3=TC_BOTH}.  TC_NEG → no positive feedback
-         → k_stable ≤ 1.  Strongest structural constraint on k.
 
     Total input: K + d_model + 3 + 3 → 3-layer MLP → count_logit[0..max_count].
+
+    Note: coupling to exist_logit prevents decoder training (any decoder
+    gradient shifts exist_logit and breaks count calibration).  Use
+    ForcingAwareCountHeadV2 (cfg.use_v2_count_head=True) to decouple.
     """
 
     def __init__(self, d_model: int, K: int,
@@ -241,6 +233,41 @@ class ForcingAwareCountHead(nn.Module):
                 ) -> torch.Tensor:           # [B, max_count+1]
         probs_sorted = torch.sigmoid(exist_logit).sort(dim=1, descending=True).values
         feat = torch.cat([probs_sorted, z_cond, u_stats, tc_onehot], dim=-1)
+        return self.mlp(feat)
+
+
+class ForcingAwareCountHeadV2(nn.Module):
+    """Count head for Corpus C forced SCCs (v2 — decoupled from exist_logit).
+
+    Reads only three feature groups (all detached):
+
+      1. Conditioned graph embedding z_cond [B, d]
+         A_η output encoding topology, kinetics, and the forcing signal.
+      2. Forcing statistics u_stats [B, 3]
+         (max|log u|, mean|log u|, n_forced/n)
+      3. Thomas class one-hot [B, 3]
+
+    Does NOT read exist_logit.  This breaks the count head's dependence on
+    the decoder output, so the decoder (SlotDecoder + exist_head) can be
+    trained without disrupting count calibration.
+
+    Total input: d_model + 3 + 3 → 3-layer MLP → count_logit[0..max_count].
+    """
+
+    def __init__(self, d_model: int,
+                 max_count: int = DEFAULT_MAX_COUNT_C,
+                 dropout: float = 0.0):
+        super().__init__()
+        self.max_count = max_count
+        d_in = d_model + 3 + 3   # z_cond + u_stats + tc_onehot
+        self.mlp = MLP(d_in, d_model, max_count + 1, n_layers=3, dropout=dropout)
+
+    def forward(self,
+                z_cond:    torch.Tensor,   # [B, d]
+                u_stats:   torch.Tensor,   # [B, 3]
+                tc_onehot: torch.Tensor,   # [B, 3]
+                ) -> torch.Tensor:         # [B, max_count+1]
+        feat = torch.cat([z_cond, u_stats, tc_onehot], dim=-1)
         return self.mlp(feat)
 
 
@@ -268,12 +295,19 @@ class CorpusCNet(CorpusBNet):
         self.max_ports_c = getattr(cfg, "max_ports_c", MAX_PORTS_C)
 
         max_count_c = getattr(cfg, "max_count_c", DEFAULT_MAX_COUNT_C)
-        self.forcing_count_head = ForcingAwareCountHead(
-            d_model=cfg.d_model,
-            K=cfg.max_fp,
-            max_count=max_count_c,
-            dropout=cfg.dropout,
-        )
+        if getattr(cfg, "use_v2_count_head", False):
+            self.forcing_count_head = ForcingAwareCountHeadV2(
+                d_model=cfg.d_model,
+                max_count=max_count_c,
+                dropout=cfg.dropout,
+            )
+        else:
+            self.forcing_count_head = ForcingAwareCountHead(
+                d_model=cfg.d_model,
+                K=cfg.max_fp,
+                max_count=max_count_c,
+                dropout=cfg.dropout,
+            )
 
     def forward(self, batch, freeze_backbone=True):
         """
@@ -328,12 +362,21 @@ class CorpusCNet(CorpusBNet):
             batch["P"].shape[0], dtype=torch.long, device=batch["P"].device))
         tc_onehot = Fnn.one_hot((tc - 1).clamp(0, 2), num_classes=3).float()  # [B, 3]
 
-        exist_logit = out_cond["exist_logit"].detach()   # [B, K]
-        out_cond["count_logit"] = self.forcing_count_head(
-            exist_logit,
-            z_cond.detach(),
-            u_stats,
-            tc_onehot,
-        )
+        if isinstance(self.forcing_count_head, ForcingAwareCountHeadV2):
+            # V2: no exist_logit — decoder training cannot destabilise count head
+            out_cond["count_logit"] = self.forcing_count_head(
+                z_cond.detach(),
+                u_stats,
+                tc_onehot,
+            )
+        else:
+            # V1: reads exist_logit (decoder changes break calibration)
+            exist_logit = out_cond["exist_logit"].detach()   # [B, K]
+            out_cond["count_logit"] = self.forcing_count_head(
+                exist_logit,
+                z_cond.detach(),
+                u_stats,
+                tc_onehot,
+            )
 
         return out_cond, out0

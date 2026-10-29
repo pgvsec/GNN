@@ -102,15 +102,19 @@ def load_l1(path, device):
     return model, cfg, ck["cfg"]
 
 
-def load_l3(path, l1_model, device):
+def load_l3(path, l1_model, device, use_v2_count_head: bool = False):
     from model_c import CorpusCNet
     ck = torch.load(path, map_location=device, weights_only=False)
-    cfg = SimpleNamespace(**ck["cfg"])
+    cfg_dict = dict(ck["cfg"])
+    if use_v2_count_head:
+        cfg_dict["use_v2_count_head"] = True
+    cfg = SimpleNamespace(**cfg_dict)
     model = CorpusCNet(l1_model, cfg)
     sd = _remap_count_head_keys(ck.get("ema", ck.get("model")))
+    # strict=False: allows forcing_count_head shape mismatch when switching V1→V2
     model.load_state_dict(sd, strict=False)
     model.to(device)
-    return model, cfg, ck["cfg"]
+    return model, cfg, cfg_dict
 
 
 def freeze_all(model):
@@ -119,13 +123,17 @@ def freeze_all(model):
 
 
 def _make_trainable_groups(l1_model, l3_model, lr_head, lr_backbone,
-                           lr_pos: float = 0.0):
+                           lr_pos: float = 0.0, lr_decoder: float = 0.0):
     """
     Return optimizer param groups.
 
     lr_head=0 + lr_backbone=0 + lr_pos>0 → pos_only mode:
       only l1_model.pos_head is trainable; count heads and backbone stay frozen.
       This keeps exist_logit unchanged so count head inputs never shift.
+
+    lr_decoder>0 → enable SlotDecoder + exist_head training.
+      Requires ForcingAwareCountHeadV2 (cfg.use_v2_count_head=True) so that
+      decoder changes don't break count head calibration.
     """
     groups = []
     seen   = set()
@@ -168,8 +176,22 @@ def _make_trainable_groups(l1_model, l3_model, lr_head, lr_backbone,
             seen.add(id(p))
         groups.append({"params": pos_params, "lr": lr_pos})
 
+    if lr_decoder > 0.0:
+        # SlotDecoder + exist_head from L1 backbone (shared with L3 backbone).
+        # Safe only with ForcingAwareCountHeadV2 (no exist_logit dependency).
+        dec_names = ("decoder.", "exist_head.")
+        dec_params = [p for n, p in l1_model.named_parameters()
+                      if any(n.startswith(d) for d in dec_names)
+                      and id(p) not in seen]
+        for p in dec_params:
+            p.requires_grad_(True)
+            seen.add(id(p))
+        if dec_params:
+            groups.append({"params": dec_params, "lr": lr_decoder})
+
     if not groups:
-        raise ValueError("No trainable params: lr, lr_backbone, and lr_pos are all 0")
+        raise ValueError(
+            "No trainable params: lr, lr_backbone, lr_pos, and lr_decoder are all 0")
 
     return groups
 
@@ -826,6 +848,15 @@ def main():
     ap.add_argument("--lr_backbone",    type=float, default=0.0,
                     help="LR for backbone parameters (0 = frozen). "
                          "Recommended: 1e-5 if needed.")
+    ap.add_argument("--lr_decoder",     type=float, default=0.0,
+                    help="LR for L1 SlotDecoder + exist_head (0 = frozen). "
+                         "Requires --use_v2_count_head; otherwise decoder gradient "
+                         "shifts exist_logit and breaks count calibration. "
+                         "Recommended: 1e-5.")
+    ap.add_argument("--use_v2_count_head", action="store_true",
+                    help="Use ForcingAwareCountHeadV2 (no exist_logit input). "
+                         "Required when --lr_decoder > 0 to protect count calibration. "
+                         "Reinitialises forcing_count_head from scratch.")
     ap.add_argument("--wd",             type=float, default=1e-4)
     ap.add_argument("--scc_reg_weight", type=float, default=0.3,
                     help="Weight on per-SCC CE regularisation term. "
@@ -864,9 +895,15 @@ def main():
                           else "cuda")
     print(f"Device: {device}")
 
+    if args.lr_decoder > 0.0 and not args.use_v2_count_head:
+        raise ValueError(
+            "--lr_decoder requires --use_v2_count_head.  Without V2 head, "
+            "decoder gradient shifts exist_logit and breaks count calibration.")
+
     print("Loading models...")
     l1_model, l1_cfg, l1_cfg_dict = load_l1(args.l1_ckpt, device)
-    l3_model, l3_cfg, l3_cfg_dict = load_l3(args.l3_ckpt, l1_model, device)
+    l3_model, l3_cfg, l3_cfg_dict = load_l3(args.l3_ckpt, l1_model, device,
+                                             use_v2_count_head=args.use_v2_count_head)
 
     freeze_all(l1_model)
     freeze_all(l3_model)
@@ -874,7 +911,8 @@ def main():
     param_groups = _make_trainable_groups(l1_model, l3_model,
                                           lr_head=args.lr,
                                           lr_backbone=args.lr_backbone,
-                                          lr_pos=args.lr_pos)
+                                          lr_pos=args.lr_pos,
+                                          lr_decoder=args.lr_decoder)
 
     trainable = sum(p.numel() for g in param_groups for p in g["params"])
     total     = sum(p.numel() for p in list(l1_model.parameters()) +
@@ -883,10 +921,16 @@ def main():
     if pos_only_mode:
         print(f"  Mode: pos-only isolation — only l1_model.pos_head trained")
         print(f"  pos_head LR: {args.lr_pos:.2e}")
+    elif args.lr_decoder > 0.0:
+        print(f"  Mode: decoder unfreeze — SlotDecoder + exist_head trainable")
+        print(f"  Count head: {'V2 (no exist_logit)' if args.use_v2_count_head else 'V1'}")
+        print(f"  decoder LR: {args.lr_decoder:.2e}")
     elif args.lr_backbone > 0.0:
         print(f"  Backbone LR: {args.lr_backbone:.2e}  (backbone unfrozen)")
     else:
         print("  Backbone frozen — only count heads trained")
+    if args.use_v2_count_head:
+        print("  ForcingAwareCountHeadV2: forcing_count_head re-initialised from scratch")
     print(f"  Composition CE max_n: {args.max_n}")
     print(f"  Per-SCC regularisation weight: {args.scc_reg_weight}")
     print(f"  Position supervision weight: {args.pos_reg_weight}")
