@@ -111,8 +111,13 @@ def load_l3(path, l1_model, device, use_v2_count_head: bool = False):
     cfg = SimpleNamespace(**cfg_dict)
     model = CorpusCNet(l1_model, cfg)
     sd = _remap_count_head_keys(ck.get("ema", ck.get("model")))
-    # strict=False: allows forcing_count_head shape mismatch when switching V1→V2
-    model.load_state_dict(sd, strict=False)
+    # Drop forcing_count_head weights that don't match current architecture shape.
+    # strict=False skips missing/unexpected keys but still errors on shape mismatches,
+    # so we filter before loading (same pattern as load_l1 for count_head).
+    model_sd = model.state_dict()
+    sd_filtered = {k: v for k, v in sd.items()
+                   if k not in model_sd or model_sd[k].shape == v.shape}
+    model.load_state_dict(sd_filtered, strict=False)
     model.to(device)
     return model, cfg, cfg_dict
 
