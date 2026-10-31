@@ -365,6 +365,18 @@ def _make_l3_batch(scc, parent_x_local: np.ndarray, parent_scc_id: int,
     return batch
 
 
+def _cat_batches(batches: list) -> dict:
+    """Stack a list of single-sample batch dicts into one batched dict along dim 0."""
+    out = {}
+    for k in batches[0]:
+        v = batches[0][k]
+        if isinstance(v, torch.Tensor):
+            out[k] = torch.cat([b[k] for b in batches], dim=0)
+        else:
+            out[k] = v  # scalar / non-tensor metadata: take first sample's value
+    return out
+
+
 def _pos_chamfer_loss(out: dict, batch: dict, gt_fps: list, scc_n: int):
     """
     Log-space Chamfer loss: for each GT FP, the nearest predicted slot must be close.
@@ -702,6 +714,184 @@ def precompute_gt_counts(cases, dag_cache):
 # 8. Epoch helpers
 # ---------------------------------------------------------------------------
 
+def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
+                        scc_reg_weight, max_n, p_predicted, pos_reg_weight,
+                        freeze_l3_backbone):
+    """
+    Batch L1 then L3 forward passes for a chunk of (case, dag, scc_gt_counts) triples.
+
+    Instead of N sequential batch_size=1 GPU calls, issues at most 2 kernel launches
+    (one L1 pass for all root SCCs in the chunk, one L3 pass for all forced-SCC
+    branches).  This eliminates the kernel-launch overhead that causes an A100 and an
+    A10 to run at identical speed when the per-step batch size is 1.
+
+    Returns: (loss, pred_counts_list)
+      loss              — mean composition CE across valid cases (scalar tensor)
+      pred_counts_list  — list[dict], one per chunk entry, scc_id → predicted k
+    """
+    B = len(chunk_data)
+
+    # ── Phase 1: collect all root-SCC (L1) inputs ────────────────────────────
+    l1_entries = []   # (chunk_idx, scc_id, scc, gt_k, gt_fps)
+    l1_raw     = []
+
+    for ci, (case, dag, scc_gt_counts) in enumerate(chunk_data):
+        for scc in dag.sccs:
+            if len(scc.parents) == 0 and scc.scc_id in scc_gt_counts:
+                gt_k, gt_fps = scc_gt_counts[scc.scc_id]
+                l1_raw.append(_make_l1_batch(scc, device))
+                l1_entries.append((ci, scc.scc_id, scc, gt_k, gt_fps))
+
+    if not l1_raw:
+        dummy = torch.tensor(0.0, device=device, requires_grad=False)
+        return dummy, [{}] * B
+
+    batched_l1_out = l1_model(_cat_batches(l1_raw))
+
+    # ── Phase 2: extract per-case L1 results ─────────────────────────────────
+    per_case = [{
+        'prob_list':   [],
+        'k_vals_list': [],
+        'scc_reg':     torch.tensor(0.0, device=device),
+        'n_reg':       0,
+        'pos_loss':    torch.tensor(0.0, device=device),
+        'n_pos':       0,
+        'pred_fps':    {},
+        'pred_counts': {},
+    } for _ in range(B)]
+
+    for li, (ci, scc_id, scc, gt_k, gt_fps) in enumerate(l1_entries):
+        count_logit = batched_l1_out["count_logit"][li]
+        probs, k_vals = odd_probs(count_logit)
+        pc = per_case[ci]
+        pc['prob_list'].append(probs)
+        pc['k_vals_list'].append(k_vals)
+
+        if scc_reg_weight > 0.0:
+            w = max(1, gt_k) / 3.0
+            pc['scc_reg'] = pc['scc_reg'] + w * _odd_ce_loss(count_logit, gt_k)
+            pc['n_reg'] += 1
+
+        need_out_i = (pos_reg_weight > 0.0 and bool(gt_fps)) or (p_predicted > 0.0)
+        if need_out_i:
+            out_i = {k: v[li:li+1] for k, v in batched_l1_out.items()
+                     if isinstance(v, torch.Tensor)}
+            raw_i = l1_raw[li]
+
+            if pos_reg_weight > 0.0 and gt_fps:
+                pl = _pos_chamfer_loss(out_i, raw_i, gt_fps, scc.n)
+                if pl is not None:
+                    pc['pos_loss'] = pc['pos_loss'] + pl
+                    pc['n_pos'] += 1
+
+            with torch.no_grad():
+                pc['pred_counts'][scc_id] = int(k_vals[probs.argmax()].item())
+                if p_predicted > 0.0:
+                    pc['pred_fps'][scc_id] = _predicted_fps_from_l1(out_i, raw_i, scc.n)
+        else:
+            with torch.no_grad():
+                pc['pred_counts'][scc_id] = int(k_vals[probs.argmax()].item())
+
+    # ── Phase 3: collect all forced-SCC (L3) inputs ──────────────────────────
+    l3_entries = []   # (chunk_idx, scc_id, scc, gt_k, gt_fps)
+    l3_raw     = []
+
+    for ci, (case, dag, scc_gt_counts) in enumerate(chunk_data):
+        pc = per_case[ci]
+        for scc in dag.sccs:
+            scc_id = scc.scc_id
+            if len(scc.parents) == 0 or scc_id not in scc_gt_counts:
+                continue
+            pid = scc.parents[0]
+            gt_k, gt_fps = scc_gt_counts[scc_id]
+            _, par_gt_fps = scc_gt_counts.get(pid, (1, []))
+
+            if not par_gt_fps:
+                k_max  = 9
+                k_vals = _odd_k_vals(k_max, device)
+                pr     = torch.zeros(len(k_vals), device=device, dtype=torch.float32)
+                pr[0]  = 1.0
+                pc['prob_list'].append(pr)
+                pc['k_vals_list'].append(k_vals)
+                pc['pred_counts'][scc_id] = 1
+                continue
+
+            if p_predicted > 0.0 and random.random() < p_predicted:
+                branch_fps = pc['pred_fps'].get(pid) or par_gt_fps
+            else:
+                branch_fps = par_gt_fps
+
+            for px in branch_fps:
+                batch = _make_l3_batch(scc, px, pid, dag,
+                                       case["T"], case["nh"], case["F"],
+                                       case["adj"], device)
+                l3_raw.append(batch)
+                l3_entries.append((ci, scc_id, scc, gt_k, gt_fps))
+
+    if l3_raw:
+        batched_l3_out, _ = l3_model(_cat_batches(l3_raw),
+                                      freeze_backbone=freeze_l3_backbone)
+
+        l3_accum = {}   # (ci, scc_id) -> {'probs_list', 'k_vals', 'gt_k'}
+
+        for li, (ci, scc_id, scc, gt_k, gt_fps) in enumerate(l3_entries):
+            count_logit  = batched_l3_out["count_logit"][li]
+            probs_branch, k_vals = odd_probs(count_logit)
+            pc = per_case[ci]
+
+            if scc_reg_weight > 0.0:
+                pc['scc_reg'] = pc['scc_reg'] + _odd_ce_loss(count_logit, gt_k)
+                pc['n_reg'] += 1
+
+            if pos_reg_weight > 0.0 and gt_fps and not freeze_l3_backbone:
+                out_i = {k: v[li:li+1] for k, v in batched_l3_out.items()
+                         if isinstance(v, torch.Tensor)}
+                pl = _pos_chamfer_loss(out_i, l3_raw[li], gt_fps, scc.n)
+                if pl is not None:
+                    pc['pos_loss'] = pc['pos_loss'] + pl
+                    pc['n_pos'] += 1
+
+            key = (ci, scc_id)
+            if key not in l3_accum:
+                l3_accum[key] = {'probs_list': [], 'k_vals': k_vals,
+                                  'gt_k': gt_k, 'scc': scc}
+            l3_accum[key]['probs_list'].append(probs_branch)
+
+        for (ci, scc_id), acc in l3_accum.items():
+            pc = per_case[ci]
+            probs_avg = torch.stack(acc['probs_list']).mean(dim=0)
+            pc['prob_list'].append(probs_avg)
+            pc['k_vals_list'].append(acc['k_vals'])
+            with torch.no_grad():
+                pc['pred_counts'][scc_id] = int(acc['k_vals'][probs_avg.argmax()].item())
+
+    # ── Phase 4: composition CE per case ─────────────────────────────────────
+    total_loss       = torch.tensor(0.0, device=device)
+    n_valid          = 0
+    pred_counts_list = []
+
+    for ci, (case, dag, scc_gt_counts) in enumerate(chunk_data):
+        pc = per_case[ci]
+        if not pc['prob_list']:
+            pred_counts_list.append({})
+            continue
+
+        n_fp_dist = multiplicative_compose(pc['prob_list'], pc['k_vals_list'], max_n=max_n)
+        comp_loss = composition_ce_loss(n_fp_dist, case["n_fp_gt"], max_n=max_n)
+
+        if scc_reg_weight > 0.0 and pc['n_reg'] > 0:
+            comp_loss = comp_loss + scc_reg_weight * pc['scc_reg'] / pc['n_reg']
+        if pos_reg_weight > 0.0 and pc['n_pos'] > 0:
+            comp_loss = comp_loss + pos_reg_weight * pc['pos_loss'] / pc['n_pos']
+
+        total_loss = total_loss + comp_loss
+        n_valid   += 1
+        pred_counts_list.append(pc['pred_counts'])
+
+    loss = total_loss / max(n_valid, 1)
+    return loss, pred_counts_list
+
+
 def run_epoch(cases, dag_cache, l1_model, l3_model, device,
               optimizer=None, max_cases=None,
               scc_reg_weight=0.0, max_n=128, p_predicted=0.0,
@@ -731,18 +921,13 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
     if max_cases is not None:
         indices = indices[:max_cases]
 
-    n_indices   = len(indices)
-    accumulated = 0
-
-    if is_train:
-        optimizer.zero_grad()
-
-    for step_i, i in enumerate(indices):
+    # Pre-filter valid cases; pay extraction cost once outside the hot loop
+    valid_items = []
+    for i in indices:
         case = cases[i]
         dag  = dag_cache[i]
         if dag is None:
             continue
-
         if gt_counts_cache is not None:
             scc_gt_counts = gt_counts_cache[i]
         else:
@@ -754,63 +939,69 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
         if scc_gt_counts is None:
             errors += 1
             continue
+        valid_items.append((case, dag, scc_gt_counts))
 
-        is_last = (step_i == n_indices - 1)
+    # Chunk size: accumulate cases per optimizer step (training) or 64 (val)
+    chunk_size = accumulate if is_train else 64
+
+    if is_train:
+        optimizer.zero_grad()
+
+    for chunk_start in range(0, len(valid_items), chunk_size):
+        chunk = valid_items[chunk_start:chunk_start + chunk_size]
 
         try:
             if is_train:
                 if use_amp:
                     with torch.autocast("cuda", dtype=torch.float16):
-                        loss, pred_counts = compute_e2e_loss(
-                            case, dag, l1_model, l3_model, device, scc_gt_counts,
-                            scc_reg_weight=scc_reg_weight, max_n=max_n,
-                            p_predicted=p_predicted, pos_reg_weight=pos_reg_weight,
-                            freeze_l3_backbone=freeze_l3_backbone)
+                        loss, pred_counts_list = _compute_chunk_loss(
+                            chunk, l1_model, l3_model, device,
+                            scc_reg_weight, max_n, p_predicted, pos_reg_weight,
+                            freeze_l3_backbone)
                 else:
-                    loss, pred_counts = compute_e2e_loss(
-                        case, dag, l1_model, l3_model, device, scc_gt_counts,
-                        scc_reg_weight=scc_reg_weight, max_n=max_n,
-                        p_predicted=p_predicted, pos_reg_weight=pos_reg_weight,
-                        freeze_l3_backbone=freeze_l3_backbone)
+                    loss, pred_counts_list = _compute_chunk_loss(
+                        chunk, l1_model, l3_model, device,
+                        scc_reg_weight, max_n, p_predicted, pos_reg_weight,
+                        freeze_l3_backbone)
 
                 if loss.requires_grad:
-                    scaled = loss / accumulate
                     if scaler is not None:
-                        scaler.scale(scaled).backward()
+                        scaler.scale(loss).backward()
                     else:
-                        scaled.backward()
-                    accumulated += 1
+                        loss.backward()
 
-                total_loss += float(loss.item())
+                total_loss += float(loss.item()) * len(chunk)
 
-                if accumulated >= accumulate or (is_last and accumulated > 0):
-                    if scaler is not None:
-                        scaler.unscale_(optimizer)
-                    torch.nn.utils.clip_grad_norm_(all_params, 1.0)
-                    if scaler is not None:
-                        scaler.step(optimizer)
-                        scaler.update()
-                    else:
-                        optimizer.step()
-                    optimizer.zero_grad()
-                    accumulated = 0
+                if scaler is not None:
+                    scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(all_params, 1.0)
+                if scaler is not None:
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    optimizer.step()
+                optimizer.zero_grad()
 
             else:
                 with torch.no_grad():
-                    loss, pred_counts = compute_e2e_loss(
-                        case, dag, l1_model, l3_model, device, scc_gt_counts,
-                        max_n=max_n, p_predicted=0.0)
-                total_loss += float(loss.item())
+                    loss, pred_counts_list = _compute_chunk_loss(
+                        chunk, l1_model, l3_model, device,
+                        scc_reg_weight=0.0, max_n=max_n, p_predicted=0.0,
+                        pos_reg_weight=0.0, freeze_l3_backbone=True)
+                total_loss += float(loss.item()) * len(chunk)
 
         except Exception:
-            errors += 1
+            errors += len(chunk)
             continue
 
-        pred_global = 1
-        for scc in dag.sccs:
-            pred_global *= pred_counts.get(scc.scc_id, 1)
-        n_exact += int(pred_global == case["n_fp_gt"])
-        n_total += 1
+        for (case, dag, scc_gt_counts), pred_counts in zip(chunk, pred_counts_list):
+            if not pred_counts:
+                continue
+            pred_global = 1
+            for scc in dag.sccs:
+                pred_global *= pred_counts.get(scc.scc_id, 1)
+            n_exact += int(pred_global == case["n_fp_gt"])
+            n_total += 1
 
     return {
         "loss":        total_loss / max(n_total, 1),
