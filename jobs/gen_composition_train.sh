@@ -6,8 +6,9 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
+#SBATCH --gres=gpu:1
 #SBATCH --time=6:00:00
-#SBATCH --partition=a100
+#SBATCH --partition=a10
 #SBATCH --account=ayg
 
 # Generate 8 x 500-case composition training batches (seeds 1001-1008).
