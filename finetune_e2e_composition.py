@@ -535,6 +535,40 @@ def composition_ce_loss(n_fp_dist: torch.Tensor, n_fp_gt: int,
     return -log_probs[target]
 
 
+def composition_margin_loss(n_fp_dist: torch.Tensor, n_fp_gt: int,
+                             margin: float = 0.1, max_n: int = 128,
+                             correct_ce_weight: float = 0.01) -> torch.Tensor:
+    """
+    Margin loss that directly optimises count_exact (argmax accuracy).
+
+    Replaces composition_ce_loss to fix the CE-count_exact divergence:
+    CE can improve (P(gt) increases smoothly) while count_exact worsens
+    (argmax shifts away from gt).  This loss avoids that pathology.
+
+    For wrong predictions (argmax ≠ n_fp_gt):
+        hinge(P(n_pred) - P(n_gt) + margin)
+        Forces P(n_gt) above P(n_pred) by a margin, directly fixing the argmax.
+
+    For correct predictions (argmax == n_fp_gt):
+        correct_ce_weight * CE(n_fp_dist, n_fp_gt)
+        Gentle CE to maintain calibration without risking flipping the argmax.
+        Default weight 0.01 is intentionally tiny.
+
+    Gradient properties:
+      - Wrong cases: strong, directed gradient toward correct argmax (≈83%→wrong 17%)
+      - Correct cases: tiny CE gradient (≈83% of cases, nearly no effect)
+      - Never pushes probability away from n_gt
+    """
+    target = min(n_fp_gt, max_n)
+    with torch.no_grad():
+        n_pred = int(n_fp_dist.argmax().item())
+    if n_pred == target:
+        if correct_ce_weight > 0.0:
+            return correct_ce_weight * (-torch.log(n_fp_dist[target] + 1e-12))
+        return n_fp_dist.new_zeros(())
+    return F.relu(n_fp_dist[n_pred] - n_fp_dist[target] + margin)
+
+
 def _odd_ce_loss(count_logit: torch.Tensor, k_gt: int) -> torch.Tensor:
     """Per-SCC CE over odd k only (used for optional regularisation term)."""
     max_count = count_logit.shape[-1] - 1
@@ -716,7 +750,11 @@ def precompute_gt_counts(cases, dag_cache):
 
 def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
                         scc_reg_weight, max_n, p_predicted, pos_reg_weight,
-                        freeze_l3_backbone):
+                        freeze_l3_backbone,
+                        use_margin_loss: bool = False,
+                        margin: float = 0.1,
+                        correct_ce_weight: float = 0.01,
+                        l1_count_no_detach: bool = False):
     """
     Batch L1 then L3 forward passes for a chunk of (case, dag, scc_gt_counts) triples.
 
@@ -725,8 +763,19 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
     branches).  This eliminates the kernel-launch overhead that causes an A100 and an
     A10 to run at identical speed when the per-step batch size is 1.
 
+    use_margin_loss    — use composition_margin_loss instead of composition_ce_loss.
+                         Directly optimises count_exact (argmax accuracy) rather than
+                         CE, avoiding the systematic CE-improve / count_exact-decline
+                         pathology seen in v7b/v7c/v7d.
+    margin             — margin for hinge in composition_margin_loss (default 0.1).
+    correct_ce_weight  — weight on CE for already-correct cases (default 0.01).
+    l1_count_no_detach — temporarily set l1_model.count_detach=False during L1 forward
+                         so composition gradient reaches the L1 backbone through the
+                         count head path (normally blocked by count_detach=True).
+                         Only effective when lr_backbone > 0.
+
     Returns: (loss, pred_counts_list)
-      loss              — mean composition CE across valid cases (scalar tensor)
+      loss              — mean composition loss across valid cases (scalar tensor)
       pred_counts_list  — list[dict], one per chunk entry, scc_id → predicted k
     """
     B = len(chunk_data)
@@ -746,7 +795,15 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
         dummy = torch.tensor(0.0, device=device, requires_grad=False)
         return dummy, [{}] * B
 
+    # Optionally disable count_detach so composition gradient flows to L1 backbone.
+    # Normally count_detach=True blocks this path; disabling it connects
+    # composition CE/margin loss → L1 count head → backbone (g, exist_logit).
+    _orig_l1_detach = getattr(l1_model, 'count_detach', True)
+    if l1_count_no_detach:
+        l1_model.count_detach = False
     batched_l1_out = l1_model(_cat_batches(l1_raw))
+    if l1_count_no_detach:
+        l1_model.count_detach = _orig_l1_detach
 
     # ── Phase 2: extract per-case L1 results ─────────────────────────────────
     per_case = [{
@@ -877,7 +934,13 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
             continue
 
         n_fp_dist = multiplicative_compose(pc['prob_list'], pc['k_vals_list'], max_n=max_n)
-        comp_loss = composition_ce_loss(n_fp_dist, case["n_fp_gt"], max_n=max_n)
+        if use_margin_loss:
+            comp_loss = composition_margin_loss(
+                n_fp_dist, case["n_fp_gt"],
+                margin=margin, max_n=max_n,
+                correct_ce_weight=correct_ce_weight)
+        else:
+            comp_loss = composition_ce_loss(n_fp_dist, case["n_fp_gt"], max_n=max_n)
 
         if scc_reg_weight > 0.0 and pc['n_reg'] > 0:
             comp_loss = comp_loss + scc_reg_weight * pc['scc_reg'] / pc['n_reg']
@@ -899,7 +962,11 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
               freeze_l3_backbone=True,
               gt_counts_cache=None,
               accumulate=32,
-              scaler=None):
+              scaler=None,
+              use_margin_loss=False,
+              margin=0.1,
+              correct_ce_weight=0.01,
+              l1_count_no_detach=False):
     is_train = optimizer is not None
 
     total_loss = 0.0
@@ -957,12 +1024,18 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
                         loss, pred_counts_list = _compute_chunk_loss(
                             chunk, l1_model, l3_model, device,
                             scc_reg_weight, max_n, p_predicted, pos_reg_weight,
-                            freeze_l3_backbone)
+                            freeze_l3_backbone,
+                            use_margin_loss=use_margin_loss, margin=margin,
+                            correct_ce_weight=correct_ce_weight,
+                            l1_count_no_detach=l1_count_no_detach)
                 else:
                     loss, pred_counts_list = _compute_chunk_loss(
                         chunk, l1_model, l3_model, device,
                         scc_reg_weight, max_n, p_predicted, pos_reg_weight,
-                        freeze_l3_backbone)
+                        freeze_l3_backbone,
+                        use_margin_loss=use_margin_loss, margin=margin,
+                        correct_ce_weight=correct_ce_weight,
+                        l1_count_no_detach=l1_count_no_detach)
 
                 if loss.requires_grad:
                     if scaler is not None:
@@ -987,7 +1060,10 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
                     loss, pred_counts_list = _compute_chunk_loss(
                         chunk, l1_model, l3_model, device,
                         scc_reg_weight=0.0, max_n=max_n, p_predicted=0.0,
-                        pos_reg_weight=0.0, freeze_l3_backbone=True)
+                        pos_reg_weight=0.0, freeze_l3_backbone=True,
+                        use_margin_loss=use_margin_loss, margin=margin,
+                        correct_ce_weight=correct_ce_weight,
+                        l1_count_no_detach=False)
                 total_loss += float(loss.item()) * len(chunk)
 
         except Exception:
@@ -1087,6 +1163,26 @@ def main():
     ap.add_argument("--accumulate",     type=int,   default=32,
                     help="Gradient accumulation steps before each optimizer.step(). "
                          "Higher = fewer optimizer steps per epoch = faster. Default 32.")
+    ap.add_argument("--use_margin_loss", action="store_true",
+                    help="Use composition_margin_loss instead of composition_ce_loss. "
+                         "Directly optimises count_exact (argmax accuracy) by applying "
+                         "a hinge loss for wrong predictions and a tiny CE for correct "
+                         "ones.  Avoids the CE-improve/count_exact-decline pathology "
+                         "seen in v7b-v7d where val CE fell but val count_exact also fell.")
+    ap.add_argument("--margin",         type=float, default=0.1,
+                    help="Margin for the hinge in composition_margin_loss. "
+                         "P(n_gt) must exceed P(n_pred) by this margin. Default 0.1.")
+    ap.add_argument("--correct_ce_weight", type=float, default=0.01,
+                    help="Weight on CE loss for already-correct cases in margin mode. "
+                         "Keeps calibration without risking flipping correct argmaxes. "
+                         "Default 0.01 (nearly zero).")
+    ap.add_argument("--l1_count_no_detach", action="store_true",
+                    help="During L1 forward in composition training, temporarily set "
+                         "l1_model.count_detach=False so composition gradient flows "
+                         "from the L1 count head all the way into the L1 backbone. "
+                         "Normally count_detach=True blocks this path; disabling it "
+                         "lets L1's backbone adapt to composition-level count errors. "
+                         "Only meaningful when --lr_backbone > 0.")
     ap.add_argument("--no_amp",        action="store_true",
                     help="Disable automatic mixed precision (float16 forward). "
                          "AMP is enabled by default on CUDA and gives ~2x speedup.")
@@ -1139,11 +1235,17 @@ def main():
         print("  Backbone frozen — only count heads trained")
     if args.use_v2_count_head:
         print("  ForcingAwareCountHeadV2: forcing_count_head re-initialised from scratch")
+    loss_mode = "margin (hinge)" if args.use_margin_loss else "CE (cross-entropy)"
+    print(f"  Composition loss: {loss_mode}")
+    if args.use_margin_loss:
+        print(f"    margin={args.margin}, correct_ce_weight={args.correct_ce_weight}")
     print(f"  Composition CE max_n: {args.max_n}")
     print(f"  Per-SCC regularisation weight: {args.scc_reg_weight}")
     print(f"  Position supervision weight: {args.pos_reg_weight}")
     print(f"  Teacher forcing p_predicted: {args.p_predicted:.2f}  "
           f"({'always GT' if args.p_predicted == 0.0 else 'always predicted' if args.p_predicted == 1.0 else 'scheduled sampling'})")
+    if args.l1_count_no_detach:
+        print("  L1 count_detach=False: composition gradient flows to L1 backbone via count head")
 
     print("Loading data...")
     train_cases = gather_cases(args.train_dirs)
@@ -1202,16 +1304,24 @@ def main():
                             freeze_l3_backbone=(args.lr_backbone == 0.0),
                             gt_counts_cache=train_gt_counts,
                             accumulate=args.accumulate,
-                            scaler=scaler)
+                            scaler=scaler,
+                            use_margin_loss=args.use_margin_loss,
+                            margin=args.margin,
+                            correct_ce_weight=args.correct_ce_weight,
+                            l1_count_no_detach=args.l1_count_no_detach)
 
         l1_model.eval()
         l3_model.eval()
         # In pos_only mode pass pos_reg_weight so val_loss reflects pos quality
         val_pos_w = args.pos_reg_weight if pos_only_mode else 0.0
+        # Always evaluate with margin loss when training with it, so val_loss is comparable
         val_m = run_epoch(val_cases, val_dags, l1_model, l3_model, device,
                           max_n=args.max_n,
                           pos_reg_weight=val_pos_w,
-                          gt_counts_cache=val_gt_counts)
+                          gt_counts_cache=val_gt_counts,
+                          use_margin_loss=args.use_margin_loss,
+                          margin=args.margin,
+                          correct_ce_weight=args.correct_ce_weight)
 
         lr_now = optimizer.param_groups[-1]["lr"]
         scheduler.step()
