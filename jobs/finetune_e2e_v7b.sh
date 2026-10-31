@@ -7,7 +7,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --gres=gpu:1
-#SBATCH --time=24:00:00
+#SBATCH --time=8:00:00
 #SBATCH --partition=a10
 #SBATCH --account=ayg
 
@@ -62,6 +62,7 @@ PYTHONPATH=$REPO_GNN:$REPO_GNN_TEMP $PYTHON finetune_e2e_composition.py \
     --val_dir     $VAL_DIR \
     --out_dir     $OUT_DIR \
     --epochs      60 \
+    --max_train   1500 \
     --lr          1e-4 \
     --lr_backbone 5e-6 \
     --lr_decoder  0.0 \
