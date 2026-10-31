@@ -67,7 +67,7 @@ PYTHONPATH=$REPO_GNN:$REPO_GNN_TEMP $PYTHON finetune_e2e_composition.py \
     --lr_decoder  0.0 \
     --lr_pos      0.0 \
     --use_v2_count_head \
-    --scc_reg_weight 1.0 \
+    --scc_reg_weight 0.5 \
     --pos_reg_weight 0.3 \
     --p_predicted 0.5 \
     --accumulate  32 \
