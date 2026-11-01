@@ -2,7 +2,7 @@
 
 **Goal:** Prove compositional GRN dynamics are learnable by a pure ML model.  
 **Target:** All three metrics must reach ~85%: `count_exact ≥ 0.85`, `fp_hd ≥ 0.85`, `stable_acc ≥ 0.85`  
-**Eval command (canonical):** `eval_composition2.py --dedup fill --refine_steps 15`  
+**Eval command (canonical):** `eval_composition2.py --l3_frame forced --dedup fill --refine_steps 15`  
 **Eval set:** `composition_eval_v5` — 500 cases, 1502 total GT FPs  
 
 ---
@@ -158,6 +158,10 @@
 5. **refine_steps=15 > refine_steps=5 by +1.66pp fp_hd:** More Newton steps help. Further gains possible with refine_steps=30+.
 
 6. **The fundamental tension:** Decoder must change to improve FP seeds, but decoder change breaks exist_logit calibration for count head. These are coupled through the shared `s = decoder(g, h)` representation.
+
+7. **Frame consistency verified (eval sweep 2026-10-29):** `l3_frame="forced"` is correct for v2–v6 checkpoints. `finetune_e2e_composition.py` calls `_make_scc_batch(scc, u, device)` without explicit frame, which defaults to `"forced"`. Switching to `"raw"` drops count_exact from 0.840→0.594 (-24.6pp). The `_make_scc_batch` call in finetune has been made explicit (`frame="forced"`) to prevent future confusion. `train_layer3.py` still defaults to `frame="raw"` — any fresh L3 retrain should pass `--frame forced` to match.
+
+8. **Position scale in "forced" frame:** The fine-tuned model encodes positions relative to `xmax_phys = box(P*u)` (the "forced" frame xmax). This is correct. The original concern about xmax_unforced clipping was based on an incorrect assumption that fine-tuning used "raw" frame.
 
 ---
 
