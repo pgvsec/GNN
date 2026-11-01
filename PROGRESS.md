@@ -1,7 +1,8 @@
 # GNN Compositional GRN Dynamics — Experiment Progress Log
 
 **Goal:** Prove compositional GRN dynamics are learnable by a pure ML model.  
-**Target:** All three metrics must reach ~85%: `count_exact ≥ 0.85`, `fp_hd ≥ 0.85`, `stable_acc ≥ 0.85`  
+**Target:** All three metrics must reach ~90%: `count_exact ≥ 0.90`, `fp_hd ≥ 0.90`, `stable_acc ≥ 0.90`  
+**Status:** count_exact=**0.914** ✓ · fp_hd=**0.891** · stable_acc=**0.914** ✓ (v8)  
 **Eval command (canonical):** `eval_composition2.py --l3_frame forced --dedup fill --refine_steps 15`  
 **Eval set:** `composition_eval_v5` — 500 cases, 1502 total GT FPs  
 
@@ -127,10 +128,58 @@
 
 **v6 is the current best on count_exact (+3 cases vs v2).**
 
-**Checkpoints:** `$SCRATCH/runs/e2e_v6/l1_best.pt`, `$SCRATCH/runs/e2e_v6/l3_best.pt`  
-⚠️ **Action required:** Copy v6 checkpoints to `~/checkpoints/e2e_v6_best/` on Gilbreth to protect from scratch purge.
+**Checkpoints:** `$SCRATCH/runs/e2e_v6/l1_best.pt`, `$SCRATCH/runs/e2e_v6/l3_best.pt`
 
 **Diagnosis of flat val loss:** `pos_head` is a 49k-param MLP mapping from frozen slot features `s = decoder(g, h)` to coordinates. It was already trained to near-optimality during Layer I training for those exact features. The Chamfer loss can fit the training set (train loss decreases) but cannot generalize because the frozen features already encode everything they can about FP positions. The bottleneck is the DECODER itself — the slot Chamfer distance of 1.109 decades (~12x off) means the decoder isn't assigning slots to cover all GT FPs. Fixing this requires training the decoder, which is blocked by the exist_logit coupling.
+
+---
+
+### v7: ForcingAwareCountHeadV2 + backbone unfreeze
+
+**Script:** `jobs/finetune_e2e_v7.sh` (and `_a100.sh`)  
+**Key changes:**
+- `--use_v2_count_head` — replaces `StructuralCountHead` with `ForcingAwareCountHeadV2` which reads `z_cond` (not detached) + `u_stats` + `tc_onehot`
+- `--lr_backbone 2e-6` — unfreezes L3 backbone via `freeze_l3_backbone=False`
+- Training data: v3+v4 (in-distribution with v5 val)
+
+**Results (full eval on v5):**
+
+| Metric | v7 |
+|--------|-----|
+| count_exact | 0.834 |
+| fp_hd | 0.847 |
+| stable_acc | 0.865 |
+
+**Diagnosis of v7b/v7c/v7d failure:** Fine-tuning attempts from v7 all used composition CE loss. CE improved (0.618→0.561) while count_exact declined (0.834→0.794) in every run. CE rewards smooth probability distributions; count_exact needs sharp argmax peaks. CE is the wrong proxy — it teaches the model to spread probability mass, which is exactly the wrong direction for argmax accuracy.
+
+---
+
+### v8: composition_margin_loss + l1_count_no_detach (current best)
+
+**Script:** `jobs/finetune_e2e_v8_a100.sh` (a10 fallback: `finetune_e2e_v8.sh`)  
+**Start:** v7 checkpoints  
+**Key changes:**
+- `--use_margin_loss`: replaces composition CE with `composition_margin_loss` — a hinge loss that directly optimizes count argmax accuracy
+  - Wrong predictions: `hinge(P(n_pred) - P(n_gt) + margin=0.1)` — forces P(n_gt) above the current argmax. Zero gradient once correct.
+  - Correct predictions: `correct_ce_weight=0.01` × CE for calibration only.
+- `--l1_count_no_detach`: temporarily sets `l1_model.count_detach=False` during composition forward, opening gradient path `composition loss → L1 count head → backbone GNN` (previously blocked by `count_detach=True`)
+- `--lr 1e-5 --lr_backbone 2e-6 --scc_reg_weight 0.5 --pos_reg_weight 0.3`
+- Training: 100 epochs, peak at epoch 84
+
+**Training dynamics:** count_exact improved monotonically from epoch 1 (0.828 → 0.894 training metric). Unlike v7b–v7d which peaked at epoch 1 and declined, v8 improved every epoch for 84 epochs.
+
+**Results (full eval on v5, 500 cases):**
+
+| Metric | v7 | v8 | Δ |
+|--------|-----|-----|---|
+| count_exact | 0.834 (417/500) | **0.914 (457/500)** | +8.0pp |
+| fp_hd | 0.847 | **0.891** | +4.4pp |
+| stable_acc | 0.865 | **0.914** | +4.9pp |
+
+**Checkpoints:** `$SCRATCH/runs/e2e_v8/l1_best.pt`, `$SCRATCH/runs/e2e_v8/l3_best.pt` (epoch 84)  
+⚠️ **Back these up** — scratch is purged periodically. Copy to `$HOME/checkpoints/e2e_v8/`.
+
+**What was tried and didn't work (v8b):** Increasing `pos_reg_weight` 0.3→0.5 caused all three metrics to regress (count_exact: 0.914→0.908, fp_hd: 0.891→0.884, stable_acc: 0.914→0.906). The backbone was at capacity balance; stronger position supervision disrupted the equilibrium. v8 remains best.
 
 ---
 
@@ -165,37 +214,49 @@
 
 ---
 
+## Key Findings (v8)
+
+9. **CE loss is misaligned with count_exact:** Composition CE rewards smooth probability distributions while count_exact needs sharp argmax peaks. All v7b/v7c/v7d attempts showed CE improving while count_exact declined. The fix is `composition_margin_loss` (hinge on argmax gap), which improved count_exact monotonically for 84 epochs.
+
+10. **l1_count_no_detach is essential:** `count_detach=True` in `SccFixedPointNet` blocked composition gradients from reaching the L1 backbone. Temporarily setting `count_detach=False` during composition training opens the path `composition loss → count head → backbone GNN`. Without this, composition loss cannot improve the backbone's count representations.
+
+11. **pos_reg_weight has a narrow sweet spot:** At 0.3, position supervision improves fp_hd without hurting count/stability. At 0.5, it over-pulls the backbone and regresses all three metrics. The backbone is at capacity balance — stronger position gradients disrupt the shared representation.
+
+12. **The backbone-unfreeze problem is solved for count:** v8 achieves backbone unfreeze (lr_backbone=2e-6) without count degradation by using margin loss instead of CE. The count head's sensitivity to `exist_logit` shifts is compensated by directly targeting count accuracy in the loss.
+
+---
+
 ## Paths Not Yet Tried
 
-1. **refine_steps=30 or 50 on v2/v6 checkpoint** (free, 30 min eval only) — might yield +0.5-1pp fp_hd via more Newton convergence
-2. **Separate pos estimator** — add a new `fp_pos_net(g, h)` module that produces FP seeds independently of `exist_logit`. Would allow decoder to be bypassed for Newton seeding without touching the count head coupling.
-3. **Larger training set** — more diverse composition cases might allow count head + decoder to co-adapt without diverging
+1. **Pos-only fine-tune from v8:** `--lr_pos 5e-6 --lr 0 --lr_backbone 0 --pos_reg_weight 1.0` — trains only `l1_model.pos_head`, guaranteed not to hurt count_exact/stable_acc. May push fp_hd above 0.90.
+2. **refine_steps=30+** — more Newton convergence steps might recover additional fp_hd for free.
+3. **Larger training set** — more diverse composition cases may help generalization further.
 
 ---
 
 ## Reproducibility
 
 ```bash
-# Reproduce v6 eval (best current metrics)
+# Reproduce v8 eval (current best)
 cd $SCRATCH/GNN
-git checkout archive/v2-best-baseline
+git checkout main
 
+PYTHONPATH=$SCRATCH/GNN:$SCRATCH/GNN_temp \
+  python exhaust_gen/eval_composition2.py \
+    --l1_ckpt $SCRATCH/runs/e2e_v8/l1_best.pt \
+    --l3_ckpt $SCRATCH/runs/e2e_v8/l3_best.pt \
+    --eval_dir $SCRATCH/runs/composition_eval_v5 \
+    --out_csv  /tmp/eval_v8_repro.csv \
+    --l3_frame forced --dedup fill --refine_steps 15
+# Expected: count_exact=0.9140 (457/500), fp_hd=0.8908, stable_acc=0.9140
+
+# Reproduce v6 eval (pre-v8 best)
 PYTHONPATH=$SCRATCH/GNN:$SCRATCH/GNN_temp \
   python exhaust_gen/eval_composition2.py \
     --l1_ckpt $SCRATCH/runs/e2e_v6/l1_best.pt \
     --l3_ckpt $SCRATCH/runs/e2e_v6/l3_best.pt \
     --eval_dir $SCRATCH/runs/composition_eval_v5 \
     --out_csv  /tmp/eval_v6_repro.csv \
-    --dedup fill --refine_steps 15
+    --l3_frame forced --dedup fill --refine_steps 15
 # Expected: count_exact=0.8400 (420/500), fp_hd=0.8242, stable_acc=0.8598
-
-# Reproduce v2 eval (for comparison)
-PYTHONPATH=$SCRATCH/GNN:$SCRATCH/GNN_temp \
-  python exhaust_gen/eval_composition2.py \
-    --l1_ckpt ~/checkpoints/e2e_v2_best_baseline/l1_best.pt \
-    --l3_ckpt ~/checkpoints/e2e_v2_best_baseline/l3_best.pt \
-    --eval_dir $SCRATCH/runs/composition_eval_v5 \
-    --out_csv  /tmp/eval_v2_repro.csv \
-    --dedup fill --refine_steps 15
-# Expected: count_exact≈0.8340 (417/500), fp_hd≈0.8229, stable_acc≈0.8669
 ```
