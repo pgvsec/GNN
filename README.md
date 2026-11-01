@@ -104,3 +104,24 @@ PYTHONPATH=$REPO_GNN:$REPO_GNN_TEMP python exhaust_gen/eval_composition2.py \
 v8 checkpoints: `$SCRATCH/runs/e2e_v8/l1_best.pt` and `l3_best.pt` (epoch 84). **Back these up** — scratch is purged periodically.
 
 Full details and next steps in `PROGRESS.md`.
+
+---
+
+## Continuing this work
+
+`main` is the protected baseline — it always holds the best validated result. Do not commit experiments directly to it.
+
+```bash
+# Clone and create your own branch from main
+git clone https://github.com/pgvsec/GNN.git
+cd GNN
+git checkout -b your-name/experiment-name origin/main
+```
+
+Run your experiments on your branch. When you beat all three metrics on the held-out v5 eval set, open a PR into `main`. The bar to merge is:
+
+```
+count_exact > 0.914  AND  fp_hd > 0.891  AND  stable_acc > 0.914
+```
+
+See `PROGRESS.md` for the full experiment history, key findings, and suggested next directions.
