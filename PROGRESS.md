@@ -226,6 +226,70 @@
 
 ---
 
+---
+
+## Generalization Experiments — Full Results (E1–E4)
+
+**Eval command:** `eval_composition2.py --l3_frame forced --dedup fill --refine_steps 15`  
+**Checkpoints:** v8 (epoch 84) — `$SCRATCH/runs/e2e_v8/l1_best.pt` / `l3_best.pt`
+
+| Tier | Dataset | n_genes | n_SCCs | count_exact | fp_hd | stable_acc | Notes |
+|------|---------|---------|--------|-------------|-------|------------|-------|
+| Baseline | v5 3+3 (biased) | 6 | 2 | **0.914** | 0.884 | 0.913 | v8 checkpoint-selection set |
+| E3 | 3+3 all-split (honest) | 6 | 2 | 0.772 | 0.810 | 0.822 | Fresh draw, seed≠42 |
+| E3 | 3+3 test-split (OOD topo) | 6 | 2 | **0.798** | 0.823 | 0.843 | OOD topologies |
+| E1 | 2+4 | 6 | 2 | 0.788 | 0.778 | 0.833 | Asymm, never trained on |
+| E1 | 4+2 | 6 | 2 | 0.748 | 0.822 | 0.805 | Asymm, never trained on |
+| E2 | 3+4 | 7 | 2 | 0.696 | 0.737 | 0.757 | Zero-shot +1 gene |
+| E2 | 4+3 | 7 | 2 | 0.686 | 0.747 | 0.758 | Zero-shot +1 gene |
+| E2 | 3+5 | 8 | 2 | 0.724 | 0.722 | 0.784 | Zero-shot +2 genes |
+| E2 | 5+3 | 8 | 2 | 0.754 | 0.732 | 0.801 | Zero-shot +2 genes |
+| E2 | 4+4 | 8 | 2 | 0.672 | 0.656 | 0.752 | Zero-shot +2 genes |
+| E4 | 2→3→4 (chain) | 9 | 3 | 0.726 | 0.692 | 0.794 | Zero-shot 3-SCC chain |
+| E4 | 3→3→3 (chain) | 9 | 3 | 0.698 | 0.736 | 0.770 | Zero-shot 3-SCC chain |
+
+### Key findings
+
+**13. Validation selection bias = 14pp:**
+v5 was used to select the v8 best checkpoint. A fresh 3+3 draw (E3 all-split, different seed) gives only 77.2%, not 91.4%. The honest single-SCC-composition generalization number is **~77–80%**. The v5 number is not wrong — it reflects true performance on that specific distribution — but it is biased as a general accuracy estimate.
+
+**14. Topology generalization confirmed (replicated):**
+E3 test-split (OOD topologies held out from all training stages) scores **79.8%** — *higher* than E3 all-split (77.2%). The gap is in the right direction in both the first run and this final full run. The model learned dynamics rules, not topology fingerprints.
+
+**15. OOD scale extrapolation — gradual degradation:**
+Moving from n=6 to n=7 costs ~8pp (69–70%). This is not catastrophic collapse — the model maintains meaningful accuracy on networks 17% larger than its training max per-SCC.
+
+**16. n=8 asymmetry paradox:**
+Within n=8 variants: 5+3 (75.4%) > 3+5 (72.4%) > 4+4 (67.2%). When the root SCC is larger (n_a=5), the L1 prediction is more confident, and the target SCC (n_b=3) sits at the optimal training-distribution size. 4+4 is hardest: both SCCs are at the large end of the training distribution, compounding prediction uncertainty.
+
+**17. Deep DAG chains don't compound error:**
+E4 n=9 3-SCC chains score 70–73% — essentially the same as E2 n=7 two-SCC compositions. If errors compounded multiplicatively (77% × 77%) we'd expect ~59%. Instead the 3-SCC pipeline holds at 70%+. The topological DAG walk in `assemble.py` handles multi-level forcing natively with no accuracy penalty for DAG depth per se.
+
+**18. Summary — the degradation curve:**
+```
+v5 biased (91.4%) → honest n=6 (77.2%) → asymm n=6 (~76.8%) → OOD n=7 (~69%) → OOD n=8 (~71%) → deep DAG n=9 (~71%)
+```
+The plateau at ~70% from n=7 onward suggests the bottleneck is L1 SCC count accuracy on larger SCCs, not the composition step itself.
+
+---
+
+## v9: Diverse composition training (in progress)
+
+**Start:** v8 checkpoints (epoch 84)  
+**Fix 1:** Add 2+4 and 4+2 training compositions (seed=100, 500 cases each) so the model sees asymmetric size pairs during fine-tuning.  
+**Fix 2:** Use a fresh 3+3 val set (seed=99, never seen by the model) for checkpoint selection — eliminates the v5 validation selection bias.  
+**Training dirs:** v3 + v4 + v9_train_2p4 + v9_train_4p2  
+**Val dir:** v9_val_3p3 (seed=99)  
+**Hyperparameters:** identical to v8 (proven to work)  
+**Scripts:** `jobs/gen_v9_data.sh` → `jobs/finetune_e2e_v9_a100.sh`
+
+**Result: Training saturated (train loss = 0.0000 from epoch 1)**
+v8 already predicts the count correctly on ALL 2000 training cases from epoch 1. The margin hinge is satisfied everywhere; `correct_ce_weight=0.01` provides negligible gradient when the model predicts with near-certainty. No gradient flows → val count_exact locked at 0.7840 for all 100 epochs.
+
+**Conclusion:** v8 is the architecture ceiling for composition fine-tuning on easy cases. The ~79% on fresh evals is the genuine generalization number. Getting to 85%+ requires hard-negative mining (training only on cases where v8 currently fails) or architectural changes. Deferring architectural improvements; proceeding with E2 and E4 using v8.
+
+---
+
 ## Paths Not Yet Tried
 
 1. **Pos-only fine-tune from v8:** `--lr_pos 5e-6 --lr 0 --lr_backbone 0 --pos_reg_weight 1.0` — trains only `l1_model.pos_head`, guaranteed not to hurt count_exact/stable_acc. May push fp_hd above 0.90.

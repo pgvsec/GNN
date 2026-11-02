@@ -107,6 +107,36 @@ Full details and next steps in `PROGRESS.md`.
 
 ---
 
+## Generalization experiments
+
+Active branch: `experiments/generalization`. Four experiment tiers probe whether the compositional operator truly generalizes:
+
+| Tier | Question | Variants | n_total |
+|------|----------|----------|---------|
+| **E1** — size variation | Can it compose SCCs of different sizes within training range? | 2+4, 4+2, 1+5, 5+1 | 6 |
+| **E2** — scale OOD | Does it extrapolate beyond the n≤6 training max? | 3+4, 4+3, 4+4, 3+5, 5+3 | 7–8 |
+| **E3** — topology holdout | Does it generalize to SCC graph topologies never seen in training? | 3+3 with `--split test` | 6 |
+| **E4** — deep DAG | Can it chain A→B→C (two forcing levels) without retraining? | 3→3→3, 2→3→4 | 9 |
+
+**Running the experiments (on Gilbreth cluster):**
+
+```bash
+# Step 1 — generate datasets (CPU-intensive; one job per tier)
+sbatch jobs/gen_e1_size_variation.sh
+sbatch jobs/gen_e2_scale_ood.sh
+sbatch jobs/gen_e3_topology_holdout.sh
+sbatch jobs/gen_e4_deep_dag.sh
+
+# Step 2 — evaluate all datasets with v8 checkpoints (GPU)
+sbatch jobs/eval_generalization.sh
+```
+
+Each gen script writes `.npy` files to `$SCRATCH/runs/generalization/<tag>/`. The eval script reads those dirs and writes per-dataset CSVs + a summary to the same directory.
+
+The data generator for all experiments is `exhaust_gen/gen_composition_eval_general.py`, which supports arbitrary SCC sizes (`--n_a`, `--n_b`) and optional 3-SCC chains (`--n_c`), with a topology split filter (`--split`).
+
+---
+
 ## Continuing this work
 
 `main` is the protected baseline — it always holds the best validated result. Do not commit experiments directly to it.
