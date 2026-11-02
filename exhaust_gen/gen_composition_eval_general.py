@@ -49,7 +49,7 @@ SCFG = SimpleNamespace(
     newton_steps=200,
     tol=1e-12,
     accept_tol=1e-9,
-    seeds=[96, 128, 160, 192, 224, 256],
+    seeds=[96, 128, 160, 192, 224, 256, 288, 320, 352],  # n=2..10; solver indexes as seeds[n-2]
     max_corners=256,
     rounds=10,
     confirm=True,
