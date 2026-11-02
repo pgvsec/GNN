@@ -73,7 +73,6 @@ PYTHONPATH=$REPO_GNN:$REPO_GNN_TEMP $PYTHON finetune_e2e_composition.py \
     --lr_backbone 2e-6 \
     --lr_decoder  0.0 \
     --lr_pos      0.0 \
-    --use_v2_count_head \
     --use_margin_loss \
     --margin      0.1 \
     --correct_ce_weight 0.01 \

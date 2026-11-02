@@ -1113,7 +1113,14 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
                         l1_count_no_detach=False)
                 total_loss += float(loss.item()) * len(chunk)
 
-        except Exception:
+        except Exception as _chunk_exc:
+            if errors == 0:  # log only the first chunk failure
+                import traceback as _tb, warnings as _w
+                _w.warn(
+                    f"run_epoch: first chunk exception: "
+                    f"{type(_chunk_exc).__name__}: {_chunk_exc}\n"
+                    f"{''.join(_tb.format_tb(_chunk_exc.__traceback__))}",
+                    stacklevel=2)
             errors += len(chunk)
             continue
 
