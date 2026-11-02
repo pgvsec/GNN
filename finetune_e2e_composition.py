@@ -721,11 +721,20 @@ def compute_e2e_loss(case, dag, l1_model, l3_model, device, scc_gt_counts,
 def precompute_dags(cases):
     from assemble import decompose_grn
     dags = []
+    first_exc_logged = False
     for c in cases:
         try:
             dag = decompose_grn(c["adj"], c["P"], c["K"], c["T"], c["nh"], c["F"])
             dags.append(dag)
-        except Exception:
+        except Exception as e:
+            if not first_exc_logged:
+                import traceback, warnings
+                warnings.warn(
+                    f"precompute_dags: first exception in decompose_grn: "
+                    f"{type(e).__name__}: {e}\n"
+                    f"{''.join(traceback.format_tb(e.__traceback__))}",
+                    stacklevel=2)
+                first_exc_logged = True
             dags.append(None)
     return dags
 
@@ -733,13 +742,22 @@ def precompute_dags(cases):
 def precompute_gt_counts(cases, dag_cache):
     """Pre-extract scc_gt_counts for every case so run_epoch avoids per-step numpy work."""
     result = []
+    first_exc_logged = False
     for case, dag in zip(cases, dag_cache):
         if dag is None:
             result.append(None)
             continue
         try:
             result.append(extract_scc_gt_counts(dag, case["fp_state"]))
-        except Exception:
+        except Exception as e:
+            if not first_exc_logged:
+                import traceback, warnings
+                warnings.warn(
+                    f"precompute_gt_counts: first exception in extract_scc_gt_counts: "
+                    f"{type(e).__name__}: {e}\n"
+                    f"{''.join(traceback.format_tb(e.__traceback__))}",
+                    stacklevel=2)
+                first_exc_logged = True
             result.append(None)
     return result
 
@@ -1026,6 +1044,16 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
     # Chunk size: accumulate cases per optimizer step (training) or 64 (val)
     chunk_size = accumulate if is_train else 64
 
+    if is_train and len(valid_items) == 0:
+        import warnings
+        warnings.warn(
+            f"run_epoch: valid_items is EMPTY — "
+            f"all {len(cases)} cases filtered out "
+            f"({errors} dag/gtc errors). "
+            "Check that gt_counts_cache is non-None and that training "
+            "directories contain valid data.",
+            stacklevel=2)
+
     if is_train:
         optimizer.zero_grad()
 
@@ -1288,10 +1316,24 @@ def main():
     print("Pre-computing SCC DAGs...")
     train_dags = precompute_dags(train_cases)
     val_dags   = precompute_dags(val_cases)
+    n_train_dag_ok = sum(1 for d in train_dags if d is not None)
+    n_val_dag_ok   = sum(1 for d in val_dags   if d is not None)
+    print(f"  Train DAGs: {n_train_dag_ok}/{len(train_dags)} OK "
+          f"({len(train_dags)-n_train_dag_ok} failed)")
+    print(f"  Val DAGs:   {n_val_dag_ok}/{len(val_dags)} OK "
+          f"({len(val_dags)-n_val_dag_ok} failed)")
 
     print("Pre-computing GT counts (avoids per-epoch numpy work)...")
     train_gt_counts = precompute_gt_counts(train_cases, train_dags)
     val_gt_counts   = precompute_gt_counts(val_cases,   val_dags)
+    n_train_gtc_ok   = sum(1 for g in train_gt_counts if g is not None)
+    n_train_gtc_empty = sum(1 for g in train_gt_counts if g is not None and len(g) == 0)
+    n_val_gtc_ok     = sum(1 for g in val_gt_counts   if g is not None)
+    print(f"  Train GT counts: {n_train_gtc_ok}/{len(train_gt_counts)} OK "
+          f"({len(train_gt_counts)-n_train_gtc_ok} failed, "
+          f"{n_train_gtc_empty} empty-dict)")
+    print(f"  Val GT counts:   {n_val_gtc_ok}/{len(val_gt_counts)} OK "
+          f"({len(val_gt_counts)-n_val_gtc_ok} failed)")
 
     use_amp = (not args.no_amp) and (device.type == "cuda")
     scaler  = torch.amp.GradScaler("cuda") if use_amp else None
@@ -1313,8 +1355,8 @@ def main():
     log_rows = []
 
     print(f"\n{'Epoch':>6}  {'Train Loss':>10}  {'Train CE':>9}  "
-          f"{'Val Loss':>9}  {'Val CE':>8}  {'LR':>8}")
-    print("-" * 60)
+          f"{'Val Loss':>9}  {'Val CE':>8}  {'LR':>8}  {'N_train':>8}")
+    print("-" * 70)
 
     for epoch in range(1, args.epochs + 1):
         if pos_only_mode:
@@ -1365,7 +1407,8 @@ def main():
               f"{train_m['count_exact']:>9.4f}  "
               f"{val_m['loss']:>9.4f}  "
               f"{val_m['count_exact']:>8.4f}  "
-              f"{lr_now:>8.2e}")
+              f"{lr_now:>8.2e}  "
+              f"{train_m['n']:>8}")
 
         log_rows.append({
             "epoch":      epoch,
