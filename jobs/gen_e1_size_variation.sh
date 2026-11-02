@@ -14,14 +14,15 @@
 # E1: In-distribution size variation (n_total=6, split != canonical 3+3)
 #
 # Hypothesis: The model learned a compositional operator, not a size-specific
-# memorization.  If it generalizes within n=6, these four splits (each never
-# seen in the composition eval training set) should achieve ~90% accuracy.
+# memorization.  If it generalizes within n=6, these splits (each never seen
+# in the composition eval training set) should achieve ~90% accuracy.
 #
 # Variants:
 #   2+4 — tiny root SCC forced into large target
 #   4+2 — large root SCC forced into tiny target
-#   1+5 — single-gene root (trivially stable)
-#   5+1 — single-gene target (trivially 1 FP given forcing)
+#
+# Note: 1+5 and 5+1 are excluded — Corpus A covers n=2..6 only; there are
+# no n=1 single-gene SCC samples to draw from.
 
 SCRATCH=/scratch/gilbreth/gupt1042
 REPO_GNN=$SCRATCH/GNN
@@ -35,7 +36,7 @@ mkdir -p $OUT_BASE
 
 GEN="$REPO_GNN/exhaust_gen/gen_composition_eval_general.py"
 
-for NA_NB in "2 4" "4 2" "1 5" "5 1"; do
+for NA_NB in "2 4" "4 2"; do
     read NA NB <<< "$NA_NB"
     TAG="e1_${NA}p${NB}"
     OUT_DIR="$OUT_BASE/$TAG"
