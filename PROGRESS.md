@@ -226,6 +226,45 @@
 
 ---
 
+---
+
+## Generalization Experiments (E1 + E3 — first results)
+
+**Eval command:** same as canonical — `eval_composition2.py --l3_frame forced --dedup fill --refine_steps 15`
+
+| Experiment | count_exact | fp_hd | stable_acc | Notes |
+|---|---|---|---|---|
+| v5 canonical (3+3, baseline) | 0.914 | 0.888 | 0.913 | Validation set used for v8 selection |
+| E1: 2+4 | 0.788 | 0.779 | 0.833 | In-dist, asymm root→target |
+| E1: 4+2 | 0.748 | 0.823 | 0.805 | In-dist, asymm root→target |
+| E3: 3+3 all-split (sanity) | 0.772 | 0.810 | 0.822 | Fresh 3+3 draw, seed≠42 |
+| E3: 3+3 test-split (OOD topo) | **0.798** | **0.823** | **0.843** | OOD topologies, still n=6 |
+
+**Key finding — validation selection bias (~14pp):**
+v5 was used as the validation set to select the v8 best checkpoint. A fresh 3+3 draw (E3-all-split, same corpus, different seed) gives only 77.2%, revealing that ~14pp of the 91.4% was overfitting to the specific v5 distribution. The honest 3+3 generalization baseline is **~77–80%**.
+
+**Key finding — topology doesn't matter:**
+E3 test-split (OOD topologies) achieves *higher* accuracy than E3 all-split (79.8% vs 77.2%), confirming the model learned dynamics rules, not topology fingerprints.
+
+**Key finding — size-split mismatch (~10-12pp):**
+2+4 and 4+2 give 74–79% because the fine-tuning training set contained only 3+3 compositions. The backbone handles all sizes, but the composition step was never trained on asymmetric pairs.
+
+**Target for v9:** count_exact ≥ 0.85 on E1 (2+4, 4+2) and E3 (all-split, test-split).
+
+---
+
+## v9: Diverse composition training (in progress)
+
+**Start:** v8 checkpoints (epoch 84)  
+**Fix 1:** Add 2+4 and 4+2 training compositions (seed=100, 500 cases each) so the model sees asymmetric size pairs during fine-tuning.  
+**Fix 2:** Use a fresh 3+3 val set (seed=99, never seen by the model) for checkpoint selection — eliminates the v5 validation selection bias.  
+**Training dirs:** v3 + v4 + v9_train_2p4 + v9_train_4p2  
+**Val dir:** v9_val_3p3 (seed=99)  
+**Hyperparameters:** identical to v8 (proven to work)  
+**Scripts:** `jobs/gen_v9_data.sh` → `jobs/finetune_e2e_v9_a100.sh`
+
+---
+
 ## Paths Not Yet Tried
 
 1. **Pos-only fine-tune from v8:** `--lr_pos 5e-6 --lr 0 --lr_backbone 0 --pos_reg_weight 1.0` — trains only `l1_model.pos_head`, guaranteed not to hurt count_exact/stable_acc. May push fp_hd above 0.90.
