@@ -62,7 +62,7 @@ def main():
           f"({100*len(fail_idx)/(fail_arr.max()+1):.1f}%)")
 
     # ── Load and subset per-case arrays ──────────────────────────────────────
-    for fname in ["adj.npy", "par.npy", "K.npy", "T.npy", "nh.npy", "F.npy"]:
+    for fname in ["adj.npy", "P.npy", "K.npy", "T.npy", "nh.npy", "F.npy"]:
         src = src_dir / fname
         if not src.exists():
             print(f"  SKIP {fname} (not found)")
