@@ -80,7 +80,7 @@ parts = [base / f"fresh_3p3_seed{s}" for s in seeds]
 out   = base / "fresh_3p3_5k"
 out.mkdir(parents=True, exist_ok=True)
 
-scalar_files = ["adj.npy", "par.npy", "K.npy", "T.npy", "nh.npy", "F.npy", "n_fp.npy"]
+scalar_files = ["adj.npy", "P.npy", "K.npy", "T.npy", "nh.npy", "F.npy", "n_fp.npy"]
 for fname in scalar_files:
     arrays = [np.load(p / fname) for p in parts if (p / fname).exists()]
     if arrays:
