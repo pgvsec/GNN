@@ -228,28 +228,48 @@
 
 ---
 
-## Generalization Experiments (E1 + E3 — first results)
+## Generalization Experiments — Full Results (E1–E4)
 
-**Eval command:** same as canonical — `eval_composition2.py --l3_frame forced --dedup fill --refine_steps 15`
+**Eval command:** `eval_composition2.py --l3_frame forced --dedup fill --refine_steps 15`  
+**Checkpoints:** v8 (epoch 84) — `$SCRATCH/runs/e2e_v8/l1_best.pt` / `l3_best.pt`
 
-| Experiment | count_exact | fp_hd | stable_acc | Notes |
-|---|---|---|---|---|
-| v5 canonical (3+3, baseline) | 0.914 | 0.888 | 0.913 | Validation set used for v8 selection |
-| E1: 2+4 | 0.788 | 0.779 | 0.833 | In-dist, asymm root→target |
-| E1: 4+2 | 0.748 | 0.823 | 0.805 | In-dist, asymm root→target |
-| E3: 3+3 all-split (sanity) | 0.772 | 0.810 | 0.822 | Fresh 3+3 draw, seed≠42 |
-| E3: 3+3 test-split (OOD topo) | **0.798** | **0.823** | **0.843** | OOD topologies, still n=6 |
+| Tier | Dataset | n_genes | n_SCCs | count_exact | fp_hd | stable_acc | Notes |
+|------|---------|---------|--------|-------------|-------|------------|-------|
+| Baseline | v5 3+3 (biased) | 6 | 2 | **0.914** | 0.884 | 0.913 | v8 checkpoint-selection set |
+| E3 | 3+3 all-split (honest) | 6 | 2 | 0.772 | 0.810 | 0.822 | Fresh draw, seed≠42 |
+| E3 | 3+3 test-split (OOD topo) | 6 | 2 | **0.798** | 0.823 | 0.843 | OOD topologies |
+| E1 | 2+4 | 6 | 2 | 0.788 | 0.778 | 0.833 | Asymm, never trained on |
+| E1 | 4+2 | 6 | 2 | 0.748 | 0.822 | 0.805 | Asymm, never trained on |
+| E2 | 3+4 | 7 | 2 | 0.696 | 0.737 | 0.757 | Zero-shot +1 gene |
+| E2 | 4+3 | 7 | 2 | 0.686 | 0.747 | 0.758 | Zero-shot +1 gene |
+| E2 | 3+5 | 8 | 2 | 0.724 | 0.722 | 0.784 | Zero-shot +2 genes |
+| E2 | 5+3 | 8 | 2 | 0.754 | 0.732 | 0.801 | Zero-shot +2 genes |
+| E2 | 4+4 | 8 | 2 | 0.672 | 0.656 | 0.752 | Zero-shot +2 genes |
+| E4 | 2→3→4 (chain) | 9 | 3 | 0.726 | 0.692 | 0.794 | Zero-shot 3-SCC chain |
+| E4 | 3→3→3 (chain) | 9 | 3 | 0.698 | 0.736 | 0.770 | Zero-shot 3-SCC chain |
 
-**Key finding — validation selection bias (~14pp):**
-v5 was used as the validation set to select the v8 best checkpoint. A fresh 3+3 draw (E3-all-split, same corpus, different seed) gives only 77.2%, revealing that ~14pp of the 91.4% was overfitting to the specific v5 distribution. The honest 3+3 generalization baseline is **~77–80%**.
+### Key findings
 
-**Key finding — topology doesn't matter:**
-E3 test-split (OOD topologies) achieves *higher* accuracy than E3 all-split (79.8% vs 77.2%), confirming the model learned dynamics rules, not topology fingerprints.
+**13. Validation selection bias = 14pp:**
+v5 was used to select the v8 best checkpoint. A fresh 3+3 draw (E3 all-split, different seed) gives only 77.2%, not 91.4%. The honest single-SCC-composition generalization number is **~77–80%**. The v5 number is not wrong — it reflects true performance on that specific distribution — but it is biased as a general accuracy estimate.
 
-**Key finding — size-split mismatch (~10-12pp):**
-2+4 and 4+2 give 74–79% because the fine-tuning training set contained only 3+3 compositions. The backbone handles all sizes, but the composition step was never trained on asymmetric pairs.
+**14. Topology generalization confirmed (replicated):**
+E3 test-split (OOD topologies held out from all training stages) scores **79.8%** — *higher* than E3 all-split (77.2%). The gap is in the right direction in both the first run and this final full run. The model learned dynamics rules, not topology fingerprints.
 
-**Target for v9:** count_exact ≥ 0.85 on E1 (2+4, 4+2) and E3 (all-split, test-split).
+**15. OOD scale extrapolation — gradual degradation:**
+Moving from n=6 to n=7 costs ~8pp (69–70%). This is not catastrophic collapse — the model maintains meaningful accuracy on networks 17% larger than its training max per-SCC.
+
+**16. n=8 asymmetry paradox:**
+Within n=8 variants: 5+3 (75.4%) > 3+5 (72.4%) > 4+4 (67.2%). When the root SCC is larger (n_a=5), the L1 prediction is more confident, and the target SCC (n_b=3) sits at the optimal training-distribution size. 4+4 is hardest: both SCCs are at the large end of the training distribution, compounding prediction uncertainty.
+
+**17. Deep DAG chains don't compound error:**
+E4 n=9 3-SCC chains score 70–73% — essentially the same as E2 n=7 two-SCC compositions. If errors compounded multiplicatively (77% × 77%) we'd expect ~59%. Instead the 3-SCC pipeline holds at 70%+. The topological DAG walk in `assemble.py` handles multi-level forcing natively with no accuracy penalty for DAG depth per se.
+
+**18. Summary — the degradation curve:**
+```
+v5 biased (91.4%) → honest n=6 (77.2%) → asymm n=6 (~76.8%) → OOD n=7 (~69%) → OOD n=8 (~71%) → deep DAG n=9 (~71%)
+```
+The plateau at ~70% from n=7 onward suggests the bottleneck is L1 SCC count accuracy on larger SCCs, not the composition step itself.
 
 ---
 

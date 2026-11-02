@@ -111,11 +111,32 @@ done
 # ── Summary ───────────────────────────────────────────────────────────────────
 echo "==================================================================="
 echo " SUMMARY — count_exact / fp_hd / stable_acc"
+printf "  %-26s  %s  %s  %s\n" "dataset" "count_exact" "fp_hd" "stable_acc"
 echo "==================================================================="
-for CSV in $OUT_BASE/results_*.csv; do
+PYTHON_AGGS=/home/gupt1042/.conda/envs/2025.06-py313/gnn/bin/python
+for CSV in $(ls $OUT_BASE/results_*.csv 2>/dev/null | sort); do
     TAG=$(basename $CSV .csv | sed 's/results_//')
-    # Extract the last line's metrics (count_exact,fp_hd,stable_acc format)
-    TAIL=$(tail -1 $CSV 2>/dev/null)
-    echo "  $TAG : $TAIL"
+    RESULT=$($PYTHON_AGGS -c "
+import csv, sys
+try:
+    with open('$CSV') as f:
+        rows = list(csv.DictReader(f))
+    if not rows:
+        print('(empty)')
+        sys.exit(0)
+    n = len(rows)
+    # try both possible column names
+    def get(r, *keys):
+        for k in keys:
+            if k in r: return float(r[k])
+        return 0.0
+    ce = sum(get(r, 'count_correct', 'count_exact') for r in rows) / n
+    fh = sum(get(r, 'fp_hd') for r in rows) / n
+    sa = sum(get(r, 'stable_acc') for r in rows) / n
+    print(f'{ce:.4f}  {fh:.4f}  {sa:.4f}  (n={n})')
+except Exception as e:
+    print(f'error: {e}')
+" 2>&1)
+    printf "  %-26s  %s\n" "$TAG" "$RESULT"
 done
 echo "==================================================================="
