@@ -27,7 +27,7 @@ REPO_GNN_TEMP=$SCRATCH/GNN_temp
 PYTHON=/home/gupt1042/.conda/envs/2025.06-py313/gnn/bin/python
 export PYTHONUNBUFFERED=1
 
-GEN_SCRIPT=$REPO_GNN/exhaust_gen/gen_composition_dataset.py
+GEN_SCRIPT=$REPO_GNN/exhaust_gen/gen_composition_eval.py
 EVAL_SCRIPT=$REPO_GNN/exhaust_gen/eval_composition2.py
 FILTER_SCRIPT=$REPO_GNN/exhaust_gen/filter_hard_negatives.py
 
@@ -46,8 +46,6 @@ for SEED in 201 202 203 204 205; do
     PART_DIR=$OUT_BASE/fresh_3p3_seed${SEED}
     echo "  Generating seed=${SEED} → $PART_DIR"
     PYTHONPATH=$REPO_GNN:$REPO_GNN_TEMP $PYTHON $GEN_SCRIPT \
-        --n_scc_a 3 \
-        --n_scc_b 3 \
         --n_cases 1000 \
         --seed $SEED \
         --out_dir $PART_DIR
