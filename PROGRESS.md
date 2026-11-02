@@ -263,6 +263,11 @@ E3 test-split (OOD topologies) achieves *higher* accuracy than E3 all-split (79.
 **Hyperparameters:** identical to v8 (proven to work)  
 **Scripts:** `jobs/gen_v9_data.sh` → `jobs/finetune_e2e_v9_a100.sh`
 
+**Result: Training saturated (train loss = 0.0000 from epoch 1)**
+v8 already predicts the count correctly on ALL 2000 training cases from epoch 1. The margin hinge is satisfied everywhere; `correct_ce_weight=0.01` provides negligible gradient when the model predicts with near-certainty. No gradient flows → val count_exact locked at 0.7840 for all 100 epochs.
+
+**Conclusion:** v8 is the architecture ceiling for composition fine-tuning on easy cases. The ~79% on fresh evals is the genuine generalization number. Getting to 85%+ requires hard-negative mining (training only on cases where v8 currently fails) or architectural changes. Deferring architectural improvements; proceeding with E2 and E4 using v8.
+
 ---
 
 ## Paths Not Yet Tried
