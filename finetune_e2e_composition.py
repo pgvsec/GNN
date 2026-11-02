@@ -754,7 +754,9 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
                         use_margin_loss: bool = False,
                         margin: float = 0.1,
                         correct_ce_weight: float = 0.01,
-                        l1_count_no_detach: bool = False):
+                        l1_count_no_detach: bool = False,
+                        exist_consistency_weight: float = 0.0,
+                        exist_consistency_alpha: float = 10.0):
     """
     Batch L1 then L3 forward passes for a chunk of (case, dag, scc_gt_counts) triples.
 
@@ -807,14 +809,16 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
 
     # ── Phase 2: extract per-case L1 results ─────────────────────────────────
     per_case = [{
-        'prob_list':   [],
-        'k_vals_list': [],
-        'scc_reg':     torch.tensor(0.0, device=device),
-        'n_reg':       0,
-        'pos_loss':    torch.tensor(0.0, device=device),
-        'n_pos':       0,
-        'pred_fps':    {},
-        'pred_counts': {},
+        'prob_list':    [],
+        'k_vals_list':  [],
+        'scc_reg':      torch.tensor(0.0, device=device),
+        'n_reg':        0,
+        'pos_loss':     torch.tensor(0.0, device=device),
+        'n_pos':        0,
+        'consist_loss': torch.tensor(0.0, device=device),
+        'n_consist':    0,
+        'pred_fps':     {},
+        'pred_counts':  {},
     } for _ in range(B)]
 
     for li, (ci, scc_id, scc, gt_k, gt_fps) in enumerate(l1_entries):
@@ -828,6 +832,13 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
             w = max(1, gt_k) / 3.0
             pc['scc_reg'] = pc['scc_reg'] + w * _odd_ce_loss(count_logit, gt_k)
             pc['n_reg'] += 1
+
+        if exist_consistency_weight > 0.0:
+            exist_logit_i = batched_l1_out["exist_logit"][li]
+            exist_count_soft = torch.sigmoid(exist_consistency_alpha * exist_logit_i).sum()
+            gt_k_t = exist_count_soft.new_tensor(float(gt_k))
+            pc['consist_loss'] = pc['consist_loss'] + F.smooth_l1_loss(exist_count_soft, gt_k_t)
+            pc['n_consist'] += 1
 
         need_out_i = (pos_reg_weight > 0.0 and bool(gt_fps)) or (p_predicted > 0.0)
         if need_out_i:
@@ -946,6 +957,8 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
             comp_loss = comp_loss + scc_reg_weight * pc['scc_reg'] / pc['n_reg']
         if pos_reg_weight > 0.0 and pc['n_pos'] > 0:
             comp_loss = comp_loss + pos_reg_weight * pc['pos_loss'] / pc['n_pos']
+        if exist_consistency_weight > 0.0 and pc['n_consist'] > 0:
+            comp_loss = comp_loss + exist_consistency_weight * pc['consist_loss'] / pc['n_consist']
 
         total_loss = total_loss + comp_loss
         n_valid   += 1
@@ -966,7 +979,9 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
               use_margin_loss=False,
               margin=0.1,
               correct_ce_weight=0.01,
-              l1_count_no_detach=False):
+              l1_count_no_detach=False,
+              exist_consistency_weight=0.0,
+              exist_consistency_alpha=10.0):
     is_train = optimizer is not None
 
     total_loss = 0.0
@@ -1027,7 +1042,9 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
                             freeze_l3_backbone,
                             use_margin_loss=use_margin_loss, margin=margin,
                             correct_ce_weight=correct_ce_weight,
-                            l1_count_no_detach=l1_count_no_detach)
+                            l1_count_no_detach=l1_count_no_detach,
+                            exist_consistency_weight=exist_consistency_weight,
+                            exist_consistency_alpha=exist_consistency_alpha)
                 else:
                     loss, pred_counts_list = _compute_chunk_loss(
                         chunk, l1_model, l3_model, device,
@@ -1035,7 +1052,9 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
                         freeze_l3_backbone,
                         use_margin_loss=use_margin_loss, margin=margin,
                         correct_ce_weight=correct_ce_weight,
-                        l1_count_no_detach=l1_count_no_detach)
+                        l1_count_no_detach=l1_count_no_detach,
+                        exist_consistency_weight=exist_consistency_weight,
+                        exist_consistency_alpha=exist_consistency_alpha)
 
                 if loss.requires_grad:
                     if scaler is not None:
@@ -1183,6 +1202,17 @@ def main():
                          "Normally count_detach=True blocks this path; disabling it "
                          "lets L1's backbone adapt to composition-level count errors. "
                          "Only meaningful when --lr_backbone > 0.")
+    ap.add_argument("--exist_consistency_weight", type=float, default=0.0,
+                    help="Weight on existence-logit consistency loss (v10). "
+                         "Penalises |sum(sigmoid(alpha*exist_logit)) - gt_k| "
+                         "so the K=16 existence probabilities are forced toward a "
+                         "bimodal distribution matching the GT FP count. "
+                         "Directly addresses uncertain/soft exist_logit for novel "
+                         "compositions. Recommended: 0.5-2.0. Default 0 (disabled).")
+    ap.add_argument("--exist_consistency_alpha", type=float, default=10.0,
+                    help="Sharpness of soft threshold in existence consistency loss. "
+                         "sigmoid(alpha * exist_logit): higher = closer to hard step. "
+                         "Default 10.0.")
     ap.add_argument("--no_amp",        action="store_true",
                     help="Disable automatic mixed precision (float16 forward). "
                          "AMP is enabled by default on CUDA and gives ~2x speedup.")
@@ -1246,6 +1276,9 @@ def main():
           f"({'always GT' if args.p_predicted == 0.0 else 'always predicted' if args.p_predicted == 1.0 else 'scheduled sampling'})")
     if args.l1_count_no_detach:
         print("  L1 count_detach=False: composition gradient flows to L1 backbone via count head")
+    if args.exist_consistency_weight > 0.0:
+        print(f"  Existence consistency loss (v10): weight={args.exist_consistency_weight}, "
+              f"alpha={args.exist_consistency_alpha}")
 
     print("Loading data...")
     train_cases = gather_cases(args.train_dirs)
@@ -1308,7 +1341,9 @@ def main():
                             use_margin_loss=args.use_margin_loss,
                             margin=args.margin,
                             correct_ce_weight=args.correct_ce_weight,
-                            l1_count_no_detach=args.l1_count_no_detach)
+                            l1_count_no_detach=args.l1_count_no_detach,
+                            exist_consistency_weight=args.exist_consistency_weight,
+                            exist_consistency_alpha=args.exist_consistency_alpha)
 
         l1_model.eval()
         l3_model.eval()
