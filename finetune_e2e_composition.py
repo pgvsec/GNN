@@ -821,7 +821,9 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
     _orig_l1_detach = getattr(l1_model, 'count_detach', True)
     if l1_count_no_detach:
         l1_model.count_detach = False
-    batched_l1_out = l1_model(_cat_batches(l1_raw))
+    # Run each SCC independently — root SCCs can have different node counts
+    # (2+4, 4+2, 3+3 compositions), so _cat_batches would fail on dim mismatch.
+    l1_outs = [l1_model(b) for b in l1_raw]
     if l1_count_no_detach:
         l1_model.count_detach = _orig_l1_detach
 
@@ -840,7 +842,8 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
     } for _ in range(B)]
 
     for li, (ci, scc_id, scc, gt_k, gt_fps) in enumerate(l1_entries):
-        count_logit = batched_l1_out["count_logit"][li]
+        _l1_out = l1_outs[li]
+        count_logit = _l1_out["count_logit"][0]
         probs, k_vals = odd_probs(count_logit)
         pc = per_case[ci]
         pc['prob_list'].append(probs)
@@ -852,7 +855,7 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
             pc['n_reg'] += 1
 
         if exist_consistency_weight > 0.0:
-            exist_logit_i = batched_l1_out["exist_logit"][li]
+            exist_logit_i = _l1_out["exist_logit"][0]
             exist_count_soft = torch.sigmoid(exist_consistency_alpha * exist_logit_i).sum()
             gt_k_t = exist_count_soft.new_tensor(float(gt_k))
             pc['consist_loss'] = pc['consist_loss'] + F.smooth_l1_loss(exist_count_soft, gt_k_t)
@@ -860,8 +863,7 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
 
         need_out_i = (pos_reg_weight > 0.0 and bool(gt_fps)) or (p_predicted > 0.0)
         if need_out_i:
-            out_i = {k: v[li:li+1] for k, v in batched_l1_out.items()
-                     if isinstance(v, torch.Tensor)}
+            out_i = {k: v for k, v in _l1_out.items() if isinstance(v, torch.Tensor)}
             raw_i = l1_raw[li]
 
             if pos_reg_weight > 0.0 and gt_fps:
@@ -915,13 +917,14 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
                 l3_entries.append((ci, scc_id, scc, gt_k, gt_fps))
 
     if l3_raw:
-        batched_l3_out, _ = l3_model(_cat_batches(l3_raw),
-                                      freeze_backbone=freeze_l3_backbone)
+        # Run each forced SCC independently — forced SCCs also have variable node counts.
+        l3_outs = [l3_model(b, freeze_backbone=freeze_l3_backbone) for b in l3_raw]
 
         l3_accum = {}   # (ci, scc_id) -> {'probs_list', 'k_vals', 'gt_k'}
 
         for li, (ci, scc_id, scc, gt_k, gt_fps) in enumerate(l3_entries):
-            count_logit  = batched_l3_out["count_logit"][li]
+            _l3_out = l3_outs[li][0]
+            count_logit  = _l3_out["count_logit"][0]
             probs_branch, k_vals = odd_probs(count_logit)
             pc = per_case[ci]
 
@@ -930,8 +933,7 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
                 pc['n_reg'] += 1
 
             if pos_reg_weight > 0.0 and gt_fps and not freeze_l3_backbone:
-                out_i = {k: v[li:li+1] for k, v in batched_l3_out.items()
-                         if isinstance(v, torch.Tensor)}
+                out_i = {k: v for k, v in _l3_out.items() if isinstance(v, torch.Tensor)}
                 pl = _pos_chamfer_loss(out_i, l3_raw[li], gt_fps, scc.n)
                 if pl is not None:
                     pc['pos_loss'] = pc['pos_loss'] + pl
