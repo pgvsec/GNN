@@ -1253,6 +1253,15 @@ def main():
     ap.add_argument("--no_amp",        action="store_true",
                     help="Disable automatic mixed precision (float16 forward). "
                          "AMP is enabled by default on CUDA and gives ~2x speedup.")
+    ap.add_argument("--start_epoch",   type=int,   default=0,
+                    help="Resume: treat this as the first epoch number. "
+                         "Pass the last completed epoch so the cosine LR "
+                         "schedule continues from the right position. "
+                         "Point --l1_ckpt/--l3_ckpt at the matching checkpoint.")
+    ap.add_argument("--best_val",      type=float, default=None,
+                    help="Resume: initial best-val-metric from the previous run "
+                         "so early-epoch results don't incorrectly overwrite the "
+                         "true best checkpoint.")
     ap.add_argument("--max_train",      type=int,   default=None)
     ap.add_argument("--no_cuda",        action="store_true")
     ap.add_argument("--seed",           type=int,   default=42)
@@ -1355,19 +1364,26 @@ def main():
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=args.epochs, eta_min=primary_lr * 0.01)
 
+    # Fast-forward scheduler to match a resumed run's position.
+    for _ in range(args.start_epoch):
+        scheduler.step()
+
     out_dir  = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     log_path = out_dir / "log.csv"
 
     # pos_only: track lowest val pos_loss; otherwise highest val count_exact
-    best_val_metric = float("inf") if pos_only_mode else -1.0
+    if args.best_val is not None:
+        best_val_metric = args.best_val
+    else:
+        best_val_metric = float("inf") if pos_only_mode else -1.0
     log_rows = []
 
     print(f"\n{'Epoch':>6}  {'Train Loss':>10}  {'Train CE':>9}  "
           f"{'Val Loss':>9}  {'Val CE':>8}  {'LR':>8}  {'N_train':>8}")
     print("-" * 70)
 
-    for epoch in range(1, args.epochs + 1):
+    for epoch in range(args.start_epoch + 1, args.start_epoch + args.epochs + 1):
         if pos_only_mode:
             l1_model.eval()   # backbone, count heads stay in eval
             l1_model.pos_head.train()
@@ -1447,8 +1463,17 @@ def main():
             save_checkpoint(out_dir, f"ep{epoch:03d}", l1_model, l3_model,
                             l1_cfg_dict, l3_cfg_dict, val_m)
 
+    # Always save the final epoch so the next run can resume cleanly.
+    save_checkpoint(out_dir, "last", l1_model, l3_model,
+                    l1_cfg_dict, l3_cfg_dict, val_m)
+
     best_label = "val pos_loss" if pos_only_mode else "val count_exact"
     print(f"\nBest {best_label}: {best_val_metric:.4f}")
+    final_epoch = args.start_epoch + args.epochs
+    print(f"To resume: --l1_ckpt {out_dir}/l1_last.pt "
+          f"--l3_ckpt {out_dir}/l3_last.pt "
+          f"--start_epoch {final_epoch} "
+          f"--best_val {best_val_metric:.4f}")
     print(f"Checkpoints saved to: {out_dir}")
 
 
