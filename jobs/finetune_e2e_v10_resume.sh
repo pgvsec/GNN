@@ -32,12 +32,14 @@ export PYTHONUNBUFFERED=1
 OUT_DIR=$SCRATCH/runs/e2e_v10
 
 # ── Fill these in from the "To resume:" line printed by the first job ────────
-RESUME_START_EPOCH=30          # last completed epoch from first run
-RESUME_BEST_VAL=0.8860         # best val count_exact seen so far
+# First run stopped at epoch 29; best checkpoint is epoch 25 (val CE=0.8920).
+# There is no ep029 checkpoint, so resume from l1_best.pt (= ep025).
+RESUME_START_EPOCH=25          # epoch of the checkpoint we're loading
+RESUME_BEST_VAL=0.8920         # best val count_exact seen so far
 # ────────────────────────────────────────────────────────────────────────────
 
-L1_CKPT=$OUT_DIR/l1_last.pt
-L3_CKPT=$OUT_DIR/l3_last.pt
+L1_CKPT=$OUT_DIR/l1_best.pt
+L3_CKPT=$OUT_DIR/l3_best.pt
 
 TRAIN_DIRS="$SCRATCH/runs/composition_eval_v3 \
             $SCRATCH/runs/composition_eval_v4 \
@@ -55,7 +57,7 @@ PYTHONPATH=$REPO_GNN:$REPO_GNN_TEMP $PYTHON finetune_e2e_composition.py \
     --train_dirs  $TRAIN_DIRS \
     --val_dir     $VAL_DIR \
     --out_dir     $OUT_DIR \
-    --epochs      70 \
+    --epochs      75 \
     --start_epoch $RESUME_START_EPOCH \
     --best_val    $RESUME_BEST_VAL \
     --lr          1e-5 \
