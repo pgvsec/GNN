@@ -40,10 +40,12 @@ gen_dataset() {
     local nb="$3"
     local tag="$4"
     local out=$GEN_DIR/$tag
-    if [ -d "$out" ] && [ -f "$out/adj.npy" ]; then
-        echo "SKIP generate [$label]: $out already exists"
+    if [ -d "$out" ] && [ -f "$out/adj.npy" ] && [ "$(python3 -c "import numpy as np; print(len(np.load('$out/adj.npy')))" 2>/dev/null)" != "0" ]; then
+        echo "SKIP generate [$label]: $out already exists and is non-empty"
         return
     fi
+    # remove any empty/failed previous attempt
+    rm -rf "$out"
     echo "=== Generating $label ($tag) ==="
     PYTHONPATH=$REPO_GNN:$REPO_GNN_TEMP $PYTHON exhaust_gen/gen_composition_eval_N.py \
         --corpus_cache $CORPUS \
