@@ -2,7 +2,17 @@
 
 A three-layer GNN pipeline that predicts fixed-point dynamics of large Gene Regulatory Networks (GRNs) compositionally, via SCC decomposition. Target metrics: **count_exact ≥ 0.90 · fp_hd ≥ 0.90 · stable_acc ≥ 0.90**.
 
-Current best (v8, `dedup=fill`, `refine_steps=15`): **0.914 / 0.891 / 0.914**
+Current best checkpoint: **v10** (`dedup=fill`, `refine_steps=15`)
+
+| Eval set | count_exact | fp_hd | stable_acc |
+|----------|-------------|-------|------------|
+| v5 canonical (biased) | 0.892 | 0.935 | 0.903 |
+| 3+3 honest OOD | 0.808 | 0.929 | 0.844 |
+| 4+4 zero-shot (SCC size 4 seen in training) | 0.674 | 0.847 | 0.765 |
+| 4+5 zero-shot (SCC size 5 **never seen**) | 0.678 | 0.856 | 0.772 |
+| 6+6 zero-shot (SCC size 6 **never seen**, 2× training size) | 0.636 | 0.793 | 0.733 |
+
+Metric notes: `count_exact` is a **pure ML** metric (argmax of count head, no physics). `fp_hd` and `stable_acc` are system-level (ML seeds + 15 Newton steps).
 
 ---
 
@@ -25,16 +35,19 @@ GNN/
 ├── train_layer3.py             # L3 training script
 ├── finetune_e2e_composition.py # End-to-end composition fine-tuning
 ├── exhaust_gen/
-│   ├── generate.py             # Corpus A generation (exhaustive)
-│   ├── gen_corpus_d.py         # Corpus D generation (composition train set)
-│   ├── gen_composition_eval.py # Composition eval set generation
-│   ├── eval_composition2.py    # Canonical evaluation script
-│   └── topology.py             # DAG utilities for generation
+│   ├── generate.py               # Corpus A generation (exhaustive, n=1..6)
+│   ├── gen_corpus_d.py           # Corpus D generation (composition train set)
+│   ├── gen_composition_eval.py   # Composition eval set generation (3+3 hardcoded)
+│   ├── gen_composition_eval_N.py # Generalized eval generation (--na / --nb any size)
+│   ├── eval_composition2.py      # Canonical evaluation script
+│   └── topology.py               # DAG utilities for generation
 ├── jobs/
-│   ├── finetune_e2e_v8_a100.sh # v8 training job (A100)
-│   └── finetune_e2e_v8.sh      # v8 training job (A10 fallback)
+│   ├── finetune_e2e_v10_a100.sh      # v10 training job (A100, current best)
+│   ├── finetune_e2e_v10_resume.sh    # v10 resume support
+│   ├── eval_generalization.sh        # Full generalization table (11 datasets, v10)
+│   └── gen_and_eval_zeroshot_large.sh # Large zero-shot: 4+5..6+6
 ├── tests/                      # Unit tests (pytest)
-└── PROGRESS.md                 # Experiment log (v2 → v8)
+└── PROGRESS.md                 # Experiment log (v2 → v10)
 ```
 
 ---

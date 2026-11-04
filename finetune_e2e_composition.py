@@ -721,11 +721,20 @@ def compute_e2e_loss(case, dag, l1_model, l3_model, device, scc_gt_counts,
 def precompute_dags(cases):
     from assemble import decompose_grn
     dags = []
+    first_exc_logged = False
     for c in cases:
         try:
             dag = decompose_grn(c["adj"], c["P"], c["K"], c["T"], c["nh"], c["F"])
             dags.append(dag)
-        except Exception:
+        except Exception as e:
+            if not first_exc_logged:
+                import traceback, warnings
+                warnings.warn(
+                    f"precompute_dags: first exception in decompose_grn: "
+                    f"{type(e).__name__}: {e}\n"
+                    f"{''.join(traceback.format_tb(e.__traceback__))}",
+                    stacklevel=2)
+                first_exc_logged = True
             dags.append(None)
     return dags
 
@@ -733,13 +742,22 @@ def precompute_dags(cases):
 def precompute_gt_counts(cases, dag_cache):
     """Pre-extract scc_gt_counts for every case so run_epoch avoids per-step numpy work."""
     result = []
+    first_exc_logged = False
     for case, dag in zip(cases, dag_cache):
         if dag is None:
             result.append(None)
             continue
         try:
             result.append(extract_scc_gt_counts(dag, case["fp_state"]))
-        except Exception:
+        except Exception as e:
+            if not first_exc_logged:
+                import traceback, warnings
+                warnings.warn(
+                    f"precompute_gt_counts: first exception in extract_scc_gt_counts: "
+                    f"{type(e).__name__}: {e}\n"
+                    f"{''.join(traceback.format_tb(e.__traceback__))}",
+                    stacklevel=2)
+                first_exc_logged = True
             result.append(None)
     return result
 
@@ -754,7 +772,9 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
                         use_margin_loss: bool = False,
                         margin: float = 0.1,
                         correct_ce_weight: float = 0.01,
-                        l1_count_no_detach: bool = False):
+                        l1_count_no_detach: bool = False,
+                        exist_consistency_weight: float = 0.0,
+                        exist_consistency_alpha: float = 10.0):
     """
     Batch L1 then L3 forward passes for a chunk of (case, dag, scc_gt_counts) triples.
 
@@ -801,24 +821,29 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
     _orig_l1_detach = getattr(l1_model, 'count_detach', True)
     if l1_count_no_detach:
         l1_model.count_detach = False
-    batched_l1_out = l1_model(_cat_batches(l1_raw))
+    # Run each SCC independently — root SCCs can have different node counts
+    # (2+4, 4+2, 3+3 compositions), so _cat_batches would fail on dim mismatch.
+    l1_outs = [l1_model(b) for b in l1_raw]
     if l1_count_no_detach:
         l1_model.count_detach = _orig_l1_detach
 
     # ── Phase 2: extract per-case L1 results ─────────────────────────────────
     per_case = [{
-        'prob_list':   [],
-        'k_vals_list': [],
-        'scc_reg':     torch.tensor(0.0, device=device),
-        'n_reg':       0,
-        'pos_loss':    torch.tensor(0.0, device=device),
-        'n_pos':       0,
-        'pred_fps':    {},
-        'pred_counts': {},
+        'prob_list':    [],
+        'k_vals_list':  [],
+        'scc_reg':      torch.tensor(0.0, device=device),
+        'n_reg':        0,
+        'pos_loss':     torch.tensor(0.0, device=device),
+        'n_pos':        0,
+        'consist_loss': torch.tensor(0.0, device=device),
+        'n_consist':    0,
+        'pred_fps':     {},
+        'pred_counts':  {},
     } for _ in range(B)]
 
     for li, (ci, scc_id, scc, gt_k, gt_fps) in enumerate(l1_entries):
-        count_logit = batched_l1_out["count_logit"][li]
+        _l1_out = l1_outs[li]
+        count_logit = _l1_out["count_logit"][0]
         probs, k_vals = odd_probs(count_logit)
         pc = per_case[ci]
         pc['prob_list'].append(probs)
@@ -829,10 +854,16 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
             pc['scc_reg'] = pc['scc_reg'] + w * _odd_ce_loss(count_logit, gt_k)
             pc['n_reg'] += 1
 
+        if exist_consistency_weight > 0.0:
+            exist_logit_i = _l1_out["exist_logit"][0]
+            exist_count_soft = torch.sigmoid(exist_consistency_alpha * exist_logit_i).sum()
+            gt_k_t = exist_count_soft.new_tensor(float(gt_k))
+            pc['consist_loss'] = pc['consist_loss'] + F.smooth_l1_loss(exist_count_soft, gt_k_t)
+            pc['n_consist'] += 1
+
         need_out_i = (pos_reg_weight > 0.0 and bool(gt_fps)) or (p_predicted > 0.0)
         if need_out_i:
-            out_i = {k: v[li:li+1] for k, v in batched_l1_out.items()
-                     if isinstance(v, torch.Tensor)}
+            out_i = {k: v for k, v in _l1_out.items() if isinstance(v, torch.Tensor)}
             raw_i = l1_raw[li]
 
             if pos_reg_weight > 0.0 and gt_fps:
@@ -886,13 +917,14 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
                 l3_entries.append((ci, scc_id, scc, gt_k, gt_fps))
 
     if l3_raw:
-        batched_l3_out, _ = l3_model(_cat_batches(l3_raw),
-                                      freeze_backbone=freeze_l3_backbone)
+        # Run each forced SCC independently — forced SCCs also have variable node counts.
+        l3_outs = [l3_model(b, freeze_backbone=freeze_l3_backbone) for b in l3_raw]
 
         l3_accum = {}   # (ci, scc_id) -> {'probs_list', 'k_vals', 'gt_k'}
 
         for li, (ci, scc_id, scc, gt_k, gt_fps) in enumerate(l3_entries):
-            count_logit  = batched_l3_out["count_logit"][li]
+            _l3_out = l3_outs[li][0]
+            count_logit  = _l3_out["count_logit"][0]
             probs_branch, k_vals = odd_probs(count_logit)
             pc = per_case[ci]
 
@@ -901,8 +933,7 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
                 pc['n_reg'] += 1
 
             if pos_reg_weight > 0.0 and gt_fps and not freeze_l3_backbone:
-                out_i = {k: v[li:li+1] for k, v in batched_l3_out.items()
-                         if isinstance(v, torch.Tensor)}
+                out_i = {k: v for k, v in _l3_out.items() if isinstance(v, torch.Tensor)}
                 pl = _pos_chamfer_loss(out_i, l3_raw[li], gt_fps, scc.n)
                 if pl is not None:
                     pc['pos_loss'] = pc['pos_loss'] + pl
@@ -946,6 +977,8 @@ def _compute_chunk_loss(chunk_data, l1_model, l3_model, device,
             comp_loss = comp_loss + scc_reg_weight * pc['scc_reg'] / pc['n_reg']
         if pos_reg_weight > 0.0 and pc['n_pos'] > 0:
             comp_loss = comp_loss + pos_reg_weight * pc['pos_loss'] / pc['n_pos']
+        if exist_consistency_weight > 0.0 and pc['n_consist'] > 0:
+            comp_loss = comp_loss + exist_consistency_weight * pc['consist_loss'] / pc['n_consist']
 
         total_loss = total_loss + comp_loss
         n_valid   += 1
@@ -966,7 +999,9 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
               use_margin_loss=False,
               margin=0.1,
               correct_ce_weight=0.01,
-              l1_count_no_detach=False):
+              l1_count_no_detach=False,
+              exist_consistency_weight=0.0,
+              exist_consistency_alpha=10.0):
     is_train = optimizer is not None
 
     total_loss = 0.0
@@ -1011,6 +1046,16 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
     # Chunk size: accumulate cases per optimizer step (training) or 64 (val)
     chunk_size = accumulate if is_train else 64
 
+    if is_train and len(valid_items) == 0:
+        import warnings
+        warnings.warn(
+            f"run_epoch: valid_items is EMPTY — "
+            f"all {len(cases)} cases filtered out "
+            f"({errors} dag/gtc errors). "
+            "Check that gt_counts_cache is non-None and that training "
+            "directories contain valid data.",
+            stacklevel=2)
+
     if is_train:
         optimizer.zero_grad()
 
@@ -1027,7 +1072,9 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
                             freeze_l3_backbone,
                             use_margin_loss=use_margin_loss, margin=margin,
                             correct_ce_weight=correct_ce_weight,
-                            l1_count_no_detach=l1_count_no_detach)
+                            l1_count_no_detach=l1_count_no_detach,
+                            exist_consistency_weight=exist_consistency_weight,
+                            exist_consistency_alpha=exist_consistency_alpha)
                 else:
                     loss, pred_counts_list = _compute_chunk_loss(
                         chunk, l1_model, l3_model, device,
@@ -1035,7 +1082,9 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
                         freeze_l3_backbone,
                         use_margin_loss=use_margin_loss, margin=margin,
                         correct_ce_weight=correct_ce_weight,
-                        l1_count_no_detach=l1_count_no_detach)
+                        l1_count_no_detach=l1_count_no_detach,
+                        exist_consistency_weight=exist_consistency_weight,
+                        exist_consistency_alpha=exist_consistency_alpha)
 
                 if loss.requires_grad:
                     if scaler is not None:
@@ -1066,7 +1115,14 @@ def run_epoch(cases, dag_cache, l1_model, l3_model, device,
                         l1_count_no_detach=False)
                 total_loss += float(loss.item()) * len(chunk)
 
-        except Exception:
+        except Exception as _chunk_exc:
+            if errors == 0:  # log only the first chunk failure
+                import traceback as _tb, warnings as _w
+                _w.warn(
+                    f"run_epoch: first chunk exception: "
+                    f"{type(_chunk_exc).__name__}: {_chunk_exc}\n"
+                    f"{''.join(_tb.format_tb(_chunk_exc.__traceback__))}",
+                    stacklevel=2)
             errors += len(chunk)
             continue
 
@@ -1183,9 +1239,29 @@ def main():
                          "Normally count_detach=True blocks this path; disabling it "
                          "lets L1's backbone adapt to composition-level count errors. "
                          "Only meaningful when --lr_backbone > 0.")
+    ap.add_argument("--exist_consistency_weight", type=float, default=0.0,
+                    help="Weight on existence-logit consistency loss (v10). "
+                         "Penalises |sum(sigmoid(alpha*exist_logit)) - gt_k| "
+                         "so the K=16 existence probabilities are forced toward a "
+                         "bimodal distribution matching the GT FP count. "
+                         "Directly addresses uncertain/soft exist_logit for novel "
+                         "compositions. Recommended: 0.5-2.0. Default 0 (disabled).")
+    ap.add_argument("--exist_consistency_alpha", type=float, default=10.0,
+                    help="Sharpness of soft threshold in existence consistency loss. "
+                         "sigmoid(alpha * exist_logit): higher = closer to hard step. "
+                         "Default 10.0.")
     ap.add_argument("--no_amp",        action="store_true",
                     help="Disable automatic mixed precision (float16 forward). "
                          "AMP is enabled by default on CUDA and gives ~2x speedup.")
+    ap.add_argument("--start_epoch",   type=int,   default=0,
+                    help="Resume: treat this as the first epoch number. "
+                         "Pass the last completed epoch so the cosine LR "
+                         "schedule continues from the right position. "
+                         "Point --l1_ckpt/--l3_ckpt at the matching checkpoint.")
+    ap.add_argument("--best_val",      type=float, default=None,
+                    help="Resume: initial best-val-metric from the previous run "
+                         "so early-epoch results don't incorrectly overwrite the "
+                         "true best checkpoint.")
     ap.add_argument("--max_train",      type=int,   default=None)
     ap.add_argument("--no_cuda",        action="store_true")
     ap.add_argument("--seed",           type=int,   default=42)
@@ -1246,6 +1322,9 @@ def main():
           f"({'always GT' if args.p_predicted == 0.0 else 'always predicted' if args.p_predicted == 1.0 else 'scheduled sampling'})")
     if args.l1_count_no_detach:
         print("  L1 count_detach=False: composition gradient flows to L1 backbone via count head")
+    if args.exist_consistency_weight > 0.0:
+        print(f"  Existence consistency loss (v10): weight={args.exist_consistency_weight}, "
+              f"alpha={args.exist_consistency_alpha}")
 
     print("Loading data...")
     train_cases = gather_cases(args.train_dirs)
@@ -1255,10 +1334,24 @@ def main():
     print("Pre-computing SCC DAGs...")
     train_dags = precompute_dags(train_cases)
     val_dags   = precompute_dags(val_cases)
+    n_train_dag_ok = sum(1 for d in train_dags if d is not None)
+    n_val_dag_ok   = sum(1 for d in val_dags   if d is not None)
+    print(f"  Train DAGs: {n_train_dag_ok}/{len(train_dags)} OK "
+          f"({len(train_dags)-n_train_dag_ok} failed)")
+    print(f"  Val DAGs:   {n_val_dag_ok}/{len(val_dags)} OK "
+          f"({len(val_dags)-n_val_dag_ok} failed)")
 
     print("Pre-computing GT counts (avoids per-epoch numpy work)...")
     train_gt_counts = precompute_gt_counts(train_cases, train_dags)
     val_gt_counts   = precompute_gt_counts(val_cases,   val_dags)
+    n_train_gtc_ok   = sum(1 for g in train_gt_counts if g is not None)
+    n_train_gtc_empty = sum(1 for g in train_gt_counts if g is not None and len(g) == 0)
+    n_val_gtc_ok     = sum(1 for g in val_gt_counts   if g is not None)
+    print(f"  Train GT counts: {n_train_gtc_ok}/{len(train_gt_counts)} OK "
+          f"({len(train_gt_counts)-n_train_gtc_ok} failed, "
+          f"{n_train_gtc_empty} empty-dict)")
+    print(f"  Val GT counts:   {n_val_gtc_ok}/{len(val_gt_counts)} OK "
+          f"({len(val_gt_counts)-n_val_gtc_ok} failed)")
 
     use_amp = (not args.no_amp) and (device.type == "cuda")
     scaler  = torch.amp.GradScaler("cuda") if use_amp else None
@@ -1271,19 +1364,26 @@ def main():
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=args.epochs, eta_min=primary_lr * 0.01)
 
+    # Fast-forward scheduler to match a resumed run's position.
+    for _ in range(args.start_epoch):
+        scheduler.step()
+
     out_dir  = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     log_path = out_dir / "log.csv"
 
     # pos_only: track lowest val pos_loss; otherwise highest val count_exact
-    best_val_metric = float("inf") if pos_only_mode else -1.0
+    if args.best_val is not None:
+        best_val_metric = args.best_val
+    else:
+        best_val_metric = float("inf") if pos_only_mode else -1.0
     log_rows = []
 
     print(f"\n{'Epoch':>6}  {'Train Loss':>10}  {'Train CE':>9}  "
-          f"{'Val Loss':>9}  {'Val CE':>8}  {'LR':>8}")
-    print("-" * 60)
+          f"{'Val Loss':>9}  {'Val CE':>8}  {'LR':>8}  {'N_train':>8}")
+    print("-" * 70)
 
-    for epoch in range(1, args.epochs + 1):
+    for epoch in range(args.start_epoch + 1, args.start_epoch + args.epochs + 1):
         if pos_only_mode:
             l1_model.eval()   # backbone, count heads stay in eval
             l1_model.pos_head.train()
@@ -1308,7 +1408,9 @@ def main():
                             use_margin_loss=args.use_margin_loss,
                             margin=args.margin,
                             correct_ce_weight=args.correct_ce_weight,
-                            l1_count_no_detach=args.l1_count_no_detach)
+                            l1_count_no_detach=args.l1_count_no_detach,
+                            exist_consistency_weight=args.exist_consistency_weight,
+                            exist_consistency_alpha=args.exist_consistency_alpha)
 
         l1_model.eval()
         l3_model.eval()
@@ -1330,7 +1432,8 @@ def main():
               f"{train_m['count_exact']:>9.4f}  "
               f"{val_m['loss']:>9.4f}  "
               f"{val_m['count_exact']:>8.4f}  "
-              f"{lr_now:>8.2e}")
+              f"{lr_now:>8.2e}  "
+              f"{train_m['n']:>8}")
 
         log_rows.append({
             "epoch":      epoch,
@@ -1360,8 +1463,17 @@ def main():
             save_checkpoint(out_dir, f"ep{epoch:03d}", l1_model, l3_model,
                             l1_cfg_dict, l3_cfg_dict, val_m)
 
+    # Always save the final epoch so the next run can resume cleanly.
+    save_checkpoint(out_dir, "last", l1_model, l3_model,
+                    l1_cfg_dict, l3_cfg_dict, val_m)
+
     best_label = "val pos_loss" if pos_only_mode else "val count_exact"
     print(f"\nBest {best_label}: {best_val_metric:.4f}")
+    final_epoch = args.start_epoch + args.epochs
+    print(f"To resume: --l1_ckpt {out_dir}/l1_last.pt "
+          f"--l3_ckpt {out_dir}/l3_last.pt "
+          f"--start_epoch {final_epoch} "
+          f"--best_val {best_val_metric:.4f}")
     print(f"Checkpoints saved to: {out_dir}")
 
 
