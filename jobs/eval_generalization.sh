@@ -69,9 +69,9 @@ run_eval "v5 3+3 (biased)" \
     $SCRATCH/runs/composition_eval_v5 \
     $OUT_DIR/v5_canonical.csv
 
-run_eval "3+3 honest (5k fresh)" \
-    $SCRATCH/runs/v10_hardneg/fresh_3p3_5k \
-    $OUT_DIR/fresh_3p3_5k.csv
+# run_eval "3+3 honest (5k fresh)" \
+#     $SCRATCH/runs/v10_hardneg/fresh_3p3_5k \
+#     $OUT_DIR/fresh_3p3_5k.csv
 
 run_eval "2+4 asymm" \
     $SCRATCH/runs/generalization/e1_2p4 \
