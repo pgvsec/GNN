@@ -82,32 +82,32 @@ run_eval "4+2 asymm" \
     $OUT_DIR/e1_4p2.csv
 
 run_eval "3+4 zero-shot +1" \
-    $SCRATCH/runs/generalization/e1_3p4 \
-    $OUT_DIR/e1_3p4.csv
+    $SCRATCH/runs/generalization/e2_3p4 \
+    $OUT_DIR/e2_3p4.csv
 
 run_eval "4+3 zero-shot +1" \
-    $SCRATCH/runs/generalization/e1_4p3 \
-    $OUT_DIR/e1_4p3.csv
+    $SCRATCH/runs/generalization/e2_4p3 \
+    $OUT_DIR/e2_4p3.csv
 
 run_eval "3+5 zero-shot +2" \
-    $SCRATCH/runs/generalization/e1_3p5 \
-    $OUT_DIR/e1_3p5.csv
+    $SCRATCH/runs/generalization/e2_3p5 \
+    $OUT_DIR/e2_3p5.csv
 
 run_eval "5+3 zero-shot +2" \
-    $SCRATCH/runs/generalization/e1_5p3 \
-    $OUT_DIR/e1_5p3.csv
+    $SCRATCH/runs/generalization/e2_5p3 \
+    $OUT_DIR/e2_5p3.csv
 
 run_eval "4+4 zero-shot +2" \
-    $SCRATCH/runs/generalization/e1_4p4 \
-    $OUT_DIR/e1_4p4.csv
+    $SCRATCH/runs/generalization/e2_4p4 \
+    $OUT_DIR/e2_4p4.csv
 
 run_eval "2→3→4 chain (3-SCC)" \
-    $SCRATCH/runs/generalization/chain_2p3p4 \
-    $OUT_DIR/chain_2p3p4.csv
+    $SCRATCH/runs/generalization/e4_2ch3ch4 \
+    $OUT_DIR/e4_2ch3ch4.csv
 
 run_eval "3→3→3 chain (3-SCC)" \
-    $SCRATCH/runs/generalization/chain_3p3p3 \
-    $OUT_DIR/chain_3p3p3.csv
+    $SCRATCH/runs/generalization/e4_3ch3ch3 \
+    $OUT_DIR/e4_3ch3ch3.csv
 
 # ── Summary table ─────────────────────────────────────────────────────────────
 echo ""
@@ -125,13 +125,13 @@ rows = [
     ("3+3 honest (5k fresh)", "fresh_3p3_5k.csv",   6, 2, "fresh draw seed≠42"),
     ("2+4 asymm",             "e1_2p4.csv",          6, 2, "never trained on"),
     ("4+2 asymm",             "e1_4p2.csv",          6, 2, "never trained on"),
-    ("3+4 zero-shot +1",      "e1_3p4.csv",          7, 2, "zero-shot +1 gene"),
-    ("4+3 zero-shot +1",      "e1_4p3.csv",          7, 2, "zero-shot +1 gene"),
-    ("3+5 zero-shot +2",      "e1_3p5.csv",          8, 2, "zero-shot +2 genes"),
-    ("5+3 zero-shot +2",      "e1_5p3.csv",          8, 2, "zero-shot +2 genes"),
-    ("4+4 zero-shot +2",      "e1_4p4.csv",          8, 2, "zero-shot +2 genes"),
-    ("2→3→4 chain",           "chain_2p3p4.csv",     9, 3, "zero-shot 3-SCC chain"),
-    ("3→3→3 chain",           "chain_3p3p3.csv",     9, 3, "zero-shot 3-SCC chain"),
+    ("3+4 zero-shot +1",      "e2_3p4.csv",          7, 2, "zero-shot +1 gene"),
+    ("4+3 zero-shot +1",      "e2_4p3.csv",          7, 2, "zero-shot +1 gene"),
+    ("3+5 zero-shot +2",      "e2_3p5.csv",          8, 2, "zero-shot +2 genes"),
+    ("5+3 zero-shot +2",      "e2_5p3.csv",          8, 2, "zero-shot +2 genes"),
+    ("4+4 zero-shot +2",      "e2_4p4.csv",          8, 2, "zero-shot +2 genes"),
+    ("2→3→4 chain",           "e4_2ch3ch4.csv",      9, 3, "zero-shot 3-SCC chain"),
+    ("3→3→3 chain",           "e4_3ch3ch3.csv",      9, 3, "zero-shot 3-SCC chain"),
 ]
 
 # v8 baseline for comparison
@@ -140,13 +140,13 @@ v8 = {
     "fresh_3p3_5k.csv":  (0.772, 0.810, 0.822),
     "e1_2p4.csv":        (0.788, 0.778, 0.833),
     "e1_4p2.csv":        (0.748, 0.822, 0.805),
-    "e1_3p4.csv":        (0.696, 0.737, 0.757),
-    "e1_4p3.csv":        (0.686, 0.747, 0.758),
-    "e1_3p5.csv":        (0.724, 0.722, 0.784),
-    "e1_5p3.csv":        (0.754, 0.732, 0.801),
-    "e1_4p4.csv":        (0.672, 0.656, 0.752),
-    "chain_2p3p4.csv":   (0.726, 0.692, 0.794),
-    "chain_3p3p3.csv":   (0.698, 0.736, 0.770),
+    "e2_3p4.csv":        (0.696, 0.737, 0.757),
+    "e2_4p3.csv":        (0.686, 0.747, 0.758),
+    "e2_3p5.csv":        (0.724, 0.722, 0.784),
+    "e2_5p3.csv":        (0.754, 0.732, 0.801),
+    "e2_4p4.csv":        (0.672, 0.656, 0.752),
+    "e4_2ch3ch4.csv":    (0.726, 0.692, 0.794),
+    "e4_3ch3ch3.csv":    (0.698, 0.736, 0.770),
 }
 
 hdr = f"{'Dataset':<26} {'n_g':>4} {'SCCs':>5}  {'count_exact':>11}  {'fp_hd':>7}  {'stable_acc':>10}  {'Notes'}"
