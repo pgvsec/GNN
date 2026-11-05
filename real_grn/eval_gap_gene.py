@@ -151,8 +151,13 @@ def eval_model(model_name, data_base, l1_ckpt, l3_ckpt, refine_steps, device, ve
         n_fp_gt   = len(gt_states)
 
         result = predictor.predict(adj, P, K, T, nh, F)
-        pred_fps   = result.get("fps", np.zeros((0, n_genes)))
-        pred_stabs = result.get("stab", np.zeros(0, dtype=np.uint8))
+        # GRNPredictor.predict() returns:
+        #   "global_fps"  — raw ML assembled FP coordinates [n_fps, N]
+        #   "global_stab" — ML predicted stability class [n_fps]
+        #   "fps_refined" — same shape, Newton-refined (identical when refine_steps=0)
+        #   "n_fps"       — count from count head (int)
+        pred_fps   = result.get("fps_refined", result.get("global_fps", np.zeros((0, n_genes))))
+        pred_stabs = result.get("global_stab", np.zeros(0, dtype=np.uint8))
         n_fp_pred  = int(result.get("n_fps", 0))
 
         count_exact = int(n_fp_pred == n_fp_gt)
