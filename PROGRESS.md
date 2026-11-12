@@ -288,6 +288,105 @@ Training sizes: 3+3, 2+4, 4+2 (all 6 total genes, max SCC size 4). The model had
 
 ---
 
+---
+
+## Real GRN Experiment: Drosophila Gap Gene Network
+
+**Branch:** `real_grn_experiments`  
+**Files:** `real_grn/gap_gene_params.py`, `real_grn/gen_gap_gene_dataset.py`, `real_grn/eval_gap_gene.py`, `jobs/eval_gap_gene.sh`  
+**Checkpoints used:** v10 (`$SCRATCH/runs/e2e_v10/l1_best.pt`, `l3_best.pt`)
+
+### Scientific Setup
+
+Two competing topology interpretations of the gap gene network tested zero-shot (GNN never trained on biological GRNs):
+
+| | Model A (Reinitz/Manu 2009) | Model B (Papatsenko-Levine 2011) |
+|---|---|---|
+| Topology | **Single 4-gene SCC** {Hb, Kr, Gt, Kni} | **Two 2-gene SCCs**: {Hb,Kni} → {Kr,Gt} |
+| Critical edge | Kr⊣Hb **present** (weak, T=0.80, F=0.15) | Kr⊣Hb **absent** |
+| GNN routing | L1 only (root SCC = full network) | L1 on {Hb,Kni}, then L3 on {Kr,Gt} |
+| Expected | 2–4 coexisting attractors | Product bistability (up to 4) |
+
+Three AP positions tested per model (37% EL, 45% EL, 55% EL) = 3 cases per model, 6 total.
+
+**Parameter design:**  
+External morphogen gradients (Bcd, Cad, Tll) encoded as direct production rates P ∈ [2.0, 3.5] per gene per AP position — no Hill-function multiplication. This keeps T_rep = 0.30 in its bistable regime (critical threshold P/K > 1.90; all P values ≥ 2.0 ✓).
+
+### Ground Truth (Brouwer-certified)
+
+Both models were solved at all three AP positions using exhaustive Newton draws (seeds 96–256, 12 rounds). Poincaré-Hopf index constraint verified in 4D (sum of Brouwer indices = +1):
+
+| Model | FPs per position | Stable attractors | Saddles | Brouwer certified |
+|-------|-----------------|-------------------|---------|-------------------|
+| **Model A** (1-SCC) | **5** | **2** | 3 (mixed index) | ✓ all 3 positions |
+| **Model B** (2-SCC) | **7** | **3** | 4 (mixed index) | ✓ all 3 positions |
+
+**4D Morse structure note:** In 4D the saddle-node alternation is 1D/2D intuition breaks. With 2 stable nodes (index +1 each) the remaining saddles must collectively sum to −1, requiring 3 saddles with mixed unstable-direction counts. With 3 stable nodes: 4 saddles summing to −2.
+
+**Critical edge effect:** Kr⊣Hb (absent in Model B) destabilises the {Kni+Kr ON} attractor, reducing stable count 3→2 and total FPs 7→5. The topology change is consistent across all three AP positions.
+
+### GNN Predictions (zero-shot)
+
+#### Pure ML (refine_steps=0) — honest ML baseline
+
+| Model | AP pos | GT FPs | Pred FPs | count_exact | fp_hd | stable_acc |
+|-------|--------|--------|----------|-------------|-------|------------|
+| **A** (1-SCC) | 37pct | 5 | 5 | ✓ | 0.800 | 0.933 |
+| **A** (1-SCC) | 45pct | 5 | 5 | ✓ | 0.800 | 0.933 |
+| **A** (1-SCC) | 55pct | 5 | 5 | ✓ | 0.800 | 0.933 |
+| **B** (2-SCC) | 37pct | 7 | 7 | ✓ | 1.000 | 1.000 |
+| **B** (2-SCC) | 45pct | 7 | 7 | ✓ | 1.000 | 1.000 |
+| **B** (2-SCC) | 55pct | 7 | 7 | ✓ | 1.000 | 1.000 |
+
+**Aggregate (refine=0):**
+
+| Model | count_exact | fp_hd | stable_acc |
+|-------|-------------|-------|------------|
+| Model A (1-SCC) | **1.000** | 0.800 | 0.933 |
+| Model B (2-SCC) | **1.000** | 1.000 | 1.000 |
+
+#### ML+Newton (refine_steps=15)
+
+| Model | count_exact | fp_hd | stable_acc | Note |
+|-------|-------------|-------|------------|------|
+| Model A (1-SCC) | 0.667 | 0.800 | 0.933 | count drop: Newton convergence drops branches |
+| Model B (2-SCC) | 1.000 | 1.000 | 1.000 | perfect |
+
+**fp_hd=0.800 at refine=0 on Model A** means the ML seeds cover 4 of 5 GT FPs per position. The 5th FP (a saddle near the boundary of competing basins) is not seeded by the ML — a known limitation for high-index saddles.
+
+### Key Findings
+
+18. **Zero-shot biological GRN topology discrimination.** The GNN correctly identifies the fixed-point count difference between a 1-SCC (5 FPs) and a 2-SCC (7 FPs) topology on a real Drosophila gap gene network, without any biological training data. `count_exact = 1.000` on both models at refine=0.
+
+19. **Critical edge detection (Kr⊣Hb) zero-shot.** The single weak edge Kr⊣Hb (T=0.80, F=0.15) reduces FP count 7→5 and stable attractors 3→2. The GNN predicts the correct count for both topologies, demonstrating sensitivity to biologically weak but topologically critical edges.
+
+20. **Model B (2-SCC) outperforms Model A on fp_hd (1.000 vs 0.800).** The compositional architecture matches the biological circuit: Model B's 2-SCC structure (L1 root SCC, L3 forced SCC) is exactly the architecture the GNN was trained on. Model A's single 4-gene SCC is a harder prediction (all 4 genes simultaneously, no forced-frame conditioning).
+
+21. **Newton refinement hurts count_exact on Model A (1.000→0.667).** The 5-gene FP geometry in a 4D space includes 3 saddles whose Newton basins are narrow. Forcing Newton from ML seeds occasionally converges to saddles → stable-node ambiguity, dropping count head predictions that were correct at refine=0. The `count_exact` metric at refine=0 is the honest pure-ML signal.
+
+22. **AP-position invariance of FP structure.** All three AP positions (37%, 45%, 55% EL) yield identical FP counts (5 for Model A, 7 for Model B). The morphogen gradient changes gene expression levels but not the topological structure of the attractor landscape at these parameter values.
+
+### Reproducibility
+
+```bash
+# From REPO_ROOT on cluster (real_grn_experiments branch):
+sbatch jobs/eval_gap_gene.sh
+# Step 1: gen_gap_gene_dataset.py → $SCRATCH/runs/real_grn/
+# Step 2: ground truth verification display
+# Step 3: eval refine=0 → gap_gene_results_refine0.json
+# Step 4: eval refine=15 → gap_gene_results_refine15.json
+
+# Manual (single step):
+python real_grn/gen_gap_gene_dataset.py --out_base /tmp/real_grn --no_cuda
+python real_grn/eval_gap_gene.py \
+    --l1_ckpt $SCRATCH/runs/e2e_v10/l1_best.pt \
+    --l3_ckpt $SCRATCH/runs/e2e_v10/l3_best.pt \
+    --data_base /tmp/real_grn \
+    --model both --refine_steps 0 --out_json /tmp/gap_refine0.json
+```
+
+---
+
 ## Paths Not Yet Tried
 
 1. **v11 hard-negative mining from v10 failures:** Mine cases where v10 mispredicts count on zero-shot sizes (3+4, 4+3, 4+4, etc.) and add to training. Targeted at the count_exact bottleneck on zero-shot.
